@@ -29,6 +29,7 @@ AFRAME.registerComponent('giro-por-pasos', {
 
 // Andar con el joystick izquierdo, hacia donde miras (sin subir ni bajar).
 const VELOCIDAD = 1.5;   // m/s
+const VELOCIDAD_MIRAR = 2.2;   // rad/s con el stick derecho del mando de Xbox, a tope
 // Zonas por las que puede ir la cabeza (con un margen para no meterse en las paredes).
 // Cada puerta une dos zonas; con la puerta cerrada no se puede pasar de una a otra.
 const SALA = { x0: -2.75, x1: 2.75, z0: -2.75, z1: 2.75 };
@@ -148,7 +149,8 @@ AFRAME.registerComponent('andar-joystick', {
       try { localStorage.setItem(this.clave, JSON.stringify({ x: r.x, y: this.altura, z: r.z, giro: this.rig.object3D.rotation.y })); } catch (e) {}
     }
     r.y += (this.altura - r.y) * Math.min(1, dt / 80);   // subir y bajar escalones con suavidad
-    const mx = THREE.MathUtils.clamp(this.x + this.tx, -1, 1), my = THREE.MathUtils.clamp(this.y + this.ty, -1, 1);
+    this.mandoPC(dt);
+    const mx = THREE.MathUtils.clamp(this.x + this.tx + this.gx, -1, 1), my = THREE.MathUtils.clamp(this.y + this.ty + this.gy, -1, 1);
     if (Math.hypot(mx, my) < 0.15) return;   // zona muerta
     const s = Math.min(dt / 1000, 0.05) * VELOCIDAD;
     const cam = document.querySelector('[camera]').object3D;
@@ -173,6 +175,39 @@ AFRAME.registerComponent('andar-joystick', {
     }
     r.x += mejor.x - cabeza.x;
     r.z += mejor.z - cabeza.z;
+  },
+  // Mando de Xbox (o cualquier mando "standard") en el PC, fuera de VR: stick izquierdo para
+  // andar (deja this.gx, this.gy, como el joystick), stick derecho para mirar, A para abrir la
+  // puerta que hay en la mira, B para traer la pantalla del PC y LB / RB para girar 30°.
+  // El navegador no ve el mando hasta que se pulsa un botón con la página delante.
+  mandoPC(dt) {
+    this.gx = this.gy = 0;
+    if (this.el.sceneEl.is('vr-mode') || !navigator.getGamepads) return;
+    const m = [...navigator.getGamepads()].find(g => g && g.connected && g.mapping === 'standard');
+    if (!m) return;
+    const zona = v => Math.abs(v) < 0.15 ? 0 : v;   // zona muerta de los sticks
+    this.gx = zona(m.axes[0]); this.gy = zona(m.axes[1]);
+    // mirar: girar y cabecear la cámara, igual que con el ratón
+    const camara = document.querySelector('[camera]');
+    const lc = camara.components['look-controls'], s = Math.min(dt, 50) / 1000 * VELOCIDAD_MIRAR;
+    if (lc) {
+      lc.yawObject.rotation.y -= zona(m.axes[2]) * s;
+      lc.pitchObject.rotation.x = THREE.MathUtils.clamp(lc.pitchObject.rotation.x - zona(m.axes[3]) * s, -Math.PI / 2, Math.PI / 2);
+    }
+    // botones: cuentan al pulsarlos, no mientras se siguen apretando
+    const antes = this.botones || [];
+    const pulsa = i => m.buttons[i] && m.buttons[i].pressed && !antes[i];
+    if (pulsa(0)) {   // A: clic en lo que hay en la mira (abre o cierra la puerta)
+      const el = camara.components.raycaster && camara.components.raycaster.intersectedEls[0];
+      if (el) el.emit('click');
+    }
+    if (pulsa(1))     // B: traer la pantalla del PC
+      for (const a of document.querySelectorAll('[agarrable]')) if (a.components.agarrable.data.clave) a.components.agarrable.traer();
+    const giro = document.querySelector('[giro-por-pasos]');
+    const g = giro && giro.components['giro-por-pasos'];
+    if (g && pulsa(4)) g.girar(PASO_GIRO);    // LB: 30° a la izquierda
+    if (g && pulsa(5)) g.girar(-PASO_GIRO);   // RB: 30° a la derecha
+    this.botones = m.buttons.map(b => b.pressed);
   }
 });
 

@@ -54,6 +54,17 @@ doradas. Se puede subir andando; los tramos son macizos y no se pueden atravesar
 **Ordenador:** clic para capturar el ratón, **WASD** o flechas para andar (igual que el joystick:
 con choques y escalones), clic con la mira en una puerta para abrirla, **Esc** suelta el ratón.
 
+**Mando de Xbox en el ordenador** (por cable, Bluetooth o adaptador; el navegador lo detecta al
+pulsar cualquier botón con la página delante; dentro de las gafas no cuenta):
+
+| Mando | Qué hace |
+|---|---|
+| **Stick izquierdo** | Andar, con los mismos choques y escalones. |
+| **Stick derecho** | Mirar alrededor (girar y mirar arriba o abajo). |
+| **A** | Abrir o cerrar la puerta que hay en la mira. |
+| **B** | Traer la pantalla del PC delante. |
+| **LB / RB** | Girar 30° a la izquierda / derecha. |
+
 Al recargar la página vuelves al sitio donde estabas y la pantalla sigue donde la dejaste (se
 guarda en el navegador). Si se cambia en el código el punto de inicio (ahora, la sala 3 mirando
 a la escalera), se empieza en el nuevo.
@@ -128,7 +139,7 @@ sus zonas en `js/movimiento.js` (`zonasPermitidas`) si se puede andar por ella.
 
 ### Componentes
 
-- **Movimiento:** `andar-joystick` (joystick y teclado), `giro-por-pasos`. Las zonas por las que
+- **Movimiento:** `andar-joystick` (joystick, teclado y mando de Xbox en el PC), `giro-por-pasos`. Las zonas por las que
   se puede ir (`SALA`, `PASILLO`, …, `PASILLOS_ARRIBA`) se unen por puertas abiertas
   (`zonasPermitidas`); las alturas que se pisan están en `SUPERFICIES` (`sueloEn`: escalones de
   hasta 35 cm, sin caídas, sin atravesar lo macizo). Desde el HTML de una sala, `macizo="ancho; fondo;
