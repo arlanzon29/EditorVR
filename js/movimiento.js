@@ -179,22 +179,37 @@ AFRAME.registerComponent('andar-joystick', {
   },
   // Mando de Xbox (o cualquier mando "standard") en el PC, fuera de VR: stick izquierdo para
   // andar (deja this.gx, this.gy, como el joystick), stick derecho para mirar, A para abrir la
-  // puerta que hay en la mira, B para traer la pantalla del PC y LB / RB para girar 30°.
+  // puerta que hay en la mira, B para traer la pantalla del PC, LB / RB para girar 30° y Vista
+  // para recalibrar los sticks (soltándolos antes).
   // El navegador no ve el mando hasta que se pulsa un botón con la página delante.
   mandoPC(dt) {
     this.gx = this.gy = 0;
     if (this.el.sceneEl.is('vr-mode') || !navigator.getGamepads) return;
     const m = [...navigator.getGamepads()].find(g => g && g.connected && g.mapping === 'standard');
     if (!m) return;
-    // reposo: lo que marca cada stick sin tocarlo, apuntado al ver el mando por primera vez (los
-    // mandos con uso no vuelven del todo a 0, y la vista se movía sola). Se resta siempre; luego,
-    // zona muerta y reescalado para que el movimiento empiece suave al salir de ella.
+    // reposo: lo que marca cada stick sin tocarlo. Hay mandos que no vuelven a 0 (uno de Xbox por
+    // Bluetooth dejaba el stick derecho en -0,7 y la vista subía sola). Empieza en 0 (al ver el
+    // mando puede que se estén tocando los sticks); se ajusta solo, despacio, cuando un eje está
+    // quieto cerca del reposo, y el botón Vista (8), con los sticks sueltos, lo pone donde estén.
     if (this.mandoId !== m.id + m.index) {
       this.mandoId = m.id + m.index;
-      this.reposo = m.axes.map(v => Math.abs(v) < 0.35 ? v : 0);
+      this.reposo = m.axes.map(() => 0);
+      this.ejesAntes = m.axes.slice();
+      this.quietoMs = m.axes.map(() => 0);
     }
+    if (m.buttons[8] && m.buttons[8].pressed) this.reposo = m.axes.slice();
+    // cada eje, de -1 a 1 contando desde el reposo hasta cada tope; zona muerta y reescalado para
+    // que el movimiento empiece suave al salir de ella
     const zona = i => {
-      const v = m.axes[i] - (this.reposo[i] || 0), a = Math.abs(v);
+      const r = this.reposo[i] || 0, bruto = m.axes[i] - r;
+      const quieto = Math.abs(m.axes[i] - (this.ejesAntes[i] ?? m.axes[i])) < 0.01;
+      this.quietoMs[i] = quieto ? (this.quietoMs[i] || 0) + dt : 0;
+      if (quieto && Math.abs(bruto) < 0.35) this.reposo[i] = r + bruto * Math.min(1, dt / 1000);   // ~1 s en seguirlo
+      // stick derecho clavado 3 s lejos del centro, pero no a tope: es su reposo (una mano no lo deja
+      // tan quieto, y si lo hiciera, la vista ya estaría en el techo o el suelo)
+      else if (i >= 2 && this.quietoMs[i] > 3000 && Math.abs(m.axes[i]) < 0.9) this.reposo[i] = m.axes[i];
+      if (Math.abs(bruto) < ZONA_MUERTA) return 0;
+      const v = bruto / (bruto > 0 ? 1 - r : 1 + r), a = Math.abs(v);
       return a < ZONA_MUERTA ? 0 : Math.sign(v) * Math.min(1, (a - ZONA_MUERTA) / (1 - ZONA_MUERTA));
     };
     this.gx = zona(0); this.gy = zona(1);
@@ -219,6 +234,7 @@ AFRAME.registerComponent('andar-joystick', {
     if (g && pulsa(4)) g.girar(PASO_GIRO);    // LB: 30° a la izquierda
     if (g && pulsa(5)) g.girar(-PASO_GIRO);   // RB: 30° a la derecha
     this.botones = m.buttons.map(b => b.pressed);
+    this.ejesAntes = m.axes.slice();
   }
 });
 

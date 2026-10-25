@@ -64,6 +64,12 @@ pulsar cualquier botón con la página delante; dentro de las gafas no cuenta):
 | **A** | Abrir o cerrar la puerta que hay en la mira. |
 | **B** | Traer la pantalla del PC delante. |
 | **LB / RB** | Girar 30° a la izquierda / derecha. |
+| **Vista** (dos cuadraditos) | Recalibrar los sticks: soltarlos y pulsarlo si la vista o el jugador se mueven solos. |
+
+Los sticks se calibran solos: el reposo se ajusta despacio cuando están quietos cerca del centro,
+y si el derecho se queda clavado 3 s lejos del centro (un mando de Xbox por Bluetooth lo dejaba en
+-0,7 y la vista subía sola), se toma eso como su reposo. El informe de posición (`/__posicion`)
+incluye los mandos que ve el navegador y lo que marcan, para diagnosticar.
 
 Al recargar la página vuelves al sitio donde estabas y la pantalla sigue donde la dejaste (se
 guarda en el navegador). Si se cambia en el código el punto de inicio (ahora, la sala 3 mirando

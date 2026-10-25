@@ -160,7 +160,14 @@ AFRAME.registerComponent('informe-posicion', {
       hora: new Date().toLocaleTimeString(), vr: this.el.is('vr-mode'), zona,
       cabeza: r3(cabeza), suelo: r3({ x: cabeza.x, y: rigY, z: cabeza.z }),
       direccion: r3(dir), rumbo: Math.round(THREE.MathUtils.radToDeg(Math.atan2(dir.x, -dir.z))),   // 0 = hacia z negativa (ventana), 90 = hacia x positiva (puerta)
-      mira
+      mira,
+      // mandos que ve el navegador (el de Xbox en el PC): ejes, botones pulsados y el reposo que
+      // se le restó a cada eje, para ver qué marca si el movimiento no va bien
+      mandos: navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean).map(g => ({
+        id: g.id, mapping: g.mapping, ejes: g.axes.map(v => +v.toFixed(2)),
+        botones: g.buttons.map((b, i) => b.pressed ? i : -1).filter(i => i >= 0)
+      })) : [],
+      reposoMando: (document.querySelector('[andar-joystick]')?.components['andar-joystick']?.reposo || []).map(v => +v.toFixed(2))
     };
     fetch('/__posicion', { method: 'POST', body: JSON.stringify(informe) }).catch(() => {});
   }
