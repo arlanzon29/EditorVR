@@ -7,7 +7,7 @@
 //    la textura, en sus coordenadas). Se ve igual. Lo que se mueve o cambia (puertas, personajes,
 //    llamas, la pantalla, carteles, modelos de Blender) y lo que recibe el rayo (.clicable) se queda
 //    como está. Las piezas fundidas se ocultan, pero siguen en su sitio (y su HTML, igual).
-//  - luces-cercanas: solo se encienden las luces puntuales que tienes cerca.
+//  - luces-cercanas: solo 6 luces puntuales, siempre las mismas, que copian a las más cercanas.
 
 const NO_FUNDIR = '[puerta], [agarrable], [antorcha], [criado], [guardia], [hoguera], [lampara-rueda], [gltf-model], [text], .clicable, .cartel';
 
@@ -78,22 +78,44 @@ function fundirEstancia(el) {
   return { antes, despues };
 }
 
-// Luces puntuales: cada medio segundo, solo quedan encendidas las que están a menos de su alcance
-// más 2 m de tus ojos (con 1 m de margen para que no se enciendan y apaguen en el borde). Al cambiar
-// cuántas hay, el navegador recompila los sombreados: puede notarse un instante al cambiar de sala.
+// Luces puntuales: un número fijo de luces (6) que nunca se encienden ni se apagan, y que copian
+// cada fotograma a las luces de la escena más cercanas a tus ojos (posición, color, fuerza, alcance;
+// así las que tiemblan siguen temblando). Las luces de la escena quedan ocultas: solo sirven de
+// modelo. Antes se encendían y apagaban las cercanas, pero cada vez que cambiaba cuántas había el
+// navegador recompilaba los materiales y daba un tirón al entrar en las salas.
 AFRAME.registerComponent('luces-cercanas', {
-  schema: { margen: { default: 2 } },
-  init() { this.cuando = 0; this.p = new THREE.Vector3(); this.ojo = new THREE.Vector3(); },
+  schema: { cuantas: { default: 6 } },
+  init() {
+    this.cuando = 0; this.p = new THREE.Vector3(); this.ojo = new THREE.Vector3();
+    this.fuentes = [];
+    this.vivas = [];
+    for (let i = 0; i < this.data.cuantas; i++) {
+      const l = new THREE.PointLight('#ffffff', 0, 1);
+      l.userData.viva = true;
+      this.el.object3D.add(l);
+      this.vivas.push({ luz: l, de: null });
+    }
+  },
   tick(t) {
-    if (t - this.cuando < 500) return;
-    this.cuando = t;
-    this.el.camera.getWorldPosition(this.ojo);
-    this.el.object3D.traverse(o => {
-      if (!o.isPointLight) return;
-      const lim = (o.distance || 10) + this.data.margen, d = o.getWorldPosition(this.p).distanceTo(this.ojo);
-      const ver = o.visible ? d < lim + 1 : d < lim;
-      if (ver !== o.visible) o.visible = ver;
-    });
+    // cada medio segundo: buscar luces nuevas (las salas cargan después) y elegir las más cercanas
+    if (t - this.cuando > 500) {
+      this.cuando = t;
+      this.el.object3D.traverse(o => {
+        if (o.isPointLight && !o.userData.viva && !o.userData.fuente) { o.userData.fuente = true; this.fuentes.push(o); }
+      });
+      this.el.camera.getWorldPosition(this.ojo);
+      // la que más cerca tiene su zona iluminada (distancia menos su alcance) va primero
+      const orden = this.fuentes.map(f => ({ f, d: f.getWorldPosition(this.p).distanceTo(this.ojo) - (f.distance || 10) }))
+        .sort((a, b) => a.d - b.d).slice(0, this.vivas.length).map(x => x.f);
+      this.vivas.forEach((v, i) => { v.de = orden[i] || null; });
+    }
+    for (const f of this.fuentes) f.visible = false;   // (A-Frame puede volver a mostrarlas)
+    for (const v of this.vivas) {
+      const f = v.de;
+      if (!f) { v.luz.intensity = 0; continue; }
+      f.getWorldPosition(v.luz.position);
+      v.luz.color.copy(f.color); v.luz.intensity = f.intensity; v.luz.distance = f.distance; v.luz.decay = f.decay;
+    }
   }
 });
 
