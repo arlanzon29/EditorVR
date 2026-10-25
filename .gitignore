@@ -13,3 +13,4 @@ servidor/*.pem
 # Ajustes y hooks personales de Claude Code
 .claude/settings.local.json
 .claude/hooks/
+.claude/modo-quest

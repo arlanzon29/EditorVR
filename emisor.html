@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Emisor de pantalla</title>
+<style>
+  body { font: 16px system-ui, sans-serif; margin: 2rem; background: #fafafa; color: #222; }
+  button { font-size: 1.1rem; padding: 0.6rem 1.4rem; margin-right: 0.5rem; cursor: pointer; }
+  #estado { margin: 1rem 0; }
+  video { max-width: 480px; width: 100%; border: 1px solid #ccc; background: #000; }
+</style>
+</head>
+<body>
+<!-- Abrir en el PC: comparte una pantalla o ventana con la pantalla de la pared de Editor VR.
+     Sube una imagen JPEG por segundo al servidor local (POST /__pantalla.jpg). -->
+<h1>Pantalla del PC para Editor VR</h1>
+<p>Pulsa <b>Compartir</b> y elige qué pantalla o ventana quieres ver en la pared de la habitación.</p>
+<button id="compartir">Compartir</button><button id="parar" disabled>Parar</button>
+<p id="estado">Sin compartir.</p>
+<video id="video" autoplay muted playsinline></video>
+<script>
+const ANCHO_MAX = 1920, CADA = 1000, CALIDAD = 0.8;
+const video = document.getElementById('video');
+const estado = document.getElementById('estado');
+const bCompartir = document.getElementById('compartir'), bParar = document.getElementById('parar');
+const lienzo = document.createElement('canvas');
+let flujo = null, enviadas = 0;
+
+bCompartir.onclick = async () => {
+  try {
+    flujo = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 5 }, audio: false });
+  } catch { estado.textContent = 'No se ha compartido nada.'; return; }
+  video.srcObject = flujo;
+  flujo.getVideoTracks()[0].addEventListener('ended', parar);
+  bCompartir.disabled = true; bParar.disabled = false;
+  enviadas = 0;
+  enviar();
+};
+bParar.onclick = parar;
+
+function parar() {
+  if (flujo) flujo.getTracks().forEach(t => t.stop());
+  flujo = null; video.srcObject = null;
+  bCompartir.disabled = false; bParar.disabled = true;
+  estado.textContent = 'Sin compartir.';
+}
+
+async function enviar() {
+  if (!flujo) return;
+  const t0 = performance.now();
+  if (video.videoWidth) {
+    const k = Math.min(1, ANCHO_MAX / video.videoWidth);
+    lienzo.width = Math.round(video.videoWidth * k);
+    lienzo.height = Math.round(video.videoHeight * k);
+    lienzo.getContext('2d').drawImage(video, 0, 0, lienzo.width, lienzo.height);
+    const blob = await new Promise(r => lienzo.toBlob(r, 'image/jpeg', CALIDAD));
+    try {
+      await fetch('/__pantalla.jpg', { method: 'POST', body: blob });
+      enviadas++;
+      estado.textContent = `Compartiendo (${lienzo.width} × ${lienzo.height}). Imágenes enviadas: ${enviadas}.`;
+    } catch { estado.textContent = 'No llega al servidor. ¿Está arrancado?'; }
+  }
+  setTimeout(enviar, Math.max(0, CADA - (performance.now() - t0)));
+}
+</script>
+</body>
+</html>
