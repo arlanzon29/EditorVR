@@ -1,0 +1,41 @@
+<!-- Exterior: campo delante del castillo, al que se sale por el portón de la muralla del patio.
+     Hierba, camino de tierra, árboles y colinas a lo lejos. Además, la piel de fuera de las salas
+     que dan al campo (por dentro sus paredes solo tienen cara hacia dentro). -->
+
+<!-- campo: 5 cm por debajo de los suelos de las salas, para no coincidir con ellos -->
+<a-plane rotation="-90 0 0" position="5 -0.05 -20" width="160" height="120" color="#ffffff" suelo-hierba></a-plane>
+<!-- camino de tierra desde el portón -->
+<a-plane rotation="-90 0 0" position="6 -0.035 -26" width="2.4" height="38" color="#8a7a5a"></a-plane>
+
+<!-- piel exterior de la sala 1 (por detrás de su ventana hundida) y de la sala 2 -->
+<a-plane position="-0.425 1.5 -3.45" rotation="0 180 0" width="6.05" height="3" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="-3.45 1.5 0.075" rotation="0 -90 0" width="7.05" height="3" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="11.925 1.5 -2.5" rotation="0 180 0" width="5.05" height="3" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="14.45 1.5 0" rotation="0 90 0" width="5" height="3" color="#ffffff" pared-piedra></a-plane>
+
+<!-- árboles (x z alto semilla) -->
+<a-entity>
+  <a-entity arbol="alto: 7; semilla: 1" position="-8 0 -14"></a-entity>
+  <a-entity arbol="alto: 6; semilla: 2" position="-14 0 -22"></a-entity>
+  <a-entity arbol="alto: 8; semilla: 3" position="-5 0 -28"></a-entity>
+  <a-entity arbol="alto: 6.5; semilla: 4" position="-20 0 -10"></a-entity>
+  <a-entity arbol="alto: 7; semilla: 5" position="-11 0 -36"></a-entity>
+  <a-entity arbol="alto: 6; semilla: 6" position="16 0 -12"></a-entity>
+  <a-entity arbol="alto: 7.5; semilla: 7" position="22 0 -20"></a-entity>
+  <a-entity arbol="alto: 6; semilla: 8" position="14 0 -30"></a-entity>
+  <a-entity arbol="alto: 6.5; semilla: 9" position="27 0 -9"></a-entity>
+  <a-entity arbol="alto: 7; semilla: 10" position="19 0 -38"></a-entity>
+  <a-entity arbol="alto: 5.5; semilla: 11" position="1 0 -20"></a-entity>
+  <a-entity arbol="alto: 5; semilla: 12" position="11 0 -23"></a-entity>
+  <a-entity arbol="alto: 6; semilla: 13" position="-1 0 -38"></a-entity>
+</a-entity>
+
+<!-- colinas a lo lejos: medias bolas aplastadas, de verdes cada vez más grises -->
+<a-entity>
+  <a-sphere position="-40 -0.05 -80" radius="30" scale="1 0.300 1" segments-width="24" segments-height="12" theta-length="90" color="#6f7a5a" material="roughness: 1"></a-sphere>
+  <a-sphere position="0 -0.05 -95" radius="40" scale="1 0.300 1" segments-width="24" segments-height="12" theta-length="90" color="#748066" material="roughness: 1"></a-sphere>
+  <a-sphere position="45 -0.05 -85" radius="32" scale="1 0.313 1" segments-width="24" segments-height="12" theta-length="90" color="#6c7858" material="roughness: 1"></a-sphere>
+  <a-sphere position="-75 -0.05 -40" radius="28" scale="1 0.286 1" segments-width="24" segments-height="12" theta-length="90" color="#77826a" material="roughness: 1"></a-sphere>
+  <a-sphere position="80 -0.05 -45" radius="30" scale="1 0.300 1" segments-width="24" segments-height="12" theta-length="90" color="#737e63" material="roughness: 1"></a-sphere>
+  <a-sphere position="-60 -0.05 -110" radius="45" scale="1 0.311 1" segments-width="24" segments-height="12" theta-length="90" color="#7c8770" material="roughness: 1"></a-sphere>
+</a-entity>

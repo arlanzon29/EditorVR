@@ -1,13 +1,16 @@
 <!-- Patio de armas (x = 3…9, z = -6,6…-0,6), fuera: se sale por la puerta de la pared izquierda
      del pasillo. Entre la sala 1 y la sala 2, cerrado por una muralla almenada de 4 m, con un pozo
-     en medio. Las paredes de la sala 1 (x = 3), de la sala 2 (x = 9) y del pasillo (z = -0,6) que
+     en medio y, al fondo, el portón al campo (salas/exterior.html). Las paredes de la sala 1 (x = 3), de la sala 2 (x = 9) y del pasillo (z = -0,6) que
      dan aquí son de doble cara. -->
 
 <!-- suelo de losas -->
 <a-plane rotation="-90 0 0" position="6 0 -3.6" width="6" height="6" color="#ffffff" pared-piedra></a-plane>
 
 <!-- muralla: al fondo y a los lados (donde no están la sala 1 ni la sala 2), con almenas -->
-<a-box position="6 2 -6.8" width="6.8" height="4" depth="0.4" piedra-mundo></a-box>
+<!-- muralla del fondo con el portón en arco (x = 5,2…6,8, 2,8 m de alto) que da al campo -->
+<a-entity muro-arcos="largo: 6.8; alto: 4; entrada: 2.6, 4.2, 2; entradaArco: true" position="9.4 0 -6.6" rotation="0 180 0"></a-entity>
+<a-entity arco-ciego="ancho: 1.6; alto: 2.8; dovela: 0.22; hueco: false" position="6 0 -6.6"></a-entity>
+<a-entity arco-ciego="ancho: 1.6; alto: 2.8; dovela: 0.22; hueco: false" position="6 0 -7" rotation="0 180 0"></a-entity>
 <a-box position="2.8 2 -4.8" width="0.4" height="4" depth="3.6" piedra-mundo></a-box>
 <a-box position="9.2 2 -4.55" width="0.4" height="4" depth="4.1" piedra-mundo></a-box>
 <a-entity>

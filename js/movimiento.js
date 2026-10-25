@@ -30,7 +30,9 @@ AFRAME.registerComponent('giro-por-pasos', {
 // Andar con el joystick izquierdo, hacia donde miras (sin subir ni bajar).
 const VELOCIDAD = 1.5;   // m/s
 const VELOCIDAD_MIRAR = 2.2;   // rad/s con el stick derecho del mando de Xbox, a tope
-const ALTURA_OJOS = 1.6;       // en VR, a esta altura sobre el suelo van los ojos, estés de pie o sentado
+// En VR cuenta la altura real de las gafas; si estás sentado (las gafas, de media, por debajo de
+// SENTADO_BAJO; se vuelve a "de pie" por encima de SENTADO_ALTO) se suma SUBIR_SENTADO.
+const SENTADO_BAJO = 1.3, SENTADO_ALTO = 1.4, SUBIR_SENTADO = 0.35;
 const ZONA_MUERTA = 0.25;      // de los sticks del mando: por debajo, como si no se tocaran
 // Zonas por las que puede ir la cabeza (con un margen para no meterse en las paredes).
 // Cada puerta une dos zonas; con la puerta cerrada no se puede pasar de una a otra.
@@ -57,6 +59,14 @@ const PASO_COMEDOR = { x0: -0.75, x1: 0.35, z0: 6.35, z1: 8.05 };   // el hueco 
 // puerta y solo cuenta con ella abierta (cerrada, en el patio te quedas a 25 cm de ella).
 const PATIO = { x0: 3.25, x1: 8.75, z0: -6.35, z1: -0.85 };
 const PASO_PATIO = { x0: 5.65, x1: 6.35, z0: -1.0, z1: -0.25 };
+// Fuera del castillo: se sale del patio por el portón de la muralla del fondo (x = 5,2…6,8,
+// z = -7…-6,6). Campo por delante del castillo y a los dos lados, hasta 25 cm de sus muros.
+const PASO_PORTON = { x0: 5.55, x1: 6.45, z0: -7.4, z1: -6.2 };
+const FUERA = [
+  { x0: -30, x1: 40, z0: -45, z1: -7.25 },     // por delante del patio y del castillo
+  { x0: -30, x1: 2.35, z0: -45, z1: -3.7 },    // delante de la sala 1 y al oeste del patio
+  { x0: 9.65, x1: 40, z0: -45, z1: -2.75 },    // delante de la sala 2 y al este del patio
+];
 const ALTO_GALERIA = 4.4;   // altura del rellano de arriba de la sala 3 y de sus pasillos
 const dentro = (p, z) => p.x >= z.x0 && p.x <= z.x1 && p.z >= z.z0 && p.z <= z.z1;
 
@@ -73,10 +83,11 @@ function zonasPermitidas(cabeza, altura) {
   // el hueco de la puerta del patio solo existe con ella abierta: se solapa con el patio, y si no,
   // desde ese borde del patio se cruzaba la puerta cerrada
   const pasoPatio = p4 ? PASO_PATIO : { x0: 1, x1: 0, z0: 1, z1: 0 };
-  const zonas = [SALA, pasillo, SALA2, pasillo2, SALA3, ARCO_ARRIBA, ...PASILLOS_ARRIBA, PASO_COMEDOR, COMEDOR, pasoPatio, PATIO];
+  const zonas = [SALA, pasillo, SALA2, pasillo2, SALA3, ARCO_ARRIBA, ...PASILLOS_ARRIBA, PASO_COMEDOR, COMEDOR, pasoPatio, PATIO, PASO_PORTON, ...FUERA];
   const uniones = [[0, 1, p1], [1, 2, p2], [1, 3, p3], [3, 4, true],
     [4, 5, enAlto], [5, 6, enAlto], [6, 7, true], [6, 8, true], [7, 9, true], [8, 9, true],
-    [4, 10, true], [10, 11, true], [1, 12, p4], [12, 13, p4]];
+    [4, 10, true], [10, 11, true], [1, 12, p4], [12, 13, p4],
+    [13, 14, true], [14, 15, true], [15, 16, true], [15, 17, true], [16, 17, true]];
   const i = zonas.findIndex(z => dentro(cabeza, z) && (enAlto || !z.arriba));
   if (i < 0) return zonas.filter(z => enAlto || !z.arriba);   // fuera de todo (no debería pasar): que pueda volver a cualquiera
   const alcanzables = new Set([i]);
@@ -158,13 +169,17 @@ AFRAME.registerComponent('andar-joystick', {
       this.guardado = t;
       try { localStorage.setItem(this.clave, JSON.stringify({ x: r.x, y: this.altura, z: r.z, giro: this.rig.object3D.rotation.y })); } catch (e) {}
     }
-    // en VR, los ojos a ALTURA_OJOS sobre lo que se pisa, sea cual sea la altura real de las gafas
-    // (de pie, sentado, agachado): el rig se sube o se baja lo que haga falta. Se corrige despacio
-    // (medio segundo) para que los movimientos rápidos de la cabeza se sigan notando.
+    // en VR, si estás sentado, el rig sube SUBIR_SENTADO. "Sentado" sale de la altura media de las
+    // gafas en unos 3 s (agacharse un momento no cuenta), con margen entre bajo y alto para que no
+    // salte; el cambio se hace en un segundo, sin tirones.
     if (this.el.sceneEl.is('vr-mode')) {
       const gafas = document.querySelector('[camera]').object3D.position.y;   // altura real de las gafas
-      this.ajusteVR = (this.ajusteVR ?? ALTURA_OJOS - gafas) + (ALTURA_OJOS - gafas - (this.ajusteVR ?? 0)) * Math.min(1, dt / 500);
-    } else this.ajusteVR = undefined;
+      this.mediaGafas = this.mediaGafas === undefined ? gafas : this.mediaGafas + (gafas - this.mediaGafas) * Math.min(1, dt / 3000);
+      if (this.mediaGafas < SENTADO_BAJO) this.sentado = true;
+      else if (this.mediaGafas > SENTADO_ALTO) this.sentado = false;
+      const objetivo = this.sentado ? SUBIR_SENTADO : 0;
+      this.ajusteVR = (this.ajusteVR ?? objetivo) + (objetivo - (this.ajusteVR ?? objetivo)) * Math.min(1, dt / 1000);
+    } else { this.ajusteVR = undefined; this.mediaGafas = undefined; this.sentado = false; }
     r.y += (this.altura + (this.ajusteVR ?? 0) - r.y) * Math.min(1, dt / 80);   // subir y bajar escalones con suavidad
     this.mandoPC(dt);
     const mx = THREE.MathUtils.clamp(this.x + this.tx + this.gx, -1, 1), my = THREE.MathUtils.clamp(this.y + this.ty + this.gy, -1, 1);

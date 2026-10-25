@@ -1,5 +1,6 @@
-// Editor VR: texturas de madera y piedra dibujadas en canvas (sin imágenes externas)
-// y los componentes que las ponen: suelo-madera, pared-piedra (planos) y piedra-mundo (cajas).
+// Editor VR: texturas de madera, piedra y hierba dibujadas en canvas (sin imágenes externas)
+// y los componentes que las ponen: suelo-madera, pared-piedra (planos), piedra-mundo (cajas) y
+// suelo-hierba (el campo de fuera).
 
 // Suelo de tablas de madera dibujado en un canvas (sin imágenes externas).
 // La textura cubre 2 × 2 m y se repite según el tamaño del plano.
@@ -175,5 +176,55 @@ AFRAME.registerComponent('piedra-mundo', {
     };
     // cuando la caja ya tiene su posición y su malla
     if (this.el.hasLoaded) aplicar(); else this.el.addEventListener('loaded', aplicar, { once: true });
+  }
+});
+
+// Hierba para el campo de fuera: verde apagado con manchas y briznas más claras y más oscuras,
+// y alguna calva de tierra, dibujada en un canvas. Cubre 4 × 4 m y se repite según el plano.
+let texturaHierba = null;
+function crearTexturaHierba() {
+  const N = 512, M = 4;
+  const c = document.createElement('canvas');
+  c.width = c.height = N;
+  const g = c.getContext('2d');
+  let semilla = 41;
+  const azar = () => (semilla = (semilla * 16807) % 2147483647) / 2147483647;
+  g.fillStyle = '#5f6b3e';
+  g.fillRect(0, 0, N, N);
+  for (let k = 0; k < 40; k++) {   // manchas grandes y calvas de tierra
+    const tierra = azar() < 0.15;
+    g.fillStyle = tierra ? 'rgba(120, 100, 70, 0.35)' : `hsla(${70 + azar() * 25}, ${20 + azar() * 15}%, ${26 + azar() * 14}%, 0.35)`;
+    const x = azar() * N, y = azar() * N, r = 20 + azar() * 60;
+    for (const dx of [0, -N, N]) for (const dy of [0, -N, N]) { g.beginPath(); g.arc(x + dx, y + dy, r, 0, 2 * Math.PI); g.fill(); }
+  }
+  for (let k = 0; k < 6000; k++) {   // briznas
+    g.strokeStyle = `hsla(${65 + azar() * 30}, ${25 + azar() * 20}%, ${20 + azar() * 30}%, 0.6)`;
+    const x = azar() * N, y = azar() * N;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + (azar() - 0.5) * 4, y - 3 - azar() * 6); g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return { tex, metros: M };
+}
+
+AFRAME.registerComponent('suelo-hierba', {
+  init() {
+    const aplicar = () => {
+      const malla = this.el.getObject3D('mesh');
+      if (!malla) return;
+      texturaHierba = texturaHierba || crearTexturaHierba();
+      const tex = texturaHierba.tex.clone();
+      tex.needsUpdate = true;
+      const w = parseFloat(this.el.getAttribute('width')), h = parseFloat(this.el.getAttribute('height'));
+      tex.repeat.set(w / texturaHierba.metros, h / texturaHierba.metros);
+      malla.material.map = tex;
+      malla.material.color.set('#ffffff');
+      malla.material.roughness = 1;
+      malla.material.needsUpdate = true;
+    };
+    this.el.addEventListener('object3dset', aplicar);
+    aplicar();
   }
 });
