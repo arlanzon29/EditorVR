@@ -1,7 +1,8 @@
 # Instrucciones para Claude en este proyecto
 
-Escena WebXR (A-Frame 1.7) para Meta Quest, todo en `index.html`. Qué hay, controles, servidor
-y cómo está hecho: [README.md](README.md). Léelo antes de cambiar la escena.
+Escena WebXR (A-Frame 1.7) para Meta Quest: `index.html` (jugador y luz general), las estancias
+en `salas/*.html` y el comportamiento en `js/*.js`. Qué hay, controles, servidor, archivos y cómo
+está hecho: [README.md](README.md). Léelo antes de cambiar la escena.
 
 ## Voz: solo en modo Quest
 
@@ -24,7 +25,7 @@ Windows, y a veces delante del ordenador. Cómo está montado: [VOZ.md](VOZ.md).
 
 Servidor: `node servidor/servidor.js` (puerto 8443 por defecto; normalmente ya está abierto en
 su propia ventana, "Servidor Editor VR"). Al cambiar `servidor.js` hay que reiniciarlo; al
-cambiar `index.html` no, la página se recarga sola.
+cambiar la escena (`index.html`, `salas/`, `js/`, `modelos/`) no, la página se recarga sola.
 
 - `https://localhost:8443/__posicion`: dónde está, en qué zona, a qué altura, hacia dónde mira
   y qué punto tiene delante. Usarlo para "pon X donde estoy" / "donde miro" / "esta pared".
@@ -54,9 +55,13 @@ cambiar `index.html` no, la página se recarga sola.
   ya pone las suyas.
 - Las cajas inclinadas se giran con un cuaternión al cargar (`loaded`), no con el atributo
   `rotation`: A-Frame aplica los ejes en otro orden y salen torcidas.
-- Cambios grandes en `index.html`: un script de Node en el scratchpad que reemplaza texto
-  exacto y falla si no lo encuentra (o lo encuentra repetido). Después, comprobar la sintaxis
-  de los `<script>` y que `<a-entity>` y `</a-entity>` cuadran.
+- Cada cosa en su archivo: una estancia nueva, archivo nuevo en `salas/` (y su `incluir` en
+  `index.html`); un componente, en el `js/` que le toque. No volver a meterlo todo en `index.html`.
+- Las estancias se cargan después de arrancar la escena: el código que busque algo de una sala
+  (`getElementById`, `querySelector`) tiene que aguantar que todavía no exista.
+- Cambios grandes: un script de Node en el scratchpad que reemplaza texto exacto y falla si no
+  lo encuentra (o lo encuentra repetido). Después, `node --check` de los `js/*.js` tocados y
+  comprobar que `<a-entity>` y `</a-entity>` cuadran en cada archivo de `salas/`.
 - Para comprobar escaleras y choques sin gafas, simular el recorrido con `sueloEn` y
   `zonasPermitidas` en Node, y mirar la escena en la vista previa.
 - Tras cambiar algo, documentarlo en README.md (y aquí si cambia cómo trabajar).

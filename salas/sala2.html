@@ -1,0 +1,87 @@
+<!-- Sala 2 (x = 9…14, z = -2,5…2,5) con su puerta desde el pasillo -->
+<!-- Segunda habitación al final del pasillo (x = 9…14, z = -2,5…2,5, 3 m de alto),
+     con el mismo estilo que la primera: piedra, techo de madera con vigas, ventana rústica y muebles -->
+<a-plane rotation="-90 0 0" position="11.5 0 0" width="5" height="5" color="#ffffff" suelo-madera></a-plane>
+<a-plane rotation="90 0 0" position="11.5 3 0" width="5" height="5" color="#ffffff" suelo-madera></a-plane>
+<a-entity>
+  <a-box position="9.5 2.9 0" width="0.15" height="0.2" depth="5" color="#5e3d22"></a-box>
+  <a-box position="10.5 2.9 0" width="0.15" height="0.2" depth="5" color="#5e3d22"></a-box>
+  <a-box position="11.5 2.9 0" width="0.15" height="0.2" depth="5" color="#5e3d22"></a-box>
+  <a-box position="12.5 2.9 0" width="0.15" height="0.2" depth="5" color="#5e3d22"></a-box>
+  <a-box position="13.5 2.9 0" width="0.15" height="0.2" depth="5" color="#5e3d22"></a-box>
+</a-entity>
+<a-plane position="9 1.5 -1.55" rotation="0 90 0" width="1.9" height="3" color="#ffffff" pared-piedra side="double"></a-plane>
+<a-plane position="9 1.5 1.55" rotation="0 90 0" width="1.9" height="3" color="#ffffff" pared-piedra side="double"></a-plane>
+<a-plane position="9 2.7 0" rotation="0 90 0" width="1.2" height="0.6" color="#ffffff" pared-piedra side="double"></a-plane>
+<!-- Puerta de la segunda sala, en la entrada desde el pasillo: como la de la primera, pero de
+     1,04 × 2,32 m para llenar el hueco. Se abre hacia dentro de la sala (Z local = +x). -->
+<a-entity position="9 0 0" rotation="0 90 0">
+  <!-- marco de sillares con dintel de dovelas (modelos/marco-ancho.glb) -->
+  <a-entity gltf-model="url(modelos/marco-ancho.glb)" position="0 0 0.01"></a-entity>
+  <a-entity puerta id="puerta2" position="-0.52 0 0.02">
+    <!-- hoja de Blender (modelos/puerta-ancha.glb): tablones, bisagras, travesaños y aldaba;
+         la caja invisible y las esferas reciben el rayo -->
+    <a-entity gltf-model="url(modelos/puerta-ancha.glb)"></a-entity>
+    <a-box class="clicable" position="0.52 1.16 0" width="1.04" height="2.32" depth="0.06" material="visible: false"></a-box>
+    <a-sphere class="clicable" position="0.88 0.963 0.06" radius="0.1" material="visible: false"></a-sphere>
+    <a-sphere class="clicable" position="0.88 0.963 -0.06" radius="0.1" material="visible: false"></a-sphere>
+    <a-entity class="cartel" position="0.76 1.163 -0.08" rotation="0 180 0" visible="false">
+      <a-plane width="0.3" height="0.1" material="shader: flat; color: #1c2230; opacity: 0.85; transparent: true"></a-plane>
+      <a-text value="Abrir" align="center" color="#ffffff" width="1.2" position="0 0 0.002"></a-text>
+    </a-entity>
+    <a-entity class="cartel" position="0.76 1.163 0.08" visible="false">
+      <a-plane width="0.3" height="0.1" material="shader: flat; color: #1c2230; opacity: 0.85; transparent: true"></a-plane>
+      <a-text value="Abrir" align="center" color="#ffffff" width="1.2" position="0 0 0.002"></a-text>
+    </a-entity>
+  </a-entity>
+</a-entity>
+<!-- Pared del fondo, en cuatro trozos alrededor del hueco de la ventana -->
+<a-plane position="14 1.5 -1.75" rotation="0 -90 0" width="1.5" height="3" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="14 1.5 1.75" rotation="0 -90 0" width="1.5" height="3" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="14 0.475 0" rotation="0 -90 0" width="2" height="0.95" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="14 2.625 0" rotation="0 -90 0" width="2" height="0.75" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="11.5 1.5 -2.5" width="5" height="3" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="11.5 1.5 2.5" rotation="0 180 0" width="5" height="3" color="#ffffff" pared-piedra></a-plane>
+<!-- Ventana de la segunda sala (igual que la de la primera, hundida en el muro del fondo) -->
+<a-plane position="14.4 1.75 0" rotation="0 -90 0" width="2.4" height="1.8" material="shader: flat; color: #9fd4ff"></a-plane>
+<a-plane position="14.39 1.05 0" rotation="0 -90 0" width="2.4" height="0.4" material="shader: flat; color: #8fbf6a"></a-plane>
+<a-plane position="14.175 1.6 -1" width="0.35" height="1.3" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="14.175 1.6 1" rotation="0 180 0" width="0.35" height="1.3" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="14.175 2.25 0" rotation="90 0 0" width="0.35" height="2" color="#ffffff" pared-piedra></a-plane>
+<a-box position="14.1 0.92 0" width="0.5" height="0.06" depth="2.2" color="#6b4423"></a-box>
+<a-entity position="14.25 1.6 0" rotation="0 -90 0">
+  <a-plane position="0 0 0.01" width="2" height="1.3" material="color: #d6ecff; opacity: 0.18; transparent: true"></a-plane>
+  <a-box position="0 0.61 0" width="2" height="0.08" depth="0.07" color="#4a2f1a"></a-box>
+  <a-box position="0 -0.61 0" width="2" height="0.08" depth="0.07" color="#4a2f1a"></a-box>
+  <a-box position="-0.96 0 0" width="0.08" height="1.3" depth="0.07" color="#4a2f1a"></a-box>
+  <a-box position="0.96 0 0" width="0.08" height="1.3" depth="0.07" color="#4a2f1a"></a-box>
+  <a-box position="0 0 0" width="0.07" height="1.3" depth="0.07" color="#4a2f1a"></a-box>
+  <a-box position="-0.48 0 0" width="0.03" height="1.3" depth="0.04" color="#4a2f1a"></a-box>
+  <a-box position="0.48 0 0" width="0.03" height="1.3" depth="0.04" color="#4a2f1a"></a-box>
+  <a-box position="0 -0.2 0" width="2" height="0.03" depth="0.04" color="#4a2f1a"></a-box>
+  <a-box position="0 0.2 0" width="2" height="0.03" depth="0.04" color="#4a2f1a"></a-box>
+</a-entity>
+<a-entity light="type: point; intensity: 1.2; distance: 6; color: #dff0ff" position="13.5 1.8 0"></a-entity>
+<!-- Biblioteca contra la pared izquierda (z = -2,5), mirando a la sala -->
+<a-entity biblioteca position="11.5 0 -2.315"></a-entity>
+<!-- Mesa de la segunda sala, separada de la pared de la derecha -->
+<a-entity position="12 0 1.3">
+  <a-box position="0 0.73 0" width="1.2" height="0.04" depth="0.7" color="#9a6a3f"></a-box>
+  <a-box position="-0.55 0.355 -0.3" width="0.05" height="0.71" depth="0.05" color="#7a5230"></a-box>
+  <a-box position="0.55 0.355 -0.3" width="0.05" height="0.71" depth="0.05" color="#7a5230"></a-box>
+  <a-box position="-0.55 0.355 0.3" width="0.05" height="0.71" depth="0.05" color="#7a5230"></a-box>
+  <a-box position="0.55 0.355 0.3" width="0.05" height="0.71" depth="0.05" color="#7a5230"></a-box>
+</a-entity>
+<!-- Silla de la segunda sala, pegada a la pared de la derecha y mirando a la mesa -->
+<a-entity position="12 0 2.24" rotation="0 180 0">
+  <a-box position="0 0.45 0" width="0.45" height="0.04" depth="0.45" color="#9a6a3f"></a-box>
+  <a-box position="-0.2 0.215 -0.2" width="0.04" height="0.43" depth="0.04" color="#7a5230"></a-box>
+  <a-box position="0.2 0.215 -0.2" width="0.04" height="0.43" depth="0.04" color="#7a5230"></a-box>
+  <a-box position="-0.2 0.215 0.2" width="0.04" height="0.43" depth="0.04" color="#7a5230"></a-box>
+  <a-box position="0.2 0.215 0.2" width="0.04" height="0.43" depth="0.04" color="#7a5230"></a-box>
+  <a-box position="-0.2 0.71 -0.2" width="0.04" height="0.48" depth="0.04" color="#7a5230"></a-box>
+  <a-box position="0.2 0.71 -0.2" width="0.04" height="0.48" depth="0.04" color="#7a5230"></a-box>
+  <a-box position="0 0.85 -0.2" width="0.44" height="0.16" depth="0.03" color="#9a6a3f"></a-box>
+  <a-box position="0 0.63 -0.2" width="0.44" height="0.05" depth="0.03" color="#9a6a3f"></a-box>
+</a-entity>
+<a-entity light="type: point; intensity: 1.2; distance: 7; color: #fff4dc" position="11.5 2.7 0"></a-entity>

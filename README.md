@@ -3,8 +3,9 @@
 Escena en realidad virtual (WebXR, con [A-Frame](https://aframe.io) 1.7) para Meta Quest, de
 estética feudal: salas de piedra, suelos y techos de madera con vigas, puertas de tablones con
 herrajes de hierro y una gran escalera al estilo de la Escalera Dorada de la catedral de Burgos.
-Todo está en [index.html](index.html); las texturas (madera, piedra) se dibujan en el propio
-navegador, sin imágenes externas.
+La escena se reparte en archivos de texto (ver [Archivos](#archivos)); las texturas (madera,
+piedra) se dibujan en el propio navegador, sin imágenes externas, y las piezas más trabajadas
+(puertas, antorchas, estatuas) son modelos de Blender.
 
 Se edita hablando con Claude: desde las gafas (por voz) o desde el ordenador. Claude puede saber
 dónde estás en la escena y ver una foto de lo que ves, y tú puedes ver el escritorio del PC
@@ -108,7 +109,23 @@ Mientras se comparte la pantalla, cualquiera en la misma wifi que abra la págin
 
 ## Cómo está hecho
 
-Componentes de A-Frame en [index.html](index.html), por orden:
+### Archivos
+
+| Archivo | Qué tiene |
+|---|---|
+| [index.html](index.html) | La escena: el jugador (`rig`, cámara y mandos), la luz general y una entidad `incluir` por estancia. |
+| [salas/](salas/) | Una estancia por archivo, en coordenadas del mundo: `sala1.html`, `pasillo.html`, `sala2.html`, `pasillo2.html`, `sala3.html`. Solo etiquetas de A-Frame. |
+| [js/incluir.js](js/incluir.js) | Componente `incluir`: descarga una estancia al arrancar y la mete en la escena. |
+| [js/movimiento.js](js/movimiento.js) | Andar, girar, zonas, `SUPERFICIES` y la mira del monitor. |
+| [js/texturas.js](js/texturas.js) | Texturas de canvas y `suelo-madera`, `pared-piedra`, `piedra-mundo`. |
+| [js/objetos.js](js/objetos.js) | Puerta, antorcha, estatua, biblioteca, escalera, muros con arcos, pasillos de arriba. |
+| [js/conexion.js](js/conexion.js) | Pantalla del PC, objetos que se cogen e informe de posición para Claude. |
+| [modelos/](modelos/) | Modelos de Blender (`.glb`) y el `.blend` para retocarlos. |
+
+Para añadir una estancia: un archivo nuevo en `salas/`, su línea `incluir` en `index.html`, y
+sus zonas en `js/movimiento.js` (`zonasPermitidas`) si se puede andar por ella.
+
+### Componentes
 
 - **Movimiento:** `andar-joystick` (joystick y teclado), `giro-por-pasos`. Las zonas por las que
   se puede ir (`SALA`, `PASILLO`, …, `PASILLOS_ARRIBA`) se unen por puertas abiertas

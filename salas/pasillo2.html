@@ -1,0 +1,11 @@
+<!-- Pasillo 2: ramal hacia la sala 3 (x = 5,4…6,6, z = 0,6…4), con dos antorchas -->
+<!-- Ramal del pasillo hacia la sala 3 (x = 5,4…6,6, z = 0,6…4, 2,4 m de alto) -->
+<a-plane rotation="-90 0 0" position="6 0 2.3" width="1.2" height="3.4" color="#ffffff" suelo-madera></a-plane>
+<!-- techo y paredes solo hasta z = 3,6: los últimos 40 cm son el hueco del muro de la sala 3,
+     y si se repiten ahí las caras coinciden y parpadean -->
+<a-plane rotation="90 0 0" position="6 2.4 2.1" width="1.2" height="3" color="#ffffff"></a-plane>
+<a-plane position="5.4 1.2 2.1" rotation="0 90 0" width="3" height="2.4" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="6.6 1.2 2.1" rotation="0 -90 0" width="3" height="2.4" color="#ffffff" pared-piedra></a-plane>
+<!-- Dos antorchas de pared (componente antorcha), una frente a otra a mitad del ramal -->
+<a-entity antorcha position="5.4 1.65 2.3" rotation="0 90 0"></a-entity>
+<a-entity antorcha position="6.6 1.65 2.3" rotation="0 -90 0"></a-entity>

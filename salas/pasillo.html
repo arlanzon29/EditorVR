@@ -1,0 +1,32 @@
+<!-- Pasillo (x = 3…9, z = -0,6…0,6) con la puerta de la sala 3 -->
+<!-- Pasillo de 6 m detrás de la puerta (x = 3…9, 1,2 m de ancho, 2,4 m de alto) -->
+<a-plane rotation="-90 0 0" position="6 0 0" width="6" height="1.2" color="#ffffff" suelo-madera></a-plane>
+<a-plane rotation="90 0 0" position="6 2.4 0" width="6" height="1.2" color="#ffffff"></a-plane>
+<a-plane position="6 1.2 -0.6" width="6" height="2.4" color="#ffffff" pared-piedra></a-plane>
+<!-- Pared derecha del pasillo, en tres trozos alrededor de la puerta de la sala 3 -->
+<a-plane position="4.235 1.2 0.6" rotation="0 180 0" width="2.47" height="2.4" color="#ffffff" pared-piedra side="double"></a-plane>
+<a-plane position="7.765 1.2 0.6" rotation="0 180 0" width="2.47" height="2.4" color="#ffffff" pared-piedra side="double"></a-plane>
+<a-plane position="6 2.265 0.6" rotation="0 180 0" width="1.06" height="0.27" color="#ffffff" pared-piedra side="double"></a-plane>
+<!-- Puerta de la sala 3 (como la de la primera sala). Se abre hacia el ramal del pasillo (+z). -->
+<a-entity position="6 0 0.6">
+  <!-- marco de sillares con dintel de dovelas (modelos/marco-puerta.glb) -->
+  <a-entity gltf-model="url(modelos/marco-puerta.glb)" position="0 0 0.01"></a-entity>
+  <a-entity puerta id="puerta3" position="-0.45 0 0.02">
+    <!-- hoja de Blender (modelos/puerta.glb): tablones, bisagras, travesaños y aldaba;
+         la caja invisible y las esferas reciben el rayo -->
+    <a-entity gltf-model="url(modelos/puerta.glb)"></a-entity>
+    <a-box class="clicable" position="0.45 1.025 0" width="0.9" height="2.05" depth="0.06" material="visible: false"></a-box>
+    <a-sphere class="clicable" position="0.74 0.963 0.06" radius="0.1" material="visible: false"></a-sphere>
+    <a-sphere class="clicable" position="0.74 0.963 -0.06" radius="0.1" material="visible: false"></a-sphere>
+    <a-entity class="cartel" position="0.62 1.163 -0.08" rotation="0 180 0" visible="false">
+      <a-plane width="0.3" height="0.1" material="shader: flat; color: #1c2230; opacity: 0.85; transparent: true"></a-plane>
+      <a-text value="Abrir" align="center" color="#ffffff" width="1.2" position="0 0 0.002"></a-text>
+    </a-entity>
+    <a-entity class="cartel" position="0.62 1.163 0.08" visible="false">
+      <a-plane width="0.3" height="0.1" material="shader: flat; color: #1c2230; opacity: 0.85; transparent: true"></a-plane>
+      <a-text value="Abrir" align="center" color="#ffffff" width="1.2" position="0 0 0.002"></a-text>
+    </a-entity>
+  </a-entity>
+</a-entity>
+<a-entity light="type: point; intensity: 0.8; distance: 4; color: #fff4dc" position="4.5 2.2 0"></a-entity>
+<a-entity light="type: point; intensity: 0.8; distance: 4; color: #fff4dc" position="7.5 2.2 0"></a-entity>

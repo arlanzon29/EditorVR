@@ -1,0 +1,32 @@
+<!-- Sala 3, la grande (x = 0…12, z = 4…14, 7,5 m de alto): escalera, caballeros y pasillos de arriba -->
+<!-- Sala 3, la grande: 12 × 10 m y 7,5 m de alto (x = 0…12, z = 4…14). Se entra por el ramal
+     del pasillo, por un hueco de 1,2 × 2,4 m en el centro de la pared z = 4. -->
+<a-plane rotation="-90 0 0" position="6 0 9" width="12" height="10" color="#ffffff" suelo-madera></a-plane>
+<a-plane rotation="90 0 0" position="6 7.5 9" width="12" height="10" color="#ffffff" suelo-madera></a-plane>
+<a-entity>
+  <a-box position="0.75 7.375 9" width="0.2" height="0.25" depth="10" color="#5e3d22"></a-box>
+  <a-box position="2.25 7.375 9" width="0.2" height="0.25" depth="10" color="#5e3d22"></a-box>
+  <a-box position="3.75 7.375 9" width="0.2" height="0.25" depth="10" color="#5e3d22"></a-box>
+  <a-box position="5.25 7.375 9" width="0.2" height="0.25" depth="10" color="#5e3d22"></a-box>
+  <a-box position="6.75 7.375 9" width="0.2" height="0.25" depth="10" color="#5e3d22"></a-box>
+  <a-box position="8.25 7.375 9" width="0.2" height="0.25" depth="10" color="#5e3d22"></a-box>
+  <a-box position="9.75 7.375 9" width="0.2" height="0.25" depth="10" color="#5e3d22"></a-box>
+  <a-box position="11.25 7.375 9" width="0.2" height="0.25" depth="10" color="#5e3d22"></a-box>
+</a-entity>
+<!-- Muros de la sala 3: piedra de 40 cm con arcos arriba que dan a los pasillos de fuera -->
+<a-entity muro-arcos="largo: 12; arcos: 1.5, 3.3, 6, 8.7, 10.5" position="0 0 14"></a-entity>
+<a-entity muro-arcos="largo: 12; arcos: 1, 3, 5, 7, 9, 11; entrada: 5.4, 6.6, 2.4" position="12 0 4" rotation="0 180 0"></a-entity>
+<a-entity muro-arcos="largo: 10; arcos: 1, 3, 5, 7, 9" position="0 0 4" rotation="0 -90 0"></a-entity>
+<a-entity muro-arcos="largo: 10; arcos: 1, 3, 5, 7, 9" position="12 0 14" rotation="0 90 0"></a-entity>
+<a-entity pasillos-arriba></a-entity>
+<a-entity light="type: point; intensity: 1.4; distance: 9; color: #fff4dc" position="3 7 6.5"></a-entity>
+<a-entity light="type: point; intensity: 1.4; distance: 9; color: #fff4dc" position="9 7 6.5"></a-entity>
+<a-entity light="type: point; intensity: 1.4; distance: 9; color: #fff4dc" position="3 7 11.5"></a-entity>
+<a-entity light="type: point; intensity: 1.4; distance: 9; color: #fff4dc" position="9 7 11.5"></a-entity>
+<!-- luz en el centro, por debajo de la galería -->
+<a-entity light="type: point; intensity: 1; distance: 8; color: #fff4dc" position="6 3.5 8.5"></a-entity>
+<!-- Escalera de pared a pared y galería perimetral (se construyen en el componente escalera-sala3) -->
+<a-entity escalera-sala3></a-entity>
+<!-- Dos caballeros de piedra al pie del tramo central, uno a cada lado, mirando a la entrada -->
+<a-entity estatua position="4.1 0 9.9" rotation="0 180 0"></a-entity>
+<a-entity estatua position="7.9 0 9.9" rotation="0 180 0"></a-entity>
