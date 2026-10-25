@@ -30,6 +30,7 @@ AFRAME.registerComponent('giro-por-pasos', {
 // Andar con el joystick izquierdo, hacia donde miras (sin subir ni bajar).
 const VELOCIDAD = 1.5;   // m/s
 const VELOCIDAD_MIRAR = 2.2;   // rad/s con el stick derecho del mando de Xbox, a tope
+const ZONA_MUERTA = 0.25;      // de los sticks del mando: por debajo, como si no se tocaran
 // Zonas por las que puede ir la cabeza (con un margen para no meterse en las paredes).
 // Cada puerta une dos zonas; con la puerta cerrada no se puede pasar de una a otra.
 const SALA = { x0: -2.75, x1: 2.75, z0: -2.75, z1: 2.75 };
@@ -185,14 +186,24 @@ AFRAME.registerComponent('andar-joystick', {
     if (this.el.sceneEl.is('vr-mode') || !navigator.getGamepads) return;
     const m = [...navigator.getGamepads()].find(g => g && g.connected && g.mapping === 'standard');
     if (!m) return;
-    const zona = v => Math.abs(v) < 0.15 ? 0 : v;   // zona muerta de los sticks
-    this.gx = zona(m.axes[0]); this.gy = zona(m.axes[1]);
+    // reposo: lo que marca cada stick sin tocarlo, apuntado al ver el mando por primera vez (los
+    // mandos con uso no vuelven del todo a 0, y la vista se movía sola). Se resta siempre; luego,
+    // zona muerta y reescalado para que el movimiento empiece suave al salir de ella.
+    if (this.mandoId !== m.id + m.index) {
+      this.mandoId = m.id + m.index;
+      this.reposo = m.axes.map(v => Math.abs(v) < 0.35 ? v : 0);
+    }
+    const zona = i => {
+      const v = m.axes[i] - (this.reposo[i] || 0), a = Math.abs(v);
+      return a < ZONA_MUERTA ? 0 : Math.sign(v) * Math.min(1, (a - ZONA_MUERTA) / (1 - ZONA_MUERTA));
+    };
+    this.gx = zona(0); this.gy = zona(1);
     // mirar: girar y cabecear la cámara, igual que con el ratón
     const camara = document.querySelector('[camera]');
     const lc = camara.components['look-controls'], s = Math.min(dt, 50) / 1000 * VELOCIDAD_MIRAR;
     if (lc) {
-      lc.yawObject.rotation.y -= zona(m.axes[2]) * s;
-      lc.pitchObject.rotation.x = THREE.MathUtils.clamp(lc.pitchObject.rotation.x - zona(m.axes[3]) * s, -Math.PI / 2, Math.PI / 2);
+      lc.yawObject.rotation.y -= zona(2) * s;
+      lc.pitchObject.rotation.x = THREE.MathUtils.clamp(lc.pitchObject.rotation.x - zona(3) * s, -Math.PI / 2, Math.PI / 2);
     }
     // botones: cuentan al pulsarlos, no mientras se siguen apretando
     const antes = this.botones || [];
