@@ -239,9 +239,9 @@ AFRAME.registerComponent('andar-joystick', {
     // botones: cuentan al pulsarlos, no mientras se siguen apretando
     const antes = this.botones || [];
     const pulsa = i => m.buttons[i] && m.buttons[i].pressed && !antes[i];
-    if (pulsa(0)) {   // A: clic en lo que hay en la mira (abre o cierra la puerta)
+    if (pulsa(0)) {   // A: como apretar el ratón sobre lo que hay en la mira (abre o cierra la puerta)
       const el = camara.components.raycaster && camara.components.raycaster.intersectedEls[0];
-      if (el) el.emit('click');
+      if (el) el.emit('mousedown');
     }
     if (pulsa(1))     // B: traer la pantalla del PC
       for (const a of document.querySelectorAll('[agarrable]')) if (a.components.agarrable.data.clave) a.components.agarrable.traer();

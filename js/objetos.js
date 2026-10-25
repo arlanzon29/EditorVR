@@ -57,7 +57,13 @@ AFRAME.registerComponent('puerta', {
       this.aldaba = a;
     });
     this.carteles = [...this.el.querySelectorAll('.cartel')];
-    this.el.addEventListener('click', () => {
+    // al APRETAR el gatillo o el ratón (mousedown), no con "click": el click de A-Frame solo llega
+    // si al soltar se sigue apuntando a la misma pieza, y la hoja y las dos esferas de la aldaba se
+    // solapan, así que en VR muchas veces no abría. Medio segundo de margen contra dobles.
+    this.ultimo = 0;
+    this.el.addEventListener('mousedown', () => {
+      if (performance.now() - this.ultimo < 500) return;
+      this.ultimo = performance.now();
       this.abierta = !this.abierta;
       for (const c of this.carteles) c.querySelector('a-text').setAttribute('value', this.abierta ? 'Cerrar' : 'Abrir');
       this.el.setAttribute('animation', {
