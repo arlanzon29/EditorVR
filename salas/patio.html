@@ -37,14 +37,25 @@
 <a-plane position="0 5 2" rotation="0 180 0" width="6" height="4" color="#ffffff" pared-piedra></a-plane>
 <a-plane position="12 5 2" rotation="0 180 0" width="6" height="4" color="#ffffff" pared-piedra></a-plane>
 
-<!-- pozo en medio: brocal de piedra, boca oscura, dos postes, el torno y un cubo colgando -->
+<!-- pozo en medio: brocal de piedra y boca oscura; sobre el brocal, a los dos lados de la boca, dos
+     postes con el torno (eje y manivela) y, colgando de la cuerda, un cubo de duelas con dos aros
+     y asa de hierro, con agua dentro -->
 <a-cylinder position="6 0.4 -3.8" radius="0.65" height="0.8" segments-radial="20" piedra-mundo></a-cylinder>
 <a-circle position="6 0.805 -3.8" rotation="-90 0 0" radius="0.5" segments="20" color="#1a1f1f"></a-circle>
-<a-box position="5.35 1.55 -3.8" width="0.1" height="1.5" depth="0.1" color="#3a281a"></a-box>
-<a-box position="6.65 1.55 -3.8" width="0.1" height="1.5" depth="0.1" color="#3a281a"></a-box>
-<a-cylinder position="6 2.15 -3.8" rotation="0 0 90" radius="0.05" height="1.4" color="#4e3421"></a-cylinder>
-<a-cylinder position="6 1.8 -3.8" radius="0.008" height="0.7" color="#8a7a5a"></a-cylinder>
-<a-cylinder position="6 1.38 -3.8" radius="0.12" height="0.18" color="#4e3421"></a-cylinder>
+<a-box position="5.425 1.55 -3.8" width="0.1" height="1.5" depth="0.12" color="#3a281a"></a-box>
+<a-box position="6.575 1.55 -3.8" width="0.1" height="1.5" depth="0.12" color="#3a281a"></a-box>
+<a-cylinder position="6.03 2.15 -3.8" rotation="0 0 90" radius="0.05" height="1.36" color="#4e3421"></a-cylinder>
+<a-box position="6.7 2.05 -3.8" width="0.03" height="0.24" depth="0.04" material="color: #262626; metalness: 0.6; roughness: 0.45"></a-box>
+<a-cylinder position="6.76 1.95 -3.8" rotation="0 0 90" radius="0.018" height="0.12" color="#3a281a"></a-cylinder>
+<a-cylinder position="6 1.88 -3.8" radius="0.008" height="0.44" color="#8a7a5a"></a-cylinder>
+<a-entity position="6 1.3 -3.8">
+  <a-cone position="0 0.11 0" radius-bottom="0.095" radius-top="0.12" height="0.22" open-ended="true" segments-radial="14" color="#5c4029" side="double"></a-cone>
+  <a-circle position="0 0.002 0" rotation="-90 0 0" radius="0.095" segments="14" color="#4a3220"></a-circle>
+  <a-circle position="0 0.18 0" rotation="-90 0 0" radius="0.112" segments="14" color="#26302c"></a-circle>
+  <a-torus position="0 0.04 0" rotation="90 0 0" radius="0.1" radius-tubular="0.008" segments-tubular="20" material="color: #262626; metalness: 0.6; roughness: 0.45"></a-torus>
+  <a-torus position="0 0.19 0" rotation="90 0 0" radius="0.116" radius-tubular="0.008" segments-tubular="20" material="color: #262626; metalness: 0.6; roughness: 0.45"></a-torus>
+  <a-torus position="0 0.22 0" radius="0.12" radius-tubular="0.006" arc="180" segments-tubular="16" material="color: #262626; metalness: 0.6; roughness: 0.45"></a-torus>
+</a-entity>
 <a-entity macizo="ancho: 1.4; fondo: 1.4; alto: 0.8" position="6 0 -3.8"></a-entity>
 
 <!-- antorchas a los lados de la puerta, por fuera (sin luz propia: es de día). Separadas 2 cm de

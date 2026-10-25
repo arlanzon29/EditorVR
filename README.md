@@ -21,7 +21,7 @@ Coordenadas en metros: **x** hacia la puerta de la sala 1 y el pasillo, **y** ha
 | **Sala 1** | 6 × 6 m, 3 m de alto (x, z = -3…3) | Paredes de piedra, suelo de tablas, techo de madera con 5 vigas. Ventana rústica hundida en el muro (marco de madera con 12 cuarterones, alféizar; por ella se ve el campo de fuera). Mesa, silla y biblioteca en la esquina. La pantalla del PC, a la izquierda de la ventana. |
 | **Pasillo** | 6 m (x = 3…9), 1,2 m de ancho | Paredes de piedra y suelo de madera. Puerta a la sala 1, puerta a la sala 2 al fondo y, a mitad, a la derecha, puerta a la sala 3. |
 | **Sala 2** | 5 × 5 m (x = 9…14) | Como la sala 1: piedra, techo con vigas, ventana rústica, biblioteca, mesa separada de la pared y silla pegada a ella. |
-| **Patio** | 6 × 6 m, fuera (x = 3…9, z = -6,6…-0,6) | Patio de armas entre la sala 1 y la sala 2: se sale por la puerta de la pared izquierda del pasillo, enfrente de la de la sala 3. Suelo de losas, muralla almenada de 4 m, pozo con torno y cubo, antorchas junto a la puerta y cielo. |
+| **Patio** | 6 × 6 m, fuera (x = 3…9, z = -6,6…-0,6) | Patio de armas entre la sala 1 y la sala 2: se sale por la puerta de la pared izquierda del pasillo, enfrente de la de la sala 3. Suelo de losas, muralla almenada de 4 m, pozo con postes sobre el brocal, torno con manivela y cubo de duelas con aros y asa, antorchas junto a la puerta y cielo. |
 | **Exterior** | Campo delante del castillo y a los lados | Se sale por el portón en arco de la muralla del patio. Hierba, camino de tierra, árboles y colinas a lo lejos. Las salas 1 y 2 tienen piel por fuera y las galerías de arriba se ven como cadalsos de madera. |
 | **Pasillo 2** | 3,4 m (x = 5,4…6,6, z = 0,6…4) | Ramal que lleva a la sala 3. A mitad, una antorcha de pared en cada lado, con la llama y la luz temblando. |
 | **Sala 3** | 12 × 10 m, 7,5 m de alto (x = 0…12, z = 4…14) | La grande. Muros de piedra de 40 cm con arcos arriba, techo con 8 vigas y la escalera. |
@@ -179,8 +179,8 @@ sus zonas en `js/movimiento.js` (`zonasPermitidas`) si se puede andar por ella.
   - `caballero.glb`: estatua de piedra (yelmo cerrado, sobreveste, capa, espada y escudo) sobre
     pedestal de sillares; 2,6 m en total, origen en el centro de la base, mira hacia +z.
   - `criado.glb`: criado de 1,77 m (túnica, delantal, capucha, jarra de barro). Piezas aparte
-    para animarlo: `Cuerpo`, `Cabeza` (pivote en el cuello), `PiernaD` / `PiernaI` (en la cadera)
-    y `BrazoI` (en el hombro). Origen entre los pies; mira hacia +z.
+    para animarlo: `Cuerpo`, `Cabeza` (pivote en el cuello), `PiernaD` / `PiernaI` (muslos, en la
+    cadera) con `EspinillaD` / `EspinillaI` colgando de ellos (en la rodilla) y `BrazoI` (en el hombro). Origen entre los pies; mira hacia +z.
   - `guardia.glb`: guardia con cota de malla, sobreveste granate con cruz, yelmo con nasal, lanza
     y escudo de cometa. Piezas `GuardiaCuerpo` y `GuardiaCabeza` (pivote en el cuello); 2,6 m con
     la lanza; origen entre los pies; mira hacia +z.

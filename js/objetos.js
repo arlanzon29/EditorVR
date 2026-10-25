@@ -590,8 +590,8 @@ function cartelDeTexto(el, texto, posicion) {
 }
 
 // Criado que anda por el comedor (modelos/criado.glb, hecho en Blender). El modelo trae aparte
-// la cabeza (gira desde el cuello), las dos piernas (desde la cadera) y el brazo libre (desde el
-// hombro); el otro brazo lleva la jarra. Recorre "puntos" (x z segundos, …, separados por comas:
+// la cabeza (gira desde el cuello), los muslos (desde la cadera) con las espinillas colgando de
+// ellos (desde la rodilla) y el brazo libre (desde el hombro); el otro brazo lleva la jarra. Recorre "puntos" (x z segundos, …, separados por comas:
 // el punto y coma separa las propiedades del componente; en coordenadas del
 // mundo: la entidad va dentro de la sala, que está en el origen) en bucle, parándose en cada uno
 // los segundos que diga. Andando balancea piernas y brazo y sube y baja un poco; parado, respira.
@@ -607,7 +607,8 @@ AFRAME.registerComponent('criado', {
     this.el.setAttribute('gltf-model', 'url(modelos/criado.glb)');
     this.piezas = {};
     this.el.addEventListener('model-loaded', e => {
-      for (const n of ['Cuerpo', 'Cabeza', 'PiernaD', 'PiernaI', 'BrazoI']) this.piezas[n] = e.detail.model.getObjectByName(n);
+      for (const n of ['Cuerpo', 'Cabeza', 'PiernaD', 'PiernaI', 'EspinillaD', 'EspinillaI', 'BrazoI']) this.piezas[n] = e.detail.model.getObjectByName(n);
+      this.modelo = e.detail.model;
     });
     this.ruta = this.data.puntos.split(',').map(s => s.trim().split(/\s+/).map(Number)).filter(p => p.length >= 2);
     this.i = 0;                  // punto al que va
@@ -648,16 +649,25 @@ AFRAME.registerComponent('criado', {
       }
     }
     if (cerca) this.girarHacia(Math.atan2(aJugador.x, aJugador.y), dt);
-    // piernas, brazo y vaivén; parado, las piernas vuelven a su sitio y respira
-    const s = andando ? Math.sin(this.fase) : 0, k = Math.min(1, dt / 120);
-    if (p.PiernaD) {
-      p.PiernaD.rotation.x += (-0.4 * s - p.PiernaD.rotation.x) * k;
-      p.PiernaI.rotation.x += (0.4 * s - p.PiernaI.rotation.x) * k;
-      p.BrazoI.rotation.x += (-0.35 * s - p.BrazoI.rotation.x) * k;
+    // el paso: "a" sube al echar a andar y baja al pararse (sin saltos). Cada muslo va adelante y
+    // atrás; la rodilla se dobla mientras la pierna vuela hacia delante y se estira antes de apoyar
+    // el pie (y queda un poco flexionada al pisar). El brazo libre, al revés que su pierna; las
+    // caderas se mecen de lado, el cuerpo se inclina un poco hacia delante y sube y baja.
+    // (rotation.x positiva lleva la pierna hacia atrás; en la espinilla, dobla la rodilla)
+    this.a = (this.a || 0) + ((andando ? 1 : 0) - (this.a || 0)) * Math.min(1, dt / 250);
+    const a = this.a, f = this.fase;
+    if (p.EspinillaD) {
+      for (const [muslo, espinilla, desfase] of [[p.PiernaD, p.EspinillaD, 0], [p.PiernaI, p.EspinillaI, Math.PI]]) {
+        const g = f + desfase;
+        muslo.rotation.x = -0.42 * Math.sin(g) * a;
+        espinilla.rotation.x = (0.85 * Math.max(0, Math.cos(g + 0.7)) ** 2 + 0.08) * a;
+      }
+      p.BrazoI.rotation.x = -0.35 * Math.sin(f) * a;
       this.respiro += dt / 1000;
-      p.Cuerpo.scale.y = 1 + (andando ? 0 : 0.006 * Math.sin(this.respiro * 1.6));
+      p.Cuerpo.scale.y = 1 + 0.006 * Math.sin(this.respiro * 1.6) * (1 - a);   // respira parado
+      this.modelo.rotation.set(0.04 * a, 0, 0.025 * Math.sin(f) * a);
     }
-    o.position.y = andando ? 0.02 * Math.abs(Math.cos(this.fase)) : 0;
+    o.position.y = 0.022 * Math.abs(Math.cos(f)) * a;
     // la cabeza sigue al jugador si está cerca y no a su espalda
     let yaw = 0, pitch = 0;
     if (dist < 4) {
