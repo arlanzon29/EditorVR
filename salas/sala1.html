@@ -1,14 +1,15 @@
 <!-- Sala 1 (x, z = -3…3, 3 m de alto): ventana, mesa, silla, biblioteca, pantalla del PC y puerta al pasillo -->
 <!-- Habitación -->
 <a-plane rotation="-90 0 0" width="6" height="6" color="#ffffff" suelo-madera></a-plane>
-<!-- Techo de tablas de madera con 5 vigas de 15 × 20 cm de pared a pared -->
+<!-- Techo de tablas de madera con 5 vigas de 15 × 20 cm de pared a pared (1 cm más cortas por
+     cada lado: la pared de la puerta es de doble cara y las puntas asomaban por fuera) -->
 <a-plane rotation="90 0 0" position="0 3 0" width="6" height="6" color="#ffffff" suelo-madera></a-plane>
 <a-entity>
-  <a-box position="0 2.9 -2.4" width="6" height="0.2" depth="0.15" color="#5e3d22"></a-box>
-  <a-box position="0 2.9 -1.2" width="6" height="0.2" depth="0.15" color="#5e3d22"></a-box>
-  <a-box position="0 2.9 0" width="6" height="0.2" depth="0.15" color="#5e3d22"></a-box>
-  <a-box position="0 2.9 1.2" width="6" height="0.2" depth="0.15" color="#5e3d22"></a-box>
-  <a-box position="0 2.9 2.4" width="6" height="0.2" depth="0.15" color="#5e3d22"></a-box>
+  <a-box position="0 2.9 -2.4" width="5.98" height="0.2" depth="0.15" color="#5e3d22"></a-box>
+  <a-box position="0 2.9 -1.2" width="5.98" height="0.2" depth="0.15" color="#5e3d22"></a-box>
+  <a-box position="0 2.9 0" width="5.98" height="0.2" depth="0.15" color="#5e3d22"></a-box>
+  <a-box position="0 2.9 1.2" width="5.98" height="0.2" depth="0.15" color="#5e3d22"></a-box>
+  <a-box position="0 2.9 2.4" width="5.98" height="0.2" depth="0.15" color="#5e3d22"></a-box>
 </a-entity>
 <!-- Pared de la ventana, en cuatro trozos alrededor del hueco (x = -1…1, y = 0,95…2,25) -->
 <a-plane position="-2 1.5 -3" width="2" height="3" color="#ffffff" pared-piedra></a-plane>
