@@ -1,7 +1,7 @@
 // Editor VR: objetos de la escena.
 // Arco ciego, puerta, antorcha, estatua, biblioteca, escalera de la sala 3, muros con arcos,
-// pasillos de arriba y lo del comedor: hoguera, lámpara de rueda, mesa larga, estandartes y el
-// criado que anda por él.
+// pasillos de arriba y lo del comedor: hoguera, lámpara de rueda, mesa larga, estandartes, el
+// criado que anda por él y los guardias de su entrada.
 
 // Arco ciego de medio punto sobre un muro: hueco oscuro con forma de arco y, alrededor, un
 // arco de dovelas de piedra que sobresale un poco. Mira hacia +z local; la base está en y = 0.
@@ -558,6 +558,28 @@ AFRAME.registerComponent('estandarte', {
   remove() { this.el.removeObject3D('mesh'); }
 });
 
+// Cartel de texto (saludos de los personajes): un plano con el texto dibujado en un canvas con la
+// letra del navegador (la de a-text no tiene ñ, ¿ ni tildes), hijo de "el", en "posicion" (x y z,
+// en coordenadas de "el") y oculto. Quien lo usa lo enseña y lo gira hacia quien lo lee.
+function cartelDeTexto(el, texto, posicion) {
+  const cartel = document.createElement('a-entity');
+  cartel.setAttribute('position', posicion);
+  cartel.setAttribute('visible', false);
+  el.appendChild(cartel);
+  const lienzo = document.createElement('canvas'), g = lienzo.getContext('2d'), letra = '600 52px Georgia, serif';
+  g.font = letra;
+  lienzo.width = Math.ceil(g.measureText(texto).width) + 60; lienzo.height = 96;
+  g.fillStyle = 'rgba(28, 34, 48, 0.85)'; g.fillRect(0, 0, lienzo.width, lienzo.height);
+  g.font = letra; g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(texto, lienzo.width / 2, lienzo.height / 2 + 3);
+  const tex = new THREE.CanvasTexture(lienzo);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const alto = 0.15;
+  cartel.setObject3D('mesh', new THREE.Mesh(new THREE.PlaneGeometry(alto * lienzo.width / lienzo.height, alto),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true })));
+  return cartel;
+}
+
 // Criado que anda por el comedor (modelos/criado.glb, hecho en Blender). El modelo trae aparte
 // la cabeza (gira desde el cuello), las dos piernas (desde la cadera) y el brazo libre (desde el
 // hombro); el otro brazo lleva la jarra. Recorre "puntos" (x z segundos, …, separados por comas:
@@ -584,23 +606,8 @@ AFRAME.registerComponent('criado', {
     this.fase = 0;               // del paso
     this.respiro = Math.random() * 10;
     this.miraYaw = 0; this.miraPitch = 0;
-    // cartel del saludo, encima de la cabeza; se gira hacia quien lo lee. El texto se dibuja en
-    // un canvas con la letra del navegador: la de a-text no tiene ñ, ¿ ni tildes
-    this.cartel = document.createElement('a-entity');
-    this.cartel.setAttribute('position', '0 2.05 0');
-    this.cartel.setAttribute('visible', false);
-    this.el.appendChild(this.cartel);
-    const lienzo = document.createElement('canvas'), g = lienzo.getContext('2d'), letra = '600 52px Georgia, serif';
-    g.font = letra;
-    lienzo.width = Math.ceil(g.measureText(this.data.saludo).width) + 60; lienzo.height = 96;
-    g.fillStyle = 'rgba(28, 34, 48, 0.85)'; g.fillRect(0, 0, lienzo.width, lienzo.height);
-    g.font = letra; g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(this.data.saludo, lienzo.width / 2, lienzo.height / 2 + 3);
-    const tex = new THREE.CanvasTexture(lienzo);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    const alto = 0.15;
-    this.cartel.setObject3D('mesh', new THREE.Mesh(new THREE.PlaneGeometry(alto * lienzo.width / lienzo.height, alto),
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true })));
+    // cartel del saludo, encima de la cabeza; se gira hacia quien lo lee
+    this.cartel = cartelDeTexto(this.el, this.data.saludo, '0 2.05 0');
     this.saludado = false;
     this.camara = null;
   },
@@ -668,5 +675,57 @@ AFRAME.registerComponent('criado', {
     const o = this.el.object3D;
     const diff = Math.atan2(Math.sin(rumbo - o.rotation.y), Math.cos(rumbo - o.rotation.y));
     o.rotation.y += diff * Math.min(1, dt / 180);
+  }
+});
+
+// Guardia de pie (modelos/guardia.glb, hecho en Blender): cota de malla, sobreveste granate con
+// cruz, yelmo con nasal, lanza y escudo. Quieto en su puesto: respira, te sigue con la cabeza si
+// estás a menos de 5 m y por delante de él, y a menos de 2 m te dice el "saludo". Mira hacia +z
+// local; con scale="-1 1 1" sale en espejo (lanza al otro lado). Es macizo: no se le atraviesa.
+AFRAME.registerComponent('guardia', {
+  schema: { saludo: { default: 'Paso libre, señor.' } },
+  init() {
+    this.el.setAttribute('gltf-model', 'url(modelos/guardia.glb)');
+    this.cuerpo = this.cabeza = null;
+    this.el.addEventListener('model-loaded', e => {
+      this.cuerpo = e.detail.model.getObjectByName('GuardiaCuerpo');
+      this.cabeza = e.detail.model.getObjectByName('GuardiaCabeza');
+    });
+    const p = this.el.object3D.position, r = 0.4;   // la lanza y el escudo sobresalen
+    SUPERFICIES.push({ x0: p.x - r, x1: p.x + r, z0: p.z - r, z1: p.z + r, y: 1.8, macizo: true });
+    // el cartel cuelga de la sala, encima de él, no del guardia: en el guardia en espejo
+    // (scale -1) girarlo hacia el jugador lo dejaba torcido
+    this.cartel = cartelDeTexto(this.el.parentEl, this.data.saludo, `${p.x} 2 ${p.z}`);
+    this.respiro = Math.random() * 10;
+    this.miraYaw = 0; this.miraPitch = 0;
+    this.saludado = false;
+  },
+  tick(t, dt) {
+    if (!dt) return;
+    dt = Math.min(dt, 50);
+    const o = this.el.object3D;
+    const ojo = this.el.sceneEl.camera.getWorldPosition(new THREE.Vector3());
+    const dx = ojo.x - o.position.x, dz = ojo.z - o.position.z, dist = Math.hypot(dx, dz);
+    this.respiro += dt / 1000;
+    if (this.cuerpo) this.cuerpo.scale.y = 1 + 0.006 * Math.sin(this.respiro * 1.4);
+    // la cabeza, hacia el jugador (en espejo, el giro va al revés)
+    let yaw = 0, pitch = 0;
+    if (dist < 5) {
+      const rel = Math.atan2(dx, dz) - o.rotation.y, ang = Math.atan2(Math.sin(rel), Math.cos(rel));
+      if (Math.abs(ang) < 1.6) {
+        yaw = THREE.MathUtils.clamp(ang, -0.9, 0.9) * Math.sign(o.scale.x);
+        pitch = THREE.MathUtils.clamp(-Math.atan2(ojo.y - 1.6, Math.max(dist, 0.3)), -0.4, 0.4);
+      }
+    }
+    this.miraYaw += (yaw - this.miraYaw) * Math.min(1, dt / 300);
+    this.miraPitch += (pitch - this.miraPitch) * Math.min(1, dt / 300);
+    if (this.cabeza) this.cabeza.rotation.set(this.miraPitch, this.miraYaw, 0, 'YXZ');
+    // saludo
+    if (dist < 2 && !this.saludado) { this.saludado = true; this.cartel.object3D.visible = true; this.ocultar = t + 3500; }
+    if (dist > 3) this.saludado = false;
+    if (this.cartel.object3D.visible) {
+      if (t > this.ocultar) this.cartel.object3D.visible = false;
+      else this.cartel.object3D.lookAt(ojo.x, this.cartel.object3D.getWorldPosition(new THREE.Vector3()).y, ojo.z);
+    }
   }
 });

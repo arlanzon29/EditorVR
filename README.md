@@ -23,7 +23,7 @@ Coordenadas en metros: **x** hacia la puerta de la sala 1 y el pasillo, **y** ha
 | **Sala 2** | 5 × 5 m (x = 9…14) | Como la sala 1: piedra, techo con vigas, ventana rústica, biblioteca, mesa separada de la pared y silla pegada a ella. |
 | **Pasillo 2** | 3,4 m (x = 5,4…6,6, z = 0,6…4) | Ramal que lleva a la sala 3. A mitad, una antorcha de pared en cada lado, con la llama y la luz temblando. |
 | **Sala 3** | 12 × 10 m, 7,5 m de alto (x = 0…12, z = 4…14) | La grande. Muros de piedra de 40 cm con arcos arriba, techo con 8 vigas y la escalera. |
-| **Comedor** | 12 × 10 m, 4,2 m de alto (x = -12,4…-0,4, z = 4…14) | A la derecha de la sala 3 entrando, por un gran arco con dovelas en su muro. Suelo de losas, techo de madera con 8 vigas, tres ventanas en arco con reja, chimenea con hoguera, mesa de 7 m con bancos y sillón, dos lámparas de rueda, estandartes y antorchas. Un criado con una jarra da vueltas a la mesa. |
+| **Comedor** | 12 × 10 m, 4,2 m de alto (x = -12,4…-0,4, z = 4…14) | A la derecha de la sala 3 entrando, por un gran arco con dovelas en su muro, guardado por dos guardias con lanza y escudo. Suelo de losas, techo de madera con 8 vigas, tres ventanas en arco con reja, chimenea con hoguera, mesa de 7 m con bancos y sillón, dos lámparas de rueda, estandartes y antorchas. Un criado con una jarra da vueltas a la mesa. |
 | **Pasillos de arriba** | Alrededor de la sala 3, por fuera de sus muros, a 4,4 m | Suelo de madera, techo y muro exterior de piedra. Se ven desde la sala por los arcos. |
 
 **La escalera de la sala 3** ocupa toda la pared del fondo, de pared lateral a pared lateral:
@@ -159,7 +159,7 @@ sus zonas en `js/movimiento.js` (`zonasPermitidas`) si se puede andar por ella.
   pedestal macizo), `biblioteca`, `escalera-sala3`, `muro-arcos` (con `entrada` a ras de suelo,
   recta o en arco con `entradaArco`), `arco-ciego` (con `hueco: false`, marco de dovelas de un arco
   abierto), `pasillos-arriba`; en el comedor, `hoguera`, `lampara-rueda`, `mesa-comedor` (mesa,
-  bancos, sillón, vajilla y candeleros; maciza), `estandarte` y `criado` (anda por una ruta de
+  bancos, sillón, vajilla y candeleros; maciza), `estandarte`, `guardia` (quieto, respira, te mira, te saluda y es macizo) y `criado` (anda por una ruta de
   puntos, mueve piernas y brazo, respira, te sigue con la cabeza y te saluda si te acercas).
 - **Modelos de Blender** en `modelos/` (glTF binario, `.glb`), con `gltf-model="url(modelos/...)"`:
   `antorcha.glb` (soporte de hierro, mango de madera y llama, objeto aparte llamado `Llama`).
@@ -178,6 +178,9 @@ sus zonas en `js/movimiento.js` (`zonasPermitidas`) si se puede andar por ella.
   - `criado.glb`: criado de 1,77 m (túnica, delantal, capucha, jarra de barro). Piezas aparte
     para animarlo: `Cuerpo`, `Cabeza` (pivote en el cuello), `PiernaD` / `PiernaI` (en la cadera)
     y `BrazoI` (en el hombro). Origen entre los pies; mira hacia +z.
+  - `guardia.glb`: guardia con cota de malla, sobreveste granate con cruz, yelmo con nasal, lanza
+    y escudo de cometa. Piezas `GuardiaCuerpo` y `GuardiaCabeza` (pivote en el cuello); 2,6 m con
+    la lanza; origen entre los pies; mira hacia +z.
   - `modelos.blend`: el archivo de Blender con todos, para retocarlos y volver a exportar.
 - **Conexión con el PC y Claude:** `pantalla-pc`, `agarrable`, `informe-posicion`,
   `foto-para-claude`.
