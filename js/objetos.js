@@ -1,6 +1,7 @@
 // Editor VR: objetos de la escena.
 // Arco ciego, puerta, antorcha, estatua, biblioteca, escalera de la sala 3, muros con arcos,
-// pasillos de arriba y lo del comedor: hoguera, lámpara de rueda, mesa larga y estandartes.
+// pasillos de arriba y lo del comedor: hoguera, lámpara de rueda, mesa larga, estandartes y el
+// criado que anda por él.
 
 // Arco ciego de medio punto sobre un muro: hueco oscuro con forma de arco y, alrededor, un
 // arco de dovelas de piedra que sobresale un poco. Mira hacia +z local; la base está en y = 0.
@@ -555,4 +556,117 @@ AFRAME.registerComponent('estandarte', {
     this.el.setObject3D('mesh', g);
   },
   remove() { this.el.removeObject3D('mesh'); }
+});
+
+// Criado que anda por el comedor (modelos/criado.glb, hecho en Blender). El modelo trae aparte
+// la cabeza (gira desde el cuello), las dos piernas (desde la cadera) y el brazo libre (desde el
+// hombro); el otro brazo lleva la jarra. Recorre "puntos" (x z segundos, …, separados por comas:
+// el punto y coma separa las propiedades del componente; en coordenadas del
+// mundo: la entidad va dentro de la sala, que está en el origen) en bucle, parándose en cada uno
+// los segundos que diga. Andando balancea piernas y brazo y sube y baja un poco; parado, respira.
+// Si te acercas a menos de 4 m te sigue con la cabeza; a menos de 1,4 m se para, se vuelve hacia
+// ti y te saluda con un cartel. No choca contigo: se le puede atravesar.
+AFRAME.registerComponent('criado', {
+  schema: {
+    puntos: { default: '' },
+    velocidad: { default: 0.7 },        // m/s
+    saludo: { default: 'Buenas, señor. ¿Más vino?' }
+  },
+  init() {
+    this.el.setAttribute('gltf-model', 'url(modelos/criado.glb)');
+    this.piezas = {};
+    this.el.addEventListener('model-loaded', e => {
+      for (const n of ['Cuerpo', 'Cabeza', 'PiernaD', 'PiernaI', 'BrazoI']) this.piezas[n] = e.detail.model.getObjectByName(n);
+    });
+    this.ruta = this.data.puntos.split(',').map(s => s.trim().split(/\s+/).map(Number)).filter(p => p.length >= 2);
+    this.i = 0;                  // punto al que va
+    this.espera = 0;             // ms que le quedan parado
+    this.fase = 0;               // del paso
+    this.respiro = Math.random() * 10;
+    this.miraYaw = 0; this.miraPitch = 0;
+    // cartel del saludo, encima de la cabeza; se gira hacia quien lo lee. El texto se dibuja en
+    // un canvas con la letra del navegador: la de a-text no tiene ñ, ¿ ni tildes
+    this.cartel = document.createElement('a-entity');
+    this.cartel.setAttribute('position', '0 2.05 0');
+    this.cartel.setAttribute('visible', false);
+    this.el.appendChild(this.cartel);
+    const lienzo = document.createElement('canvas'), g = lienzo.getContext('2d'), letra = '600 52px Georgia, serif';
+    g.font = letra;
+    lienzo.width = Math.ceil(g.measureText(this.data.saludo).width) + 60; lienzo.height = 96;
+    g.fillStyle = 'rgba(28, 34, 48, 0.85)'; g.fillRect(0, 0, lienzo.width, lienzo.height);
+    g.font = letra; g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(this.data.saludo, lienzo.width / 2, lienzo.height / 2 + 3);
+    const tex = new THREE.CanvasTexture(lienzo);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const alto = 0.15;
+    this.cartel.setObject3D('mesh', new THREE.Mesh(new THREE.PlaneGeometry(alto * lienzo.width / lienzo.height, alto),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true })));
+    this.saludado = false;
+    this.camara = null;
+  },
+  tick(t, dt) {
+    if (!dt || !this.ruta.length) return;
+    dt = Math.min(dt, 50);
+    const o = this.el.object3D, p = this.piezas;
+    this.camara = this.camara || this.el.sceneEl.camera;
+    const ojo = this.camara.getWorldPosition(new THREE.Vector3());
+    const aJugador = new THREE.Vector2(ojo.x - o.position.x, ojo.z - o.position.z), dist = aJugador.length();
+    const cerca = dist < 1.4;
+    // andar hacia el punto que toca, salvo que esté esperando o tenga al jugador delante
+    let andando = false;
+    if (this.espera > 0) this.espera -= dt;
+    else if (!cerca) {
+      const [x, z, pausa = 0] = this.ruta[this.i];
+      const d = new THREE.Vector2(x - o.position.x, z - o.position.z), falta = d.length();
+      const paso = this.data.velocidad * dt / 1000;
+      if (falta <= paso) {
+        o.position.x = x; o.position.z = z;
+        this.i = (this.i + 1) % this.ruta.length;
+        this.espera = pausa * 1000;
+      } else {
+        d.divideScalar(falta);
+        o.position.x += d.x * paso; o.position.z += d.y * paso;
+        this.girarHacia(Math.atan2(d.x, d.y), dt);
+        this.fase += paso / 0.35 * Math.PI;   // un paso cada 35 cm
+        andando = true;
+      }
+    }
+    if (cerca) this.girarHacia(Math.atan2(aJugador.x, aJugador.y), dt);
+    // piernas, brazo y vaivén; parado, las piernas vuelven a su sitio y respira
+    const s = andando ? Math.sin(this.fase) : 0, k = Math.min(1, dt / 120);
+    if (p.PiernaD) {
+      p.PiernaD.rotation.x += (-0.4 * s - p.PiernaD.rotation.x) * k;
+      p.PiernaI.rotation.x += (0.4 * s - p.PiernaI.rotation.x) * k;
+      p.BrazoI.rotation.x += (-0.35 * s - p.BrazoI.rotation.x) * k;
+      this.respiro += dt / 1000;
+      p.Cuerpo.scale.y = 1 + (andando ? 0 : 0.006 * Math.sin(this.respiro * 1.6));
+    }
+    o.position.y = andando ? 0.02 * Math.abs(Math.cos(this.fase)) : 0;
+    // la cabeza sigue al jugador si está cerca y no a su espalda
+    let yaw = 0, pitch = 0;
+    if (dist < 4) {
+      const rel = Math.atan2(aJugador.x, aJugador.y) - o.rotation.y;
+      const ang = Math.atan2(Math.sin(rel), Math.cos(rel));
+      if (Math.abs(ang) < 1.9) {
+        yaw = THREE.MathUtils.clamp(ang, -1.1, 1.1);
+        pitch = THREE.MathUtils.clamp(-Math.atan2(ojo.y - 1.6, Math.max(dist, 0.3)), -0.5, 0.5);
+      }
+    }
+    this.miraYaw += (yaw - this.miraYaw) * Math.min(1, dt / 250);
+    this.miraPitch += (pitch - this.miraPitch) * Math.min(1, dt / 250);
+    if (p.Cabeza) p.Cabeza.rotation.set(this.miraPitch, this.miraYaw, 0, 'YXZ');
+    // saludo al acercarse (se vuelve a mostrar al alejarse y volver)
+    if (cerca && !this.saludado) { this.saludado = true; this.cartel.object3D.visible = true; this.ocultar = t + 3500; }
+    if (!cerca && dist > 2.5) this.saludado = false;
+    if (this.cartel.object3D.visible) {
+      if (t > this.ocultar) this.cartel.object3D.visible = false;
+      else this.cartel.object3D.lookAt(ojo.x, this.cartel.object3D.getWorldPosition(new THREE.Vector3()).y, ojo.z);
+    }
+  },
+  // girar el cuerpo poco a poco hasta mirar hacia "rumbo" (el modelo mira hacia +z local)
+  girarHacia(rumbo, dt) {
+    const o = this.el.object3D;
+    const diff = Math.atan2(Math.sin(rumbo - o.rotation.y), Math.cos(rumbo - o.rotation.y));
+    o.rotation.y += diff * Math.min(1, dt / 180);
+  }
 });
