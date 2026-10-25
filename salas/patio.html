@@ -11,8 +11,10 @@
 <a-entity muro-arcos="largo: 6.8; alto: 4; entrada: 2.6, 4.2, 2; entradaArco: true" position="9.4 0 -6.6" rotation="0 180 0"></a-entity>
 <a-entity arco-ciego="ancho: 1.6; alto: 2.8; dovela: 0.22; hueco: false" position="6 0 -6.6"></a-entity>
 <a-entity arco-ciego="ancho: 1.6; alto: 2.8; dovela: 0.22; hueco: false" position="6 0 -7" rotation="0 180 0"></a-entity>
-<a-box position="2.8 2 -4.8" width="0.4" height="4" depth="3.6" piedra-mundo></a-box>
-<a-box position="9.2 2 -4.55" width="0.4" height="4" depth="4.1" piedra-mundo></a-box>
+<!-- los dos lados acaban 2 cm antes de las salas 1 y 2: si llegan justo, su testa coincide con la
+     pared de dentro de la sala y parpadea en su rincón -->
+<a-box position="2.8 2 -4.81" width="0.4" height="4" depth="3.58" piedra-mundo></a-box>
+<a-box position="9.2 2 -4.56" width="0.4" height="4" depth="4.08" piedra-mundo></a-box>
 <a-entity>
   <a-box position="3 4.3 -6.8" width="0.5" height="0.6" depth="0.4" piedra-mundo></a-box>
   <a-box position="4 4.3 -6.8" width="0.5" height="0.6" depth="0.4" piedra-mundo></a-box>
@@ -30,12 +32,12 @@
   <a-box position="9.2 4.3 -3" width="0.4" height="0.6" depth="0.5" piedra-mundo></a-box>
 </a-entity>
 
-<!-- fachada que se ve desde el patio por encima del pasillo y de las salas 1 y 2: tapa por fuera
-     los pasillos de arriba de la sala 3 (z = 2). Por encima del techo de cada sala, para no
-     meterse dentro de ellas. -->
-<a-plane position="6 4.7 2" rotation="0 180 0" width="6" height="4.6" color="#ffffff" pared-piedra></a-plane>
-<a-plane position="0 5 2" rotation="0 180 0" width="6" height="4" color="#ffffff" pared-piedra></a-plane>
-<a-plane position="12 5 2" rotation="0 180 0" width="6" height="4" color="#ffffff" pared-piedra></a-plane>
+<!-- fachada que se ve desde fuera por encima del pasillo y de las salas 1 y 2 (z = 2), desde el techo
+     de cada sala hasta 4,4 m: de ahí arriba ya está el muro de fuera de los pasillos de arriba (de
+     doble cara), y si se solapan parpadean -->
+<a-plane position="6 3.4 2" rotation="0 180 0" width="6" height="2" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="0 3.7 2" rotation="0 180 0" width="6" height="1.4" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="12 3.7 2" rotation="0 180 0" width="6" height="1.4" color="#ffffff" pared-piedra></a-plane>
 
 <!-- pozo en medio: brocal de piedra y boca oscura; sobre el brocal, a los dos lados de la boca, dos
      postes con el torno (eje y manivela) y, colgando de la cuerda, un cubo de duelas con dos aros

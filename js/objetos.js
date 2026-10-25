@@ -1,4 +1,12 @@
 // Editor VR: objetos de la escena.
+
+// Los modelos de Blender llegan con materiales de doble cara (Blender no oculta la trasera). Se
+// dejan de una: si no, la trasera de una pieza apoyada en una pared o en el suelo coincide con
+// ellos y asoma parpadeando.
+document.addEventListener('model-loaded', e => e.detail.model.traverse(o => {
+  if (o.isMesh) for (const m of [].concat(o.material)) m.side = THREE.FrontSide;
+}));
+
 // Arco ciego, puerta, antorcha, estatua, biblioteca, escalera de la sala 3, muros con arcos,
 // pasillos de arriba y lo del comedor: hoguera, lámpara de rueda, mesa larga, estandartes, el
 // criado que anda por él y los guardias de su entrada.
@@ -241,7 +249,7 @@ AFRAME.registerComponent('escalera-sala3', {
       caja(x0 - 0.01, x1 + 0.01, y - 0.04, y, z0 - 0.01, z1 + 0.01, HUELLA);
       const roca = document.createElement('a-plane');
       roca.setAttribute('rotation', '-90 0 0');
-      roca.setAttribute('position', `${(x0 + x1) / 2} ${y + 0.002} ${(z0 + z1) / 2}`);
+      roca.setAttribute('position', `${(x0 + x1) / 2} ${y + 0.006} ${(z0 + z1) / 2}`);   // 6 mm: con 2 parpadeaba de lejos
       roca.setAttribute('width', x1 - x0 + 0.02); roca.setAttribute('height', z1 - z0 + 0.02);
       roca.setAttribute('color', '#ffffff'); roca.setAttribute('pared-piedra', '');
       this.el.appendChild(roca);
@@ -549,7 +557,7 @@ AFRAME.registerComponent('estandarte', {
     const oro = new THREE.MeshStandardMaterial({ color: emblema, roughness: 0.8 });
     const cruzV = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.7, 0.006), oro);
     cruzV.position.set(0, 0.15, 0.012);
-    const cruzH = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.1, 0.006), oro);
+    const cruzH = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.1, 0.01), oro);   // más grueso que el vertical: sus frentes no coinciden
     cruzH.position.set(0, 0.3, 0.012);
     const madera = new THREE.MeshStandardMaterial({ color: '#3a281a', roughness: 0.9 });
     const vara = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, ancho + 0.2, 8), madera);

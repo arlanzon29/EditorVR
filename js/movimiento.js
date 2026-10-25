@@ -60,12 +60,17 @@ const PASO_COMEDOR = { x0: -0.75, x1: 0.35, z0: 6.35, z1: 8.05 };   // el hueco 
 const PATIO = { x0: 3.25, x1: 8.75, z0: -6.35, z1: -0.85 };
 const PASO_PATIO = { x0: 5.65, x1: 6.35, z0: -1.0, z1: -0.25 };
 // Fuera del castillo: se sale del patio por el portón de la muralla del fondo (x = 5,2…6,8,
-// z = -7…-6,6). Campo por delante del castillo y a los dos lados, hasta 25 cm de sus muros.
+// z = -7…-6,6). Campo alrededor de todo el castillo, hasta 25 cm de sus muros. Por debajo de los
+// pasillos de arriba (a 4,4 m) que vuelan por fuera no se entra.
 const PASO_PORTON = { x0: 5.55, x1: 6.45, z0: -7.4, z1: -6.2 };
 const FUERA = [
   { x0: -30, x1: 40, z0: -45, z1: -7.25 },     // por delante del patio y del castillo
   { x0: -30, x1: 2.35, z0: -45, z1: -3.7 },    // delante de la sala 1 y al oeste del patio
   { x0: 9.65, x1: 40, z0: -45, z1: -2.75 },    // delante de la sala 2 y al este del patio
+  { x0: -30, x1: -3.7, z0: -45, z1: 3.35 },    // al oeste de la sala 1, hasta el muro del comedor
+  { x0: -30, x1: -13.05, z0: -45, z1: 45 },    // al oeste del comedor
+  { x0: -30, x1: 40, z0: 14.65, z1: 45 },      // por detrás (norte)
+  { x0: 14.6, x1: 40, z0: -45, z1: 45 },       // al este de la sala 2 y de la sala 3
 ];
 const ALTO_GALERIA = 4.4;   // altura del rellano de arriba de la sala 3 y de sus pasillos
 const dentro = (p, z) => p.x >= z.x0 && p.x <= z.x1 && p.z >= z.z0 && p.z <= z.z1;
@@ -87,7 +92,7 @@ function zonasPermitidas(cabeza, altura) {
   const uniones = [[0, 1, p1], [1, 2, p2], [1, 3, p3], [3, 4, true],
     [4, 5, enAlto], [5, 6, enAlto], [6, 7, true], [6, 8, true], [7, 9, true], [8, 9, true],
     [4, 10, true], [10, 11, true], [1, 12, p4], [12, 13, p4],
-    [13, 14, true], [14, 15, true], [15, 16, true], [15, 17, true], [16, 17, true]];
+    [13, 14, true], ...FUERA.map((_, i) => [14, 15 + i, true])];
   const i = zonas.findIndex(z => dentro(cabeza, z) && (enAlto || !z.arriba));
   if (i < 0) return zonas.filter(z => enAlto || !z.arriba);   // fuera de todo (no debería pasar): que pueda volver a cualquiera
   const alcanzables = new Set([i]);
