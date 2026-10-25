@@ -52,6 +52,7 @@ doradas. Se puede subir andando; los tramos son macizos y no se pueden atravesar
 | **Gatillo lateral** apuntando a la pantalla | Cogerla y colocarla; se queda donde la sueltes. |
 | **Botón B o Y** | Traer la pantalla del PC delante de ti. |
 | **Botón A o X** | Mandar a Claude una foto de lo que ves (el mando vibra al llegar). |
+| **Apretar el joystick izquierdo** | Enseñar u ocultar el medidor de rendimiento (en el ordenador, tecla **M**). |
 
 En VR cuenta tu altura real. Si estás sentado (las gafas, de media, por debajo de 1,30 m durante
 unos segundos), la escena te sube **35 cm** (`SUBIR_SENTADO` en js/movimiento.js); al ponerte de
@@ -143,6 +144,7 @@ Mientras se comparte la pantalla, cualquiera en la misma wifi que abra la págin
 | [js/movimiento.js](js/movimiento.js) | Andar, girar, zonas, `SUPERFICIES`, obstáculos `macizo` y la mira del monitor. |
 | [js/texturas.js](js/texturas.js) | Texturas de canvas y `suelo-madera`, `pared-piedra`, `piedra-mundo`. |
 | [js/objetos.js](js/objetos.js) | Puerta, antorcha, estatua, biblioteca, escalera, muros con arcos, pasillos de arriba, y lo del comedor (hoguera, lámpara de rueda, mesa, estandarte). |
+| [js/medidor.js](js/medidor.js) | Medidor de rendimiento: imágenes por segundo (y la peor), llamadas de dibujo, triángulos y luces. |
 | [js/conexion.js](js/conexion.js) | Pantalla del PC, objetos que se cogen e informe de posición para Claude. |
 | [modelos/](modelos/) | Modelos de Blender (`.glb`) y el `.blend` para retocarlos. |
 
