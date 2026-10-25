@@ -57,6 +57,8 @@ cambiar la escena (`index.html`, `salas/`, `js/`, `modelos/`) no, la página se 
   la letra de `a-text` no los tiene y se los come.
 - En el atributo de un componente, `;` separa propiedades: una lista dentro de una propiedad va
   con comas (los puntos de la ruta del criado).
+- Nada pegado a una pared de doble cara (`side="double"`, las que se ven por los dos lados): su
+  trasera coincide con la otra cara y asoma parpadeando. Separarlo 1 o 2 cm (las antorchas del patio).
 - Las cajas inclinadas se giran con un cuaternión al cargar (`loaded`), no con el atributo
   `rotation`: A-Frame aplica los ejes en otro orden y salen torcidas.
 - Cada cosa en su archivo: una estancia nueva, archivo nuevo en `salas/` (y su `incluir` en
