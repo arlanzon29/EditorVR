@@ -30,6 +30,7 @@ AFRAME.registerComponent('giro-por-pasos', {
 // Andar con el joystick izquierdo, hacia donde miras (sin subir ni bajar).
 const VELOCIDAD = 1.5;   // m/s
 const VELOCIDAD_MIRAR = 2.2;   // rad/s con el stick derecho del mando de Xbox, a tope
+const ALTURA_OJOS = 1.6;       // en VR, a esta altura sobre el suelo van los ojos, estés de pie o sentado
 const ZONA_MUERTA = 0.25;      // de los sticks del mando: por debajo, como si no se tocaran
 // Zonas por las que puede ir la cabeza (con un margen para no meterse en las paredes).
 // Cada puerta une dos zonas; con la puerta cerrada no se puede pasar de una a otra.
@@ -149,7 +150,14 @@ AFRAME.registerComponent('andar-joystick', {
       this.guardado = t;
       try { localStorage.setItem(this.clave, JSON.stringify({ x: r.x, y: this.altura, z: r.z, giro: this.rig.object3D.rotation.y })); } catch (e) {}
     }
-    r.y += (this.altura - r.y) * Math.min(1, dt / 80);   // subir y bajar escalones con suavidad
+    // en VR, los ojos a ALTURA_OJOS sobre lo que se pisa, sea cual sea la altura real de las gafas
+    // (de pie, sentado, agachado): el rig se sube o se baja lo que haga falta. Se corrige despacio
+    // (medio segundo) para que los movimientos rápidos de la cabeza se sigan notando.
+    if (this.el.sceneEl.is('vr-mode')) {
+      const gafas = document.querySelector('[camera]').object3D.position.y;   // altura real de las gafas
+      this.ajusteVR = (this.ajusteVR ?? ALTURA_OJOS - gafas) + (ALTURA_OJOS - gafas - (this.ajusteVR ?? 0)) * Math.min(1, dt / 500);
+    } else this.ajusteVR = undefined;
+    r.y += (this.altura + (this.ajusteVR ?? 0) - r.y) * Math.min(1, dt / 80);   // subir y bajar escalones con suavidad
     this.mandoPC(dt);
     const mx = THREE.MathUtils.clamp(this.x + this.tx + this.gx, -1, 1), my = THREE.MathUtils.clamp(this.y + this.ty + this.gy, -1, 1);
     if (Math.hypot(mx, my) < 0.15) return;   // zona muerta

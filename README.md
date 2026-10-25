@@ -51,6 +51,9 @@ doradas. Se puede subir andando; los tramos son macizos y no se pueden atravesar
 | **Botón B o Y** | Traer la pantalla del PC delante de ti. |
 | **Botón A o X** | Mandar a Claude una foto de lo que ves (el mando vibra al llegar). |
 
+En VR los ojos van siempre a **1,60 m** sobre lo que pisas, estés de pie o sentado (`ALTURA_OJOS`
+en js/movimiento.js): la escena compensa la altura real de las gafas poco a poco.
+
 **Ordenador:** clic para capturar el ratón, **WASD** o flechas para andar (igual que el joystick:
 con choques y escalones), clic con la mira en una puerta para abrirla, **Esc** suelta el ratón.
 

@@ -132,7 +132,8 @@ AFRAME.registerComponent('informe-posicion', {
     const cam = this.el.querySelector('[camera]').object3D;
     const cabeza = cam.getWorldPosition(new THREE.Vector3());
     const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.getWorldQuaternion(new THREE.Quaternion()));
-    const rigY = document.getElementById('rig').object3D.position.y;   // altura del suelo que pisa
+    const andar = document.querySelector('[andar-joystick]')?.components['andar-joystick'];
+    const rigY = andar ? andar.altura : document.getElementById('rig').object3D.position.y;   // altura del suelo que pisa
     const zona = dentro(cabeza, SALA) ? 'sala 1' : dentro(cabeza, PASILLO) ? 'pasillo' : dentro(cabeza, SALA2) ? 'sala 2' : dentro(cabeza, PASILLO2) ? 'pasillo 2' : dentro(cabeza, SALA3) ? (rigY > 2 ? (rigY > 4.3 ? 'sala 3 (rellano de arriba)' : 'sala 3 (en la escalera)') : 'sala 3') : rigY > 4.3 && [ARCO_ARRIBA, ...PASILLOS_ARRIBA].some(z => dentro(cabeza, z)) ? 'pasillos de arriba (sala 3)' : [COMEDOR, PASO_COMEDOR].some(z => dentro(cabeza, z)) ? 'comedor' : 'fuera';
     // ¿qué tiene delante? (solo mallas visibles, sin el rig ni los rayos de los mandos)
     const rig = document.getElementById('rig').object3D;
