@@ -144,6 +144,7 @@ Mientras se comparte la pantalla, cualquiera en la misma wifi que abra la págin
 | [js/movimiento.js](js/movimiento.js) | Andar, girar, zonas, `SUPERFICIES`, obstáculos `macizo` y la mira del monitor. |
 | [js/texturas.js](js/texturas.js) | Texturas de canvas y `suelo-madera`, `pared-piedra`, `piedra-mundo`. |
 | [js/objetos.js](js/objetos.js) | Puerta, antorcha, estatua, biblioteca, escalera, muros con arcos, pasillos de arriba, y lo del comedor (hoguera, lámpara de rueda, mesa, estandarte). |
+| [js/rendimiento.js](js/rendimiento.js) | Para el Quest: al cargar cada estancia junta lo fijo en pocas mallas (`fundirEstancia`), y solo enciende las luces cercanas (`luces-cercanas`). |
 | [js/medidor.js](js/medidor.js) | Medidor de rendimiento: imágenes por segundo (y la peor), llamadas de dibujo, triángulos y luces. |
 | [js/conexion.js](js/conexion.js) | Pantalla del PC, objetos que se cogen e informe de posición para Claude. |
 | [modelos/](modelos/) | Modelos de Blender (`.glb`) y el `.blend` para retocarlos. |

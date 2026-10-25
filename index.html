@@ -6,6 +6,7 @@
 <title>Editor VR</title>
 <script src="https://cdn.jsdelivr.net/npm/aframe@1.7.0/dist/aframe-master.min.js"></script>
 <!-- Comportamiento: componentes de A-Frame en js/ (el orden importa poco: se usan al arrancar) -->
+<script src="js/rendimiento.js"></script>
 <script src="js/incluir.js"></script>
 <script src="js/movimiento.js"></script>
 <script src="js/texturas.js"></script>
@@ -16,7 +17,7 @@
 <body>
 <!-- La escena: aquí el jugador (rig), la luz general y las estancias. Cada estancia está en
      salas/ y se carga con el componente incluir; sus coordenadas son las del mundo. -->
-<a-scene informe-posicion foto-para-claude medidor renderer="antialias: true; colorManagement: true" xr-mode-ui="enabled: true" background="color: #a9cfe8">
+<a-scene informe-posicion foto-para-claude medidor luces-cercanas renderer="antialias: true; colorManagement: true" xr-mode-ui="enabled: true" background="color: #a9cfe8">
 
   <!-- Inicio: en la sala 3, mirando a la escalera -->
   <a-entity id="rig" position="6 0 7" rotation="0 180 0">

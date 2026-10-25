@@ -459,6 +459,11 @@ AFRAME.registerComponent('lampara-rueda', {
       g.add(plato, vela, f);
       this.llamas.push(f);
     }
+    // menos llamadas de dibujo: el hierro en una malla, la cera en otra y las llamas en otra (antes,
+    // unas 30 por lámpara). Las llamas tiemblan cambiando su brillo, todas a la vez.
+    const de = mat => g.children.filter(o => o.isMesh && o.material === mat);
+    fundirMallas(g, de(hierro)); fundirMallas(g, de(cera)); fundirMallas(g, de(llama));
+    this.llamaMat = llama;
     this.el.setObject3D('mesh', g);
     this.luz = document.createElement('a-entity');
     this.luz.setAttribute('light', { type: 'point', intensity: this.data.intensidad, distance: 8, color: '#ffcf8a' });
@@ -468,7 +473,7 @@ AFRAME.registerComponent('lampara-rueda', {
   },
   tick(t) {
     const s = t / 1000 + this.fase;
-    this.llamas.forEach((f, i) => f.scale.set(1, 1 + 0.2 * Math.sin(s * 9 + i * 1.3), 1));
+    this.llamaMat.emissiveIntensity = 2 * (1 + 0.15 * Math.sin(s * 9) + 0.1 * Math.sin(s * 23.3));
     const luz = this.luz.getObject3D('light');
     if (luz) luz.intensity = this.data.intensidad * (1 + 0.06 * Math.sin(s * 7.3) + 0.04 * Math.sin(s * 17.9));
   },
