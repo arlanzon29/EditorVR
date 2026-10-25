@@ -1,8 +1,9 @@
 // Editor VR: medidor de rendimiento.
 // Un cartelito con las imágenes por segundo (y la peor desde que se encendió), las llamadas de
 // dibujo, los triángulos y las luces puntuales encendidas. En VR va sobre el mando izquierdo; en el
-// ordenador, arriba a la izquierda de la vista. Se enciende y se apaga apretando el joystick
-// izquierdo (hacia dentro) o con la tecla M. Sirve para ver cuánto margen queda en el Quest.
+// ordenador, arriba a la izquierda de la vista. Sale encendido; se apaga y se enciende con el botón X,
+// apretando el joystick izquierdo (hacia dentro) o con la tecla M. Sirve para ver cuánto margen
+// queda en el Quest.
 
 AFRAME.registerComponent('medidor', {
   init() {
@@ -14,12 +15,16 @@ AFRAME.registerComponent('medidor', {
     this.panel = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.0875),
       new THREE.MeshBasicMaterial({ map: this.tex, transparent: true, depthTest: false }));
     this.panel.renderOrder = 999;
-    this.panel.visible = false;
+    this.panel.visible = true;
     this.cuadros = 0; this.ms = 0; this.peor = Infinity; this.calentando = 0;
     const alternar = () => { this.panel.visible = !this.panel.visible; this.peor = Infinity; this.calentando = 1500; };
     window.addEventListener('keydown', e => { if (e.code === 'KeyM') alternar(); });
     const mando = () => document.querySelector('[laser-controls="hand: left"]');
-    const enganchar = () => { const m = mando(); if (m) m.addEventListener('thumbstickdown', alternar); else setTimeout(enganchar, 500); };
+    const enganchar = () => {
+      const m = mando();
+      if (!m) return setTimeout(enganchar, 500);
+      for (const ev of ['thumbstickdown', 'xbuttondown']) m.addEventListener(ev, alternar);
+    };
     enganchar();
     // en VR, sobre el mando izquierdo, inclinado hacia ti; fuera, pegado a la cámara
     this.colocar = () => {
@@ -32,7 +37,8 @@ AFRAME.registerComponent('medidor', {
         this.panel.position.set(-0.19, 0.12, -0.5); this.panel.rotation.set(0, 0, 0); this.panel.scale.setScalar(0.9);
       }
     };
-    this.el.addEventListener('enter-vr', () => setTimeout(this.colocar, 300));
+    // al entrar en VR el mando tarda un poco en aparecer: se coloca varias veces
+    this.el.addEventListener('enter-vr', () => { for (const ms of [300, 1000, 2500]) setTimeout(this.colocar, ms); });
     this.el.addEventListener('exit-vr', this.colocar);
     if (this.el.hasLoaded) this.colocar(); else this.el.addEventListener('loaded', this.colocar, { once: true });
   },

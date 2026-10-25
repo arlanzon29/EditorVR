@@ -52,7 +52,7 @@ doradas. Se puede subir andando; los tramos son macizos y no se pueden atravesar
 | **Gatillo lateral** apuntando a la pantalla | Cogerla y colocarla; se queda donde la sueltes. |
 | **Botón B o Y** | Traer la pantalla del PC delante de ti. |
 | **Botón A o X** | Mandar a Claude una foto de lo que ves (el mando vibra al llegar). |
-| **Apretar el joystick izquierdo** | Enseñar u ocultar el medidor de rendimiento (en el ordenador, tecla **M**). |
+| **Botón X** o **apretar el joystick izquierdo** | Ocultar o enseñar el medidor de rendimiento, que sale encendido (en el ordenador, tecla **M**). |
 
 En VR cuenta tu altura real. Si estás sentado (las gafas, de media, por debajo de 1,30 m durante
 unos segundos), la escena te sube **35 cm** (`SUBIR_SENTADO` en js/movimiento.js); al ponerte de
