@@ -7,11 +7,19 @@
 <!-- camino de tierra desde el portón -->
 <a-plane rotation="-90 0 0" position="6 -0.035 -26" width="2.4" height="38" color="#8a7a5a"></a-plane>
 
-<!-- piel exterior de la sala 1 (por detrás de su ventana hundida) y de la sala 2 -->
-<a-plane position="-0.425 1.5 -3.45" rotation="0 180 0" width="6.05" height="3" color="#ffffff" pared-piedra></a-plane>
+<!-- piel exterior de la sala 1 y de la sala 2: en el fondo del hueco de sus ventanas (35 cm
+     dentro del muro), en cuatro trozos alrededor de él (x o z = -1…1, y = 0,95…2,25), para que
+     la ventana se vea desde fuera y desde dentro se vea el campo -->
+<a-plane position="-2.225 1.5 -3.35" rotation="0 180 0" width="2.45" height="3" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="1.8 1.5 -3.35" rotation="0 180 0" width="1.6" height="3" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="0 0.475 -3.35" rotation="0 180 0" width="2" height="0.95" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="0 2.625 -3.35" rotation="0 180 0" width="2" height="0.75" color="#ffffff" pared-piedra></a-plane>
 <a-plane position="-3.45 1.5 0.075" rotation="0 -90 0" width="7.05" height="3" color="#ffffff" pared-piedra></a-plane>
 <a-plane position="11.925 1.5 -2.5" rotation="0 180 0" width="5.05" height="3" color="#ffffff" pared-piedra></a-plane>
-<a-plane position="14.45 1.5 0" rotation="0 90 0" width="5" height="3" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="14.35 1.5 -1.75" rotation="0 90 0" width="1.5" height="3" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="14.35 1.5 1.75" rotation="0 90 0" width="1.5" height="3" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="14.35 0.475 0" rotation="0 90 0" width="2" height="0.95" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="14.35 2.625 0" rotation="0 90 0" width="2" height="0.75" color="#ffffff" pared-piedra></a-plane>
 
 <!-- árboles (x z alto semilla) -->
 <a-entity>

@@ -18,7 +18,7 @@ Coordenadas en metros: **x** hacia la puerta de la sala 1 y el pasillo, **y** ha
 
 | Zona | Dónde | Qué hay |
 |---|---|---|
-| **Sala 1** | 6 × 6 m, 3 m de alto (x, z = -3…3) | Paredes de piedra, suelo de tablas, techo de madera con 5 vigas. Ventana rústica hundida en el muro (marco de madera con 12 cuarterones, alféizar, cielo y campo). Mesa, silla y biblioteca en la esquina. La pantalla del PC, a la izquierda de la ventana. |
+| **Sala 1** | 6 × 6 m, 3 m de alto (x, z = -3…3) | Paredes de piedra, suelo de tablas, techo de madera con 5 vigas. Ventana rústica hundida en el muro (marco de madera con 12 cuarterones, alféizar; por ella se ve el campo de fuera). Mesa, silla y biblioteca en la esquina. La pantalla del PC, a la izquierda de la ventana. |
 | **Pasillo** | 6 m (x = 3…9), 1,2 m de ancho | Paredes de piedra y suelo de madera. Puerta a la sala 1, puerta a la sala 2 al fondo y, a mitad, a la derecha, puerta a la sala 3. |
 | **Sala 2** | 5 × 5 m (x = 9…14) | Como la sala 1: piedra, techo con vigas, ventana rústica, biblioteca, mesa separada de la pared y silla pegada a ella. |
 | **Patio** | 6 × 6 m, fuera (x = 3…9, z = -6,6…-0,6) | Patio de armas entre la sala 1 y la sala 2: se sale por la puerta de la pared izquierda del pasillo, enfrente de la de la sala 3. Suelo de losas, muralla almenada de 4 m, pozo con torno y cubo, antorchas junto a la puerta y cielo. |
