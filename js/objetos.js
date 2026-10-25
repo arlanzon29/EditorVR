@@ -336,12 +336,16 @@ AFRAME.registerComponent('pasillos-arriba', {
       if (extra) p.setAttribute(extra, '');
       this.el.appendChild(p);
     };
-    // suelos (y lo que se pisa), techos: el anillo entre los muros de la sala y el exterior
-    const tramos = [[-2, 14, 14.4, 16], [-2, 14, 2, 3.6], [-2, -0.4, 3.6, 14.4], [12.4, 14, 3.6, 14.4], [5.4, 6.6, 14, 14.4]];
-    for (const [x0, x1, z0, z1] of tramos) {
+    // suelos (y lo que se pisa), techos: el anillo entre los muros de la sala y el exterior. El
+    // último tramo es el paso por el arco del fondo, dentro del espesor del muro: solo se pisa; el
+    // suelo ya lo pone el hueco del muro (con otro plano encima, en la misma cara, parpadeaba)
+    const tramos = [[-2, 14, 14.4, 16], [-2, 14, 2, 3.6], [-2, -0.4, 3.6, 14.4], [12.4, 14, 3.6, 14.4], [5.4, 6.6, 14, 14.4, true]];
+    for (const [x0, x1, z0, z1, soloPisar] of tramos) {
       const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
-      plano([cx, H, cz], '-90 0 0', x1 - x0, z1 - z0, 'suelo-madera');
-      plano([cx, TECHO, cz], '90 0 0', x1 - x0, z1 - z0);
+      if (!soloPisar) {
+        plano([cx, H, cz], '-90 0 0', x1 - x0, z1 - z0, 'suelo-madera');
+        plano([cx, TECHO, cz], '90 0 0', x1 - x0, z1 - z0);
+      }
       SUPERFICIES.push({ x0, x1, z0, z1, y: H, macizo: false });
     }
     // muro exterior, mirando hacia dentro del pasillo
