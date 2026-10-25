@@ -194,14 +194,18 @@ AFRAME.registerComponent('andar-joystick', {
     const delante = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.getWorldQuaternion(new THREE.Quaternion()));
     delante.y = 0; delante.normalize();
     const derecha = new THREE.Vector3(-delante.z, 0, delante.x);
-    const zonas = zonasPermitidas(cam.getWorldPosition(new THREE.Vector3()), this.altura);   // antes de moverse
+    const donde = cam.getWorldPosition(new THREE.Vector3());
+    const zonas = zonasPermitidas(donde, this.altura);   // antes de moverse
+    // ¿ya está dentro de algo macizo? En VR se puede meter uno andando de verdad (en el pozo, por
+    // ejemplo), y desde dentro cualquier paso chocaba: se quedaba atascado. Así puede salir.
+    const atascado = sueloEn(donde, this.altura) === null;
     const antes = r.clone();
     r.addScaledVector(delante, -my * s).addScaledVector(derecha, mx * s);
     const cabeza = cam.getWorldPosition(new THREE.Vector3());
     // escalones: subir o bajar; si hay un obstáculo macizo o un desnivel, no se mueve
     const suelo = sueloEn(cabeza, this.altura);
-    if (suelo === null) { r.x = antes.x; r.z = antes.z; return; }
-    this.altura = suelo;
+    if (suelo === null) { if (!atascado) { r.x = antes.x; r.z = antes.z; return; } }
+    else this.altura = suelo;
     // que la cabeza no atraviese paredes: si sale de las zonas permitidas, vuelve al punto más cercano
     if (zonas.some(z => dentro(cabeza, z))) return;
     let mejor = null, mejorD = Infinity;
