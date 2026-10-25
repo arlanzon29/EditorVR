@@ -20,7 +20,7 @@ Coordenadas en metros: **x** hacia la puerta de la sala 1 y el pasillo, **y** ha
 | **Sala 1** | 6 × 6 m, 3 m de alto (x, z = -3…3) | Paredes de piedra, suelo de tablas, techo de madera con 5 vigas. Ventana rústica hundida en el muro (marco de madera con 12 cuarterones, alféizar, cielo y campo). Mesa, silla y biblioteca en la esquina. La pantalla del PC, a la izquierda de la ventana. |
 | **Pasillo** | 6 m (x = 3…9), 1,2 m de ancho | Paredes de piedra y suelo de madera. Puerta a la sala 1, puerta a la sala 2 al fondo y, a mitad, a la derecha, puerta a la sala 3. |
 | **Sala 2** | 5 × 5 m (x = 9…14) | Como la sala 1: piedra, techo con vigas, ventana rústica, biblioteca, mesa separada de la pared y silla pegada a ella. |
-| **Pasillo 2** | 3,4 m (x = 5,4…6,6, z = 0,6…4) | Ramal que lleva a la sala 3. |
+| **Pasillo 2** | 3,4 m (x = 5,4…6,6, z = 0,6…4) | Ramal que lleva a la sala 3. A mitad, una antorcha de pared en cada lado, con luz cálida. |
 | **Sala 3** | 12 × 10 m, 7,5 m de alto (x = 0…12, z = 4…14) | La grande. Muros de piedra de 40 cm con arcos arriba, techo con 8 vigas y la escalera. |
 | **Pasillos de arriba** | Alrededor de la sala 3, por fuera de sus muros, a 4,4 m | Suelo de madera, techo y muro exterior de piedra. Se ven desde la sala por los arcos. |
 
@@ -43,7 +43,7 @@ doradas. Se puede subir andando; los tramos son macizos y no se pueden atravesar
 |---|---|
 | **Joystick izquierdo** | Andar hacia donde miras. Sube y baja escalones; no deja atravesar paredes ni puertas cerradas, ni caerse. |
 | **Joystick derecho** a un lado | Girar 30°. |
-| **Gatillo** apuntando a una puerta | Abrirla o cerrarla (el rayo se pone verde, la anilla brilla y sale el cartel). |
+| **Gatillo** apuntando a una puerta | Abrirla o cerrarla (el rayo se pone verde, la aldaba brilla y sale el cartel). |
 | **Gatillo lateral** apuntando a la pantalla | Cogerla y colocarla; se queda donde la sueltes. |
 | **Botón B o Y** | Traer la pantalla del PC delante de ti. |
 | **Botón A o X** | Mandar a Claude una foto de lo que ves (el mando vibra al llegar). |
@@ -117,6 +117,19 @@ Componentes de A-Frame en [index.html](index.html), por orden:
   alineada en el mundo).
 - **Objetos:** `puerta`, `biblioteca`, `escalera-sala3`, `muro-arcos`, `arco-ciego`,
   `pasillos-arriba`.
+- **Modelos de Blender** en `modelos/` (glTF binario, `.glb`), con `gltf-model="url(modelos/...)"`:
+  `antorcha.glb` (soporte de hierro, mango de madera y llama, objeto aparte llamado `Llama`).
+  Su origen es el punto de la placa que toca la pared y sale hacia +z: se pone en la pared y se
+  gira para que mire a la sala (90° si la pared mira a +x, -90° si mira a -x, 180° si mira a -z).
+  - Puertas: `puerta.glb` (hoja de 0,9 × 2,05 m) y `puerta-ancha.glb` (1,04 × 2,32 m, la de la
+    sala 2): tablones con juntas, delante bisagras largas con punta de lanza, clavos y escudo de
+    cerradura, detrás travesaños con tornapuntas, y la aldaba a los dos lados. El origen es la
+    bisagra, abajo; la aldaba es un nodo aparte llamado `Aldaba` que el componente `puerta`
+    hace brillar. Los tableros de cajas se quitaron; quedan, invisibles, la caja y las esferas
+    que recibe el rayo.
+  - Marcos: `marco-puerta.glb` y `marco-ancho.glb`, jambas de sillares (hiladas alternas que
+    sobresalen) y dintel adovelado de cinco piezas. Origen en el centro del hueco, a ras de suelo.
+  - `modelos.blend`: el archivo de Blender con todos, para retocarlos y volver a exportar.
 - **Conexión con el PC y Claude:** `pantalla-pc`, `agarrable`, `informe-posicion`,
   `foto-para-claude`.
 

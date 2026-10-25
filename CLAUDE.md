@@ -49,6 +49,9 @@ cambiar `index.html` no, la página se recarga sola.
 - Todo lo que se pisa por encima del suelo va en `SUPERFICIES` (`macizo` si no se puede pasar
   por debajo); cada zona nueva por la que se pueda andar, en las zonas de `zonasPermitidas`
   (unidas por puertas, y `arriba: true` si solo se llega a la altura de la galería).
+- Dos caras en el mismo plano parpadean (z-fighting). Al llegar un pasillo a un muro grueso
+  (los de la sala 3 tienen 40 cm), sus paredes y techo terminan en la cara del muro: el hueco
+  ya pone las suyas.
 - Las cajas inclinadas se giran con un cuaternión al cargar (`loaded`), no con el atributo
   `rotation`: A-Frame aplica los ejes en otro orden y salen torcidas.
 - Cambios grandes en `index.html`: un script de Node en el scratchpad que reemplaza texto

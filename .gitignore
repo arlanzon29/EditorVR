@@ -14,3 +14,6 @@ servidor/*.pem
 .claude/settings.local.json
 .claude/hooks/
 .claude/modo-quest
+
+# Copias de seguridad de Blender
+modelos/*.blend1
