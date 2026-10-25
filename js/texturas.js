@@ -144,8 +144,10 @@ AFRAME.registerComponent('pared-piedra', {
 // Piedra para cualquier caja: pone la textura de piedra en todas sus caras a escala real,
 // alineada con el mundo (las hileras casan entre cajas vecinas, como en un muro de sillares).
 // Calcula las coordenadas de textura de cada cara según hacia dónde mira; la geometría se
-// copia para no tocar la que A-Frame comparte entre cajas iguales.
+// copia para no tocar la que A-Frame comparte entre cajas iguales. "tono" tiñe la piedra (para que
+// algo de piedra se distinga del muro de detrás, como la chimenea del comedor).
 AFRAME.registerComponent('piedra-mundo', {
+  schema: { tono: { default: '#ffffff' } },
   init() {
     const aplicar = () => {
       const malla = this.el.getObject3D('mesh');
@@ -167,7 +169,7 @@ AFRAME.registerComponent('piedra-mundo', {
       const tex = texturaPiedra.tex.clone();
       tex.needsUpdate = true;
       malla.material.map = tex;
-      malla.material.color.set('#ffffff');
+      malla.material.color.set(this.data.tono);
       malla.material.roughness = 0.95;
       malla.material.needsUpdate = true;
     };

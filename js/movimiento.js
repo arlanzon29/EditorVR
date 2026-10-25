@@ -45,6 +45,10 @@ const PASILLOS_ARRIBA = [
   { x0: 12.65, x1: 13.75, z0: 2.25, z1: 15.75, arriba: true },    // lado izquierdo
   { x0: -1.75, x1: 13.75, z0: 2.25, z1: 3.35, arriba: true },     // delante
 ];
+// Comedor: ampliación a la derecha de la sala 3 (entrando), al otro lado de su muro (x = 0…-0,4),
+// por un arco abierto de 2,4 m (z = 6…8,4). Planta baja, 4,2 m de alto (debajo de los pasillos de arriba).
+const COMEDOR = { x0: -12.15, x1: -0.65, z0: 4.25, z1: 13.75 };
+const PASO_COMEDOR = { x0: -0.75, x1: 0.35, z0: 6.35, z1: 8.05 };   // el hueco del arco, a través del muro
 const ALTO_GALERIA = 4.4;   // altura del rellano de arriba de la sala 3 y de sus pasillos
 const dentro = (p, z) => p.x >= z.x0 && p.x <= z.x1 && p.z >= z.z0 && p.z <= z.z1;
 
@@ -58,9 +62,10 @@ function zonasPermitidas(cabeza, altura) {
   const p1 = abierta('puerta1'), p2 = abierta('puerta2'), p3 = abierta('puerta3');
   const pasillo = { x0: p1 ? PASILLO.x0 : 3.25, x1: p2 ? PASILLO.x1 : 8.75, z0: PASILLO.z0, z1: PASILLO.z1 };
   const pasillo2 = { x0: PASILLO2.x0, x1: PASILLO2.x1, z0: p3 ? PASILLO2.z0 : 0.85, z1: PASILLO2.z1 };
-  const zonas = [SALA, pasillo, SALA2, pasillo2, SALA3, ARCO_ARRIBA, ...PASILLOS_ARRIBA];
+  const zonas = [SALA, pasillo, SALA2, pasillo2, SALA3, ARCO_ARRIBA, ...PASILLOS_ARRIBA, PASO_COMEDOR, COMEDOR];
   const uniones = [[0, 1, p1], [1, 2, p2], [1, 3, p3], [3, 4, true],
-    [4, 5, enAlto], [5, 6, enAlto], [6, 7, true], [6, 8, true], [7, 9, true], [8, 9, true]];
+    [4, 5, enAlto], [5, 6, enAlto], [6, 7, true], [6, 8, true], [7, 9, true], [8, 9, true],
+    [4, 10, true], [10, 11, true]];
   const i = zonas.findIndex(z => dentro(cabeza, z) && (enAlto || !z.arriba));
   if (i < 0) return zonas.filter(z => enAlto || !z.arriba);   // fuera de todo (no debería pasar): que pueda volver a cualquiera
   const alcanzables = new Set([i]);
@@ -86,6 +91,16 @@ function sueloEn(p, actual) {
   }
   return suelo < actual - ESCALON_MAX ? null : suelo;
 }
+
+// Obstáculo macizo (pedestal, mesa, chimenea…) puesto desde el HTML de una sala: un rectángulo
+// centrado en la entidad, "ancho" en x y "fondo" en z (sin girar), que no se puede atravesar.
+AFRAME.registerComponent('macizo', {
+  schema: { ancho: { default: 1 }, fondo: { default: 1 }, alto: { default: 1 } },
+  init() {
+    const p = this.el.object3D.position, { ancho, fondo, alto } = this.data;
+    SUPERFICIES.push({ x0: p.x - ancho / 2, x1: p.x + ancho / 2, z0: p.z - fondo / 2, z1: p.z + fondo / 2, y: alto, macizo: true });
+  }
+});
 
 // dónde estaba (localStorage); la clave lleva el punto de inicio del rig, para que al cambiarlo
 // en el HTML se empiece allí y no en el sitio guardado de antes

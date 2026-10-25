@@ -23,6 +23,7 @@ Coordenadas en metros: **x** hacia la puerta de la sala 1 y el pasillo, **y** ha
 | **Sala 2** | 5 × 5 m (x = 9…14) | Como la sala 1: piedra, techo con vigas, ventana rústica, biblioteca, mesa separada de la pared y silla pegada a ella. |
 | **Pasillo 2** | 3,4 m (x = 5,4…6,6, z = 0,6…4) | Ramal que lleva a la sala 3. A mitad, una antorcha de pared en cada lado, con la llama y la luz temblando. |
 | **Sala 3** | 12 × 10 m, 7,5 m de alto (x = 0…12, z = 4…14) | La grande. Muros de piedra de 40 cm con arcos arriba, techo con 8 vigas y la escalera. |
+| **Comedor** | 12 × 10 m, 4,2 m de alto (x = -12,4…-0,4, z = 4…14) | A la derecha de la sala 3 entrando, por un gran arco con dovelas en su muro. Suelo de losas, techo de madera con 8 vigas, tres ventanas en arco con reja, chimenea con hoguera, mesa de 7 m con bancos y sillón, dos lámparas de rueda, estandartes y antorchas. |
 | **Pasillos de arriba** | Alrededor de la sala 3, por fuera de sus muros, a 4,4 m | Suelo de madera, techo y muro exterior de piedra. Se ven desde la sala por los arcos. |
 
 **La escalera de la sala 3** ocupa toda la pared del fondo, de pared lateral a pared lateral:
@@ -114,11 +115,11 @@ Mientras se comparte la pantalla, cualquiera en la misma wifi que abra la págin
 | Archivo | Qué tiene |
 |---|---|
 | [index.html](index.html) | La escena: el jugador (`rig`, cámara y mandos), la luz general y una entidad `incluir` por estancia. |
-| [salas/](salas/) | Una estancia por archivo, en coordenadas del mundo: `sala1.html`, `pasillo.html`, `sala2.html`, `pasillo2.html`, `sala3.html`. Solo etiquetas de A-Frame. |
+| [salas/](salas/) | Una estancia por archivo, en coordenadas del mundo: `sala1.html`, `pasillo.html`, `sala2.html`, `pasillo2.html`, `sala3.html`, `comedor.html`. Solo etiquetas de A-Frame. |
 | [js/incluir.js](js/incluir.js) | Componente `incluir`: descarga una estancia al arrancar y la mete en la escena. |
-| [js/movimiento.js](js/movimiento.js) | Andar, girar, zonas, `SUPERFICIES` y la mira del monitor. |
+| [js/movimiento.js](js/movimiento.js) | Andar, girar, zonas, `SUPERFICIES`, obstáculos `macizo` y la mira del monitor. |
 | [js/texturas.js](js/texturas.js) | Texturas de canvas y `suelo-madera`, `pared-piedra`, `piedra-mundo`. |
-| [js/objetos.js](js/objetos.js) | Puerta, antorcha, estatua, biblioteca, escalera, muros con arcos, pasillos de arriba. |
+| [js/objetos.js](js/objetos.js) | Puerta, antorcha, estatua, biblioteca, escalera, muros con arcos, pasillos de arriba, y lo del comedor (hoguera, lámpara de rueda, mesa, estandarte). |
 | [js/conexion.js](js/conexion.js) | Pantalla del PC, objetos que se cogen e informe de posición para Claude. |
 | [modelos/](modelos/) | Modelos de Blender (`.glb`) y el `.blend` para retocarlos. |
 
@@ -130,12 +131,15 @@ sus zonas en `js/movimiento.js` (`zonasPermitidas`) si se puede andar por ella.
 - **Movimiento:** `andar-joystick` (joystick y teclado), `giro-por-pasos`. Las zonas por las que
   se puede ir (`SALA`, `PASILLO`, …, `PASILLOS_ARRIBA`) se unen por puertas abiertas
   (`zonasPermitidas`); las alturas que se pisan están en `SUPERFICIES` (`sueloEn`: escalones de
-  hasta 35 cm, sin caídas, sin atravesar lo macizo).
+  hasta 35 cm, sin caídas, sin atravesar lo macizo). Desde el HTML de una sala, `macizo="ancho; fondo;
+  alto"` añade un obstáculo que no se puede atravesar (la chimenea del comedor).
 - **Materiales:** `suelo-madera`, `pared-piedra` (planos), `piedra-mundo` (cajas, con la textura
-  alineada en el mundo).
-- **Objetos:** `puerta`, `antorcha` (carga el modelo, pone su luz y hace temblar la llama), `estatua` (caballero con
-  pedestal macizo), `biblioteca`, `escalera-sala3`, `muro-arcos`, `arco-ciego`,
-  `pasillos-arriba`.
+  alineada en el mundo; `tono` la tiñe).
+- **Objetos:** `puerta`, `antorcha` (carga el modelo, pone su luz, salvo con `luz: false`, y hace temblar la llama), `estatua` (caballero con
+  pedestal macizo), `biblioteca`, `escalera-sala3`, `muro-arcos` (con `entrada` a ras de suelo,
+  recta o en arco con `entradaArco`), `arco-ciego` (con `hueco: false`, marco de dovelas de un arco
+  abierto), `pasillos-arriba`; en el comedor, `hoguera`, `lampara-rueda`, `mesa-comedor` (mesa,
+  bancos, sillón, vajilla y candeleros; maciza) y `estandarte`.
 - **Modelos de Blender** en `modelos/` (glTF binario, `.glb`), con `gltf-model="url(modelos/...)"`:
   `antorcha.glb` (soporte de hierro, mango de madera y llama, objeto aparte llamado `Llama`).
   Su origen es el punto de la placa que toca la pared y sale hacia +z: se pone en la pared y se

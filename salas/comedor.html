@@ -1,0 +1,67 @@
+<!-- Comedor (x = -12,4…-0,4, z = 4…14, 4,2 m de alto): a la derecha de la sala 3 entrando, por un
+     arco en su muro. Suelo de losas, techo de madera con vigas, tres ventanas en arco, chimenea,
+     mesa larga con bancos, dos lámparas de rueda, estandartes y antorchas. -->
+
+<!-- suelo de losas (hasta x = 0: también el paso bajo el arco) y techo de tablas con 8 vigas -->
+<a-plane rotation="-90 0 0" position="-6.2 0 9" width="12.4" height="10" color="#ffffff" pared-piedra></a-plane>
+<a-plane rotation="90 0 0" position="-6.4 4.2 9" width="12" height="10" color="#ffffff" suelo-madera></a-plane>
+<a-entity>
+  <a-box position="-11.65 4.05 9" width="0.25" height="0.3" depth="10" color="#5e3d22"></a-box>
+  <a-box position="-10.15 4.05 9" width="0.25" height="0.3" depth="10" color="#5e3d22"></a-box>
+  <a-box position="-8.65 4.05 9" width="0.25" height="0.3" depth="10" color="#5e3d22"></a-box>
+  <a-box position="-7.15 4.05 9" width="0.25" height="0.3" depth="10" color="#5e3d22"></a-box>
+  <a-box position="-5.65 4.05 9" width="0.25" height="0.3" depth="10" color="#5e3d22"></a-box>
+  <a-box position="-4.15 4.05 9" width="0.25" height="0.3" depth="10" color="#5e3d22"></a-box>
+  <a-box position="-2.65 4.05 9" width="0.25" height="0.3" depth="10" color="#5e3d22"></a-box>
+  <a-box position="-1.15 4.05 9" width="0.25" height="0.3" depth="10" color="#5e3d22"></a-box>
+</a-entity>
+
+<!-- muros de piedra de 40 cm (la cara de dentro, en el borde de la sala; el espesor, hacia fuera).
+     El de la izquierda entrando (x = -0,4) es el muro de la sala 3 visto desde aquí. -->
+<a-entity muro-arcos="largo: 12; alto: 4.2" position="-0.4 0 4" rotation="0 180 0"></a-entity>
+<a-entity muro-arcos="largo: 12; alto: 4.2" position="-12.4 0 14"></a-entity>
+<!-- muro del fondo con tres ventanas en arco (z = 6, 9 y 12; antepecho a 1,4 m) -->
+<a-entity muro-arcos="largo: 10; alto: 4.2; arcos: 2, 5, 8; ancho: 1; base: 1.4; recto: 1.4" position="-12.4 0 4" rotation="0 -90 0"></a-entity>
+<!-- lo que se ve por las ventanas: cielo y campo, por fuera del muro -->
+<a-plane position="-13.2 2.1 9" rotation="0 90 0" width="10" height="4.2" material="shader: flat; color: #9fd4ff"></a-plane>
+<a-plane position="-13.19 0.9 9" rotation="0 90 0" width="10" height="1.8" material="shader: flat; color: #8fbf6a"></a-plane>
+<!-- rejas de hierro de las ventanas: un barrote y un travesaño en cada una -->
+<a-box position="-12.6 2.35 6" width="0.04" height="1.9" depth="0.04" material="color: #262626; metalness: 0.6; roughness: 0.45"></a-box>
+<a-box position="-12.6 2.3 6" width="0.04" height="0.04" depth="1" material="color: #262626; metalness: 0.6; roughness: 0.45"></a-box>
+<a-box position="-12.6 2.35 9" width="0.04" height="1.9" depth="0.04" material="color: #262626; metalness: 0.6; roughness: 0.45"></a-box>
+<a-box position="-12.6 2.3 9" width="0.04" height="0.04" depth="1" material="color: #262626; metalness: 0.6; roughness: 0.45"></a-box>
+<a-box position="-12.6 2.35 12" width="0.04" height="1.9" depth="0.04" material="color: #262626; metalness: 0.6; roughness: 0.45"></a-box>
+<a-box position="-12.6 2.3 12" width="0.04" height="0.04" depth="1" material="color: #262626; metalness: 0.6; roughness: 0.45"></a-box>
+
+<!-- Chimenea en el centro de la pared de la derecha entrando (z = 14): jambas, dintel y campana de
+     piedra, fondo oscuro, solera y la hoguera. Maciza: no se puede entrar en ella. -->
+<a-box position="-7.75 0.8 13.7" width="0.5" height="1.6" depth="0.6" piedra-mundo="tono: #e8d6b4"></a-box>
+<a-box position="-5.05 0.8 13.7" width="0.5" height="1.6" depth="0.6" piedra-mundo="tono: #e8d6b4"></a-box>
+<a-box position="-6.4 1.775 13.65" width="3.2" height="0.35" depth="0.7" piedra-mundo="tono: #e8d6b4"></a-box>
+<!-- repisa de roble sobre el dintel y campana en dos cuerpos, más oscura que el muro (ahumada) -->
+<a-box position="-6.4 1.99 13.6" width="3.4" height="0.08" depth="0.8" color="#3a281a"></a-box>
+<a-box position="-6.4 2.565 13.725" width="2.9" height="1.07" depth="0.55" piedra-mundo="tono: #b8ab96"></a-box>
+<a-box position="-6.4 3.625 13.8" width="1.8" height="1.15" depth="0.4" piedra-mundo="tono: #a89c88"></a-box>
+<a-box position="-6.4 0.8 13.95" width="2.2" height="1.6" depth="0.1" color="#1e1813"></a-box>
+<a-box position="-6.4 0.03 13.55" width="3.4" height="0.06" depth="0.9" color="#9a907f"></a-box>
+<a-entity hoguera position="-6.4 0.06 13.6"></a-entity>
+<a-entity macizo="ancho: 3.4; fondo: 0.9; alto: 1.6" position="-6.4 0 13.55"></a-entity>
+
+<!-- Mesa larga de 7 m en el centro, con bancos y sillón en la cabecera (hacia las ventanas) -->
+<a-entity mesa-comedor="largo: 7" position="-6.4 0 9"></a-entity>
+<!-- dos lámparas de rueda sobre la mesa, colgadas del techo -->
+<a-entity lampara-rueda="techo: 1.2; intensidad: 1" position="-8.2 3 9"></a-entity>
+<a-entity lampara-rueda="techo: 1.2; intensidad: 1" position="-4.6 3 9"></a-entity>
+
+<!-- estandartes en la pared de la izquierda entrando (z = 4), granates y azules -->
+<a-entity estandarte="color: #6b2a26" position="-2.6 2.5 4.02"></a-entity>
+<a-entity estandarte="color: #2f3e57" position="-5.0 2.5 4.02"></a-entity>
+<a-entity estandarte="color: #6b2a26" position="-7.8 2.5 4.02"></a-entity>
+<a-entity estandarte="color: #2f3e57" position="-10.2 2.5 4.02"></a-entity>
+
+<!-- antorchas sin luz propia (alumbran las lámparas y la chimenea): junto al arco de entrada y
+     entre las ventanas -->
+<a-entity antorcha="luz: false" position="-0.4 1.75 5.3" rotation="0 -90 0"></a-entity>
+<a-entity antorcha="luz: false" position="-0.4 1.75 9.1" rotation="0 -90 0"></a-entity>
+<a-entity antorcha="luz: false" position="-12.4 1.75 7.5" rotation="0 90 0"></a-entity>
+<a-entity antorcha="luz: false" position="-12.4 1.75 10.5" rotation="0 90 0"></a-entity>
