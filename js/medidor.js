@@ -16,7 +16,7 @@ AFRAME.registerComponent('medidor', {
       new THREE.MeshBasicMaterial({ map: this.tex, transparent: true, depthTest: false }));
     this.panel.renderOrder = 999;
     this.panel.visible = true;
-    this.cuadros = 0; this.ms = 0; this.peor = Infinity; this.calentando = 0;
+    this.cuadros = 0; this.ms = 0; this.peor = Infinity; this.calentando = 3000;   // al cargar va a tirones: no cuenta
     const alternar = () => { this.panel.visible = !this.panel.visible; this.peor = Infinity; this.calentando = 1500; };
     window.addEventListener('keydown', e => { if (e.code === 'KeyM') alternar(); });
     const mando = () => document.querySelector('[laser-controls="hand: left"]');
