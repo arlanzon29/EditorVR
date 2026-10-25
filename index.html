@@ -424,6 +424,46 @@ AFRAME.registerComponent('puerta', {
   }
 });
 
+// Antorcha de pared (modelos/antorcha.glb, hecha en Blender). El modelo sale de la pared hacia
+// +z; se pone pegado a ella y se gira hacia la sala. Lleva su luz cálida junto a la llama, y la
+// llama (nodo "Llama" del modelo) tiembla: se estira, se encoge y se ladea, y la luz sube y baja
+// a la vez. Cada antorcha con su propio ritmo, para que no parpadeen todas juntas.
+AFRAME.registerComponent('antorcha', {
+  schema: { intensidad: { default: 0.5 }, color: { default: '#ffb060' } },
+  init() {
+    this.el.setAttribute('gltf-model', 'url(modelos/antorcha.glb)');
+    this.llama = null;
+    this.el.addEventListener('model-loaded', e => { this.llama = e.detail.model.getObjectByName('Llama'); });
+    this.luz = document.createElement('a-entity');
+    this.luz.setAttribute('light', { type: 'point', intensity: this.data.intensidad, distance: 4, color: this.data.color });
+    this.luz.setAttribute('position', '0 0.35 0.25');
+    this.el.appendChild(this.luz);
+    this.fase = Math.random() * 100;
+  },
+  tick(t) {
+    const s = t / 1000 + this.fase;
+    // tres ondas de velocidades que no casan entre sí: un temblor que no se ve repetirse
+    const v = 0.5 * Math.sin(s * 7.3) + 0.3 * Math.sin(s * 13.1 + 1.7) + 0.2 * Math.sin(s * 23.7 + 4.1);   // -1…1
+    if (this.llama) {
+      this.llama.scale.set(1 - v * 0.08, 1 + v * 0.18, 1 - v * 0.08);
+      this.llama.rotation.z = 0.06 * Math.sin(s * 3.1);
+    }
+    const luz = this.luz.getObject3D('light');
+    if (luz) luz.intensity = this.data.intensidad * (1 + v * 0.3);
+  }
+});
+
+// Estatua de un caballero sobre pedestal (modelos/caballero.glb, hecha en Blender): figura de
+// 1,77 m sobre un pedestal de sillares de 0,95 × 0,95 × 0,85 m. Mira hacia +z local. El
+// pedestal es macizo: no se puede atravesar ni subir (va en SUPERFICIES).
+AFRAME.registerComponent('estatua', {
+  init() {
+    this.el.setAttribute('gltf-model', 'url(modelos/caballero.glb)');
+    const p = this.el.object3D.position, r = 0.95 / 2;
+    SUPERFICIES.push({ x0: p.x - r, x1: p.x + r, z0: p.z - r, z1: p.z + r, y: 0.85, macizo: true });
+  }
+});
+
 // Pantalla del PC en la pared: pide al servidor local una captura del escritorio
 // (/__pantalla.jpg) en cuanto llega la anterior, como mucho una por segundo.
 // Si no hay servidor (p. ej. abriendo el archivo directamente), muestra "Sin imagen del PC".
@@ -977,12 +1017,9 @@ const r3 = v => ({ x: +v.x.toFixed(2), y: +v.y.toFixed(2), z: +v.z.toFixed(2) })
   <a-plane rotation="90 0 0" position="6 2.4 2.1" width="1.2" height="3" color="#ffffff"></a-plane>
   <a-plane position="5.4 1.2 2.1" rotation="0 90 0" width="3" height="2.4" color="#ffffff" pared-piedra></a-plane>
   <a-plane position="6.6 1.2 2.1" rotation="0 -90 0" width="3" height="2.4" color="#ffffff" pared-piedra></a-plane>
-  <!-- Dos antorchas de pared (modelos/antorcha.glb, hecha en Blender), una frente a otra a mitad
-       del ramal. El modelo sale de la pared hacia +z; cada una lleva su luz cálida junto a la llama. -->
-  <a-entity gltf-model="url(modelos/antorcha.glb)" position="5.4 1.65 2.3" rotation="0 90 0"></a-entity>
-  <a-entity gltf-model="url(modelos/antorcha.glb)" position="6.6 1.65 2.3" rotation="0 -90 0"></a-entity>
-  <a-entity light="type: point; intensity: 0.5; distance: 4; color: #ffb060" position="5.65 2 2.3"></a-entity>
-  <a-entity light="type: point; intensity: 0.5; distance: 4; color: #ffb060" position="6.35 2 2.3"></a-entity>
+  <!-- Dos antorchas de pared (componente antorcha), una frente a otra a mitad del ramal -->
+  <a-entity antorcha position="5.4 1.65 2.3" rotation="0 90 0"></a-entity>
+  <a-entity antorcha position="6.6 1.65 2.3" rotation="0 -90 0"></a-entity>
 
   <!-- Sala 3, la grande: 12 × 10 m y 7,5 m de alto (x = 0…12, z = 4…14). Se entra por el ramal
        del pasillo, por un hueco de 1,2 × 2,4 m en el centro de la pared z = 4. -->
@@ -1012,6 +1049,9 @@ const r3 = v => ({ x: +v.x.toFixed(2), y: +v.y.toFixed(2), z: +v.z.toFixed(2) })
   <a-entity light="type: point; intensity: 1; distance: 8; color: #fff4dc" position="6 3.5 8.5"></a-entity>
   <!-- Escalera de pared a pared y galería perimetral (se construyen en el componente escalera-sala3) -->
   <a-entity escalera-sala3></a-entity>
+  <!-- Dos caballeros de piedra al pie del tramo central, uno a cada lado, mirando a la entrada -->
+  <a-entity estatua position="4.1 0 9.9" rotation="0 180 0"></a-entity>
+  <a-entity estatua position="7.9 0 9.9" rotation="0 180 0"></a-entity>
   <a-entity light="type: point; intensity: 0.8; distance: 4; color: #fff4dc" position="4.5 2.2 0"></a-entity>
   <a-entity light="type: point; intensity: 0.8; distance: 4; color: #fff4dc" position="7.5 2.2 0"></a-entity>
 
