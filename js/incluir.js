@@ -12,6 +12,8 @@ AFRAME.registerComponent('incluir', {
       // el servidor añade a cada .html el script de recarga automática: aquí sobra
       .then(html => { this.el.insertAdjacentHTML('beforeend', html.replace(/<script[\s\S]*?<\/script>/g, '')); return this.esperarCarga(); })
       .then(() => {
+        // con ?sinfundir en la dirección no se funde (para buscar solapes y depurar)
+        if (location.search.includes('sinfundir')) return;
         const r = fundirEstancia(this.el);
         console.log(`${this.data}: ${r.antes} mallas fijas → ${r.despues}`);
       })

@@ -146,3 +146,44 @@ function fundirMallas(padre, mallas) {
   return malla;
 }
 
+// Buscar caras que parpadean (z-fighting): triángulos de objetos distintos en el mismo plano,
+// mirando hacia el mismo lado y solapados. Para lanzarlo a mano en la consola del navegador, con la
+// escena cargada con ?sinfundir (fundidas, las piezas de una estancia son un solo objeto y no se
+// comparan entre sí). Devuelve las parejas, con un punto de cada una.
+function buscarSolapes() {
+  const escena = document.querySelector('a-scene').object3D;
+  escena.updateMatrixWorld(true);
+  const tris = [], a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  const nombre = o => { let e = o; while (e && !e.el) e = e.parent; const el = e && e.el; return el ? el.tagName.toLowerCase() + ' ' + (el.closest('[incluir]')?.getAttribute('incluir') || '') : '?'; };
+  escena.traverse(o => {
+    if (!o.isMesh) return;
+    for (let p = o; p; p = p.parent) if (p.visible === false) return;
+    const mats = [].concat(o.material);
+    if (mats.every(m => m.visible === false || (m.transparent && m.opacity < 0.3))) return;
+    const pos = o.geometry.attributes.position, idx = o.geometry.index; if (!pos) return;
+    const dobles = mats.some(m => m.side === THREE.DoubleSide), quien = nombre(o), n = idx ? idx.count : pos.count;
+    for (let i = 0; i < n; i += 3) {
+      a.fromBufferAttribute(pos, idx ? idx.getX(i) : i).applyMatrix4(o.matrixWorld);
+      b.fromBufferAttribute(pos, idx ? idx.getX(i + 1) : i + 1).applyMatrix4(o.matrixWorld);
+      c.fromBufferAttribute(pos, idx ? idx.getX(i + 2) : i + 2).applyMatrix4(o.matrixWorld);
+      const nr = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a));
+      if (nr.length() < 2e-4) continue;
+      nr.normalize();
+      for (const nn of dobles ? [nr, nr.clone().negate()] : [nr]) tris.push({ o, quien, n: nn, d: nn.dot(a), pts: [a.clone(), b.clone(), c.clone()] });
+    }
+  });
+  const cubos = new Map();
+  for (const t of tris) { const k = [Math.round(t.n.x * 50), Math.round(t.n.y * 50), Math.round(t.n.z * 50), Math.round(t.d * 200)].join(','); (cubos.get(k) || cubos.set(k, []).get(k)).push(t); }
+  const dentro = (p, t) => { const [A, B, C] = t.pts, v0 = C.clone().sub(A), v1 = B.clone().sub(A), v2 = p.clone().sub(A); const d00 = v0.dot(v0), d01 = v0.dot(v1), d02 = v0.dot(v2), d11 = v1.dot(v1), d12 = v1.dot(v2), inv = 1 / (d00 * d11 - d01 * d01), u = (d11 * d02 - d01 * d12) * inv, w = (d00 * d12 - d01 * d02) * inv; return u > 0.02 && w > 0.02 && u + w < 0.98; };
+  const centro = t => t.pts[0].clone().add(t.pts[1]).add(t.pts[2]).divideScalar(3);
+  const hallados = new Map();
+  for (const lista of cubos.values()) for (let i = 0; i < lista.length; i++) for (let j = i + 1; j < lista.length; j++) {
+    const t1 = lista[i], t2 = lista[j];
+    if (t1.o === t2.o) continue;
+    if (!(dentro(centro(t1), t2) || dentro(centro(t2), t1) || t1.pts.some(p => dentro(p, t2)) || t2.pts.some(p => dentro(p, t1)))) continue;
+    const clave = [t1.quien, t2.quien].sort().join('  <->  ');
+    if (!hallados.has(clave)) hallados.set(clave, centro(t1).toArray().map(v => +v.toFixed(2)));
+  }
+  return [...hallados];
+}
+

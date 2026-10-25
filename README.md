@@ -7,9 +7,9 @@ La escena se reparte en archivos de texto (ver [Archivos](#archivos)); las textu
 piedra) se dibujan en el propio navegador, sin imágenes externas, y las piezas más trabajadas
 (puertas, antorchas, estatuas) son modelos de Blender.
 
-Se edita hablando con Claude: desde las gafas (por voz) o desde el ordenador. Claude puede saber
-dónde estás en la escena y ver una foto de lo que ves, y tú puedes ver el escritorio del PC
-dentro de la escena.
+Se edita hablando con Claude: desde las gafas (por voz) o desde el ordenador. Claude sabe dónde
+estás en la escena y qué miras, modela en Blender lo que haga falta, y tú puedes ver el escritorio
+del PC dentro de la escena. Lo que se ha ido haciendo, paso a paso: [HISTORIAL.md](HISTORIAL.md).
 
 ## La escena
 
@@ -22,7 +22,7 @@ Coordenadas en metros: **x** hacia la puerta de la sala 1 y el pasillo, **y** ha
 | **Pasillo** | 6 m (x = 3…9), 1,2 m de ancho | Paredes de piedra y suelo de madera. Puerta a la sala 1, puerta a la sala 2 al fondo y, a mitad, a la derecha, puerta a la sala 3. |
 | **Sala 2** | 5 × 5 m (x = 9…14) | Como la sala 1: piedra, techo con vigas, ventana rústica, biblioteca, mesa separada de la pared y silla pegada a ella. |
 | **Patio** | 6 × 6 m, fuera (x = 3…9, z = -6,6…-0,6) | Patio de armas entre la sala 1 y la sala 2: se sale por la puerta de la pared izquierda del pasillo, enfrente de la de la sala 3. Suelo de losas, muralla almenada de 4 m, pozo con postes sobre el brocal, torno con manivela y cubo de duelas con aros y asa, antorchas junto a la puerta y cielo. |
-| **Exterior** | Campo delante del castillo y a los lados | Se sale por el portón en arco de la muralla del patio. Hierba, camino de tierra, árboles y colinas a lo lejos. Las salas 1 y 2 tienen piel por fuera y las galerías de arriba se ven como cadalsos de madera. |
+| **Exterior** | Campo alrededor de todo el castillo | Se sale por el portón en arco de la muralla del patio. Hierba, camino de tierra, árboles y colinas a lo lejos. Las salas 1 y 2 tienen piel por fuera y las galerías de arriba se ven como cadalsos de madera. |
 | **Pasillo 2** | 3,4 m (x = 5,4…6,6, z = 0,6…4) | Ramal que lleva a la sala 3. A mitad, una antorcha de pared en cada lado, con la llama y la luz temblando. |
 | **Sala 3** | 12 × 10 m, 7,5 m de alto (x = 0…12, z = 4…14) | La grande. Muros de piedra de 40 cm con arcos arriba, techo con 8 vigas y la escalera. |
 | **Comedor** | 12 × 10 m, 4,2 m de alto (x = -12,4…-0,4, z = 4…14) | A la derecha de la sala 3 entrando, por un gran arco con dovelas en su muro, guardado por dos guardias con lanza y escudo. Suelo de losas, techo de madera con 8 vigas, tres ventanas en arco con reja, chimenea con hoguera, mesa de 7 m con bancos y sillón, dos lámparas de rueda, estandartes y antorchas. Un criado con una jarra da vueltas a la mesa. |
@@ -51,7 +51,6 @@ doradas. Se puede subir andando; los tramos son macizos y no se pueden atravesar
 | **Gatillo** apuntando a una puerta | Abrirla o cerrarla (el rayo se pone verde, la aldaba brilla y sale el cartel). |
 | **Gatillo lateral** apuntando a la pantalla | Cogerla y colocarla; se queda donde la sueltes. |
 | **Botón B o Y** | Traer la pantalla del PC delante de ti. |
-| **Botón A o X** | Mandar a Claude una foto de lo que ves (el mando vibra al llegar). |
 | **Botón X** o **apretar el joystick izquierdo** | Ocultar o enseñar el medidor de rendimiento, que sale encendido (en el ordenador, tecla **M**). |
 
 En VR cuenta tu altura real. Si estás sentado (las gafas, de media, por debajo de 1,30 m durante
@@ -104,7 +103,7 @@ el PC y Claude:
 |---|---|---|
 | `/__pantalla.jpg` | `emisor.html`, una imagen por segundo | La pantalla de la escena (caduca a los 5 s) |
 | `/__posicion` | La escena, cada segundo | Claude: dónde estás, zona, hacia dónde miras y qué tienes delante |
-| `/__vista.jpg` | La escena, al pulsar A o X | Claude: la última foto de lo que ves |
+| `/__vista.jpg` | (pendiente: la escena aún no la manda) | Claude: la última foto de lo que ves |
 | `/__recarga` | — | La página, para recargarse al guardar |
 
 Mientras se comparte la pantalla, cualquiera en la misma wifi que abra la página puede verla.
@@ -125,12 +124,14 @@ Mientras se comparte la pantalla, cualquiera en la misma wifi que abra la págin
 ## Dónde estás y qué ves (para Claude)
 
 - `/__posicion` (JSON): `zona` (sala 1, pasillo, sala 2, pasillo 2, sala 3, en la escalera,
-  rellano de arriba, pasillos de arriba), `cabeza`, `suelo` (con la altura que pisas),
+  rellano de arriba, pasillos de arriba, comedor, patio, exterior), `cabeza`, `suelo` (con la altura que pisas),
   `direccion`, `rumbo` (0 = hacia la ventana de la sala 1, 90 = hacia la puerta, 180 = hacia
   atrás) y `mira`: el punto, la distancia y el objeto que tienes delante. Así Claude puede
   colocar cosas "donde estoy" o "donde miro".
-- `/__vista.jpg`: la foto del botón A o X. La escena se vuelve a dibujar desde tu cabeza
-  (1280 × 720, 80°), sin que se note en las gafas.
+  También `mandos`: los mandos que ve el navegador y lo que marcan (para el de Xbox).
+- `/__vista.jpg`: **pendiente.** La escena nombra un componente `foto-para-claude` que nunca se
+  llegó a programar; el servidor ya guarda la foto si alguien la manda. Hasta entonces, mandar
+  capturas a Claude a mano.
 
 ## Cómo está hecho
 
@@ -168,7 +169,8 @@ sus zonas en `js/movimiento.js` (`zonasPermitidas`) si se puede andar por ella.
   bancos, sillón, vajilla y candeleros; maciza), `estandarte`, `guardia` (quieto, respira, te mira, te saluda y es macizo) `arbol` (copa de bolas y tronco macizo) y `criado` (anda por una ruta de
   puntos, mueve piernas y brazo, respira, te sigue con la cabeza y te saluda si te acercas).
 - **Modelos de Blender** en `modelos/` (glTF binario, `.glb`), con `gltf-model="url(modelos/...)"`:
-  `antorcha.glb` (soporte de hierro, mango de madera y llama, objeto aparte llamado `Llama`).
+  `antorcha.glb` (`Soporte`, una sola pieza con el hierro, el mango y la brea, y la `Llama`
+  aparte para que tiemble).
   Su origen es el punto de la placa que toca la pared y sale hacia +z: se pone en la pared y se
   gira para que mire a la sala (90° si la pared mira a +x, -90° si mira a -x, 180° si mira a -z).
   - Puertas: `puerta.glb` (hoja de 0,9 × 2,05 m) y `puerta-ancha.glb` (1,04 × 2,32 m, la de la
@@ -188,10 +190,46 @@ sus zonas en `js/movimiento.js` (`zonasPermitidas`) si se puede andar por ella.
     y escudo de cometa. Piezas `GuardiaCuerpo` y `GuardiaCabeza` (pivote en el cuello); 2,6 m con
     la lanza; origen entre los pies; mira hacia +z.
   - `modelos.blend`: el archivo de Blender con todos, para retocarlos y volver a exportar.
-- **Conexión con el PC y Claude:** `pantalla-pc`, `agarrable`, `informe-posicion`,
-  `foto-para-claude`.
+- **Conexión con el PC y Claude:** `pantalla-pc`, `agarrable`, `informe-posicion`
+  (`foto-para-claude`, pendiente).
+- **Rendimiento:** `fundirEstancia` (al cargar cada sala), `fundirMallas` (piezas de un mismo
+  objeto, como la lámpara de rueda), `luces-cercanas` y `medidor`. Ver [Rendimiento](#rendimiento).
+- **Carteles con texto:** `cartelDeTexto` (objetos.js) dibuja el texto en un canvas: la letra de
+  `a-text` no tiene ñ, ¿ ni tildes.
+
+## Rendimiento
+
+El límite es el Quest, no el modelado. Para que vaya fluido (72–90 imágenes por segundo):
+**pocas llamadas de dibujo** (unas 100–200 por imagen; cada malla a la vista es una), triángulos
+de sobra (cientos de miles) y **pocas luces puntuales** (cada una encarece todo lo que se dibuja).
+El navegador descarta lo que queda fuera de la vista, pero no lo que está tapado detrás de un muro:
+lo peor es mirar el castillo entero desde fuera.
+
+- **Lo fijo se funde:** al cargar cada estancia, todas sus cajas, planos y piezas fijas se juntan en
+  unas pocas mallas, una por clase de material (el color de cada pieza va en sus vértices y la
+  colocación de la textura en sus coordenadas). No se funden las puertas, los personajes, las
+  llamas, la pantalla, los carteles, los modelos de Blender ni lo que recibe el rayo (`.clicable`).
+  El HTML de las salas no cambia. Con `?sinfundir` en la dirección se carga sin fundir.
+- **6 luces fijas:** las luces de la escena no se dibujan; 6 luces que siempre están encendidas
+  copian a las 6 más cercanas. Si cambiara cuántas luces hay, el navegador recompilaría los
+  materiales y daría un tirón (pasaba al entrar en las salas).
+- **Modelos de Blender en pocas piezas:** una por material, salvo lo que se anima aparte.
+- **Medidor** (botón X, joystick izquierdo apretado o tecla M): imágenes por segundo, la peor,
+  llamadas, triángulos y luces.
+
+Medido en el Quest (octubre de 2026), antes y después de fundir y de las 6 luces:
+
+| Dónde | Llamadas | Imágenes por segundo |
+|---|---|---|
+| Fuera, de frente al castillo | 1.097 → 189 | 25 → 76–82 |
+| Frente a la escalera de la sala 3 | 502 → 86 | 44 → 90 |
+| Comedor | 449 → 83 | 55 → 88–90 |
+
+Si algún día no llega: ocultar el interior de las salas cuando se está fuera, cargar las salas
+según uno se acerca, o luz horneada en texturas.
 
 ## Trabajar con Claude
 
 - Por voz desde las gafas, y el modo Quest / modo ordenador: [VOZ.md](VOZ.md).
 - Instrucciones para Claude en este proyecto: [CLAUDE.md](CLAUDE.md).
+- Lo que se ha hecho y por qué: [HISTORIAL.md](HISTORIAL.md).

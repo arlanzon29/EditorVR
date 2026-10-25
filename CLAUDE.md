@@ -68,6 +68,16 @@ cambiar la escena (`index.html`, `salas/`, `js/`, `modelos/`) no, la página se 
 - Cambios grandes: un script de Node en el scratchpad que reemplaza texto exacto y falla si no
   lo encuentra (o lo encuentra repetido). Después, `node --check` de los `js/*.js` tocados y
   comprobar que `<a-entity>` y `</a-entity>` cuadran en cada archivo de `salas/`.
+- Modelos de Blender: exportar `.glb` a `modelos/` con el `.blend` guardado allí; cada modelo en
+  pocas piezas (una por material), salvo lo que se anima aparte (con su pivote en la articulación).
+  Llegan de doble cara y `objetos.js` los deja de una: no confiar en ver su trasera.
+- Rendimiento (ver README): lo fijo se funde solo al cargar la sala; un componente que se mueva o
+  cambie va en `NO_FUNDIR` (rendimiento.js). No contar con encender y apagar luces: hay 6 fijas
+  que copian a las más cercanas. Medir con el medidor (botón X) antes y después de algo grande.
+- Parpadeos: `buscarSolapes()` en la consola, con la escena cargada con `?sinfundir`.
+- La vista previa del navegador integrado es la misma pestaña que puede estar usando el usuario:
+  no mover la cámara si la está usando; y mientras está abierta manda su posición a `/__posicion`
+  (cerrarla cuando el usuario está en las gafas).
 - Para comprobar escaleras y choques sin gafas, simular el recorrido con `sueloEn` y
   `zonasPermitidas` en Node, y mirar la escena en la vista previa.
 - Tras cambiar algo, documentarlo en README.md (y aquí si cambia cómo trabajar).
