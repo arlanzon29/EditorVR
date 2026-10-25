@@ -15,7 +15,7 @@
 <body>
 <!-- La escena: aquí el jugador (rig), la luz general y las estancias. Cada estancia está en
      salas/ y se carga con el componente incluir; sus coordenadas son las del mundo. -->
-<a-scene informe-posicion foto-para-claude renderer="antialias: true; colorManagement: true" xr-mode-ui="enabled: true" background="color: #ffffff">
+<a-scene informe-posicion foto-para-claude renderer="antialias: true; colorManagement: true" xr-mode-ui="enabled: true" background="color: #a9cfe8">
 
   <!-- Inicio: en la sala 3, mirando a la escalera -->
   <a-entity id="rig" position="6 0 7" rotation="0 180 0">
@@ -40,6 +40,7 @@
   <a-entity incluir="salas/pasillo2.html"></a-entity>
   <a-entity incluir="salas/sala3.html"></a-entity>
   <a-entity incluir="salas/comedor.html"></a-entity>
+  <a-entity incluir="salas/patio.html"></a-entity>
 </a-scene>
 </body>
 </html>

@@ -1,0 +1,49 @@
+<!-- Patio de armas (x = 3…9, z = -6,6…-0,6), fuera: se sale por la puerta de la pared izquierda
+     del pasillo. Entre la sala 1 y la sala 2, cerrado por una muralla almenada de 4 m, con un pozo
+     en medio. Las paredes de la sala 1 (x = 3), de la sala 2 (x = 9) y del pasillo (z = -0,6) que
+     dan aquí son de doble cara. -->
+
+<!-- suelo de losas -->
+<a-plane rotation="-90 0 0" position="6 0 -3.6" width="6" height="6" color="#ffffff" pared-piedra></a-plane>
+
+<!-- muralla: al fondo y a los lados (donde no están la sala 1 ni la sala 2), con almenas -->
+<a-box position="6 2 -6.8" width="6.8" height="4" depth="0.4" piedra-mundo></a-box>
+<a-box position="2.8 2 -4.8" width="0.4" height="4" depth="3.6" piedra-mundo></a-box>
+<a-box position="9.2 2 -4.55" width="0.4" height="4" depth="4.1" piedra-mundo></a-box>
+<a-entity>
+  <a-box position="3 4.3 -6.8" width="0.5" height="0.6" depth="0.4" piedra-mundo></a-box>
+  <a-box position="4 4.3 -6.8" width="0.5" height="0.6" depth="0.4" piedra-mundo></a-box>
+  <a-box position="5 4.3 -6.8" width="0.5" height="0.6" depth="0.4" piedra-mundo></a-box>
+  <a-box position="6 4.3 -6.8" width="0.5" height="0.6" depth="0.4" piedra-mundo></a-box>
+  <a-box position="7 4.3 -6.8" width="0.5" height="0.6" depth="0.4" piedra-mundo></a-box>
+  <a-box position="8 4.3 -6.8" width="0.5" height="0.6" depth="0.4" piedra-mundo></a-box>
+  <a-box position="9 4.3 -6.8" width="0.5" height="0.6" depth="0.4" piedra-mundo></a-box>
+  <a-box position="2.8 4.3 -6" width="0.4" height="0.6" depth="0.5" piedra-mundo></a-box>
+  <a-box position="2.8 4.3 -5" width="0.4" height="0.6" depth="0.5" piedra-mundo></a-box>
+  <a-box position="2.8 4.3 -4" width="0.4" height="0.6" depth="0.5" piedra-mundo></a-box>
+  <a-box position="9.2 4.3 -6" width="0.4" height="0.6" depth="0.5" piedra-mundo></a-box>
+  <a-box position="9.2 4.3 -5" width="0.4" height="0.6" depth="0.5" piedra-mundo></a-box>
+  <a-box position="9.2 4.3 -4" width="0.4" height="0.6" depth="0.5" piedra-mundo></a-box>
+  <a-box position="9.2 4.3 -3" width="0.4" height="0.6" depth="0.5" piedra-mundo></a-box>
+</a-entity>
+
+<!-- fachada que se ve desde el patio por encima del pasillo y de las salas 1 y 2: tapa por fuera
+     los pasillos de arriba de la sala 3 (z = 2). Por encima del techo de cada sala, para no
+     meterse dentro de ellas. -->
+<a-plane position="6 4.7 2" rotation="0 180 0" width="6" height="4.6" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="0 5 2" rotation="0 180 0" width="6" height="4" color="#ffffff" pared-piedra></a-plane>
+<a-plane position="12 5 2" rotation="0 180 0" width="6" height="4" color="#ffffff" pared-piedra></a-plane>
+
+<!-- pozo en medio: brocal de piedra, boca oscura, dos postes, el torno y un cubo colgando -->
+<a-cylinder position="6 0.4 -3.8" radius="0.65" height="0.8" segments-radial="20" piedra-mundo></a-cylinder>
+<a-circle position="6 0.805 -3.8" rotation="-90 0 0" radius="0.5" segments="20" color="#1a1f1f"></a-circle>
+<a-box position="5.35 1.55 -3.8" width="0.1" height="1.5" depth="0.1" color="#3a281a"></a-box>
+<a-box position="6.65 1.55 -3.8" width="0.1" height="1.5" depth="0.1" color="#3a281a"></a-box>
+<a-cylinder position="6 2.15 -3.8" rotation="0 0 90" radius="0.05" height="1.4" color="#4e3421"></a-cylinder>
+<a-cylinder position="6 1.8 -3.8" radius="0.008" height="0.7" color="#8a7a5a"></a-cylinder>
+<a-cylinder position="6 1.38 -3.8" radius="0.12" height="0.18" color="#4e3421"></a-cylinder>
+<a-entity macizo="ancho: 1.4; fondo: 1.4; alto: 0.8" position="6 0 -3.8"></a-entity>
+
+<!-- antorchas a los lados de la puerta, por fuera (sin luz propia: es de día) -->
+<a-entity antorcha="luz: false" position="5.1 1.75 -0.6" rotation="0 180 0"></a-entity>
+<a-entity antorcha="luz: false" position="6.9 1.75 -0.6" rotation="0 180 0"></a-entity>

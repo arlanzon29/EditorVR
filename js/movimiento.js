@@ -52,6 +52,11 @@ const PASILLOS_ARRIBA = [
 // por un arco abierto de 2,4 m (z = 6…8,4). Planta baja, 4,2 m de alto (debajo de los pasillos de arriba).
 const COMEDOR = { x0: -12.15, x1: -0.65, z0: 4.25, z1: 13.75 };
 const PASO_COMEDOR = { x0: -0.75, x1: 0.35, z0: 6.35, z1: 8.05 };   // el hueco del arco, a través del muro
+// Patio de armas, fuera, entre la sala 1 y la sala 2 (x = 3…9, z = -6,6…-0,6), con la muralla
+// alrededor. Se sale por la puerta 4, en la pared izquierda del pasillo; el paso es el hueco de la
+// puerta y solo cuenta con ella abierta (cerrada, en el patio te quedas a 25 cm de ella).
+const PATIO = { x0: 3.25, x1: 8.75, z0: -6.35, z1: -0.85 };
+const PASO_PATIO = { x0: 5.65, x1: 6.35, z0: -1.0, z1: -0.25 };
 const ALTO_GALERIA = 4.4;   // altura del rellano de arriba de la sala 3 y de sus pasillos
 const dentro = (p, z) => p.x >= z.x0 && p.x <= z.x1 && p.z >= z.z0 && p.z <= z.z1;
 
@@ -62,13 +67,16 @@ function zonasPermitidas(cabeza, altura) {
   const enAlto = altura > ALTO_GALERIA - 0.1;
   // (mientras no ha cargado la sala de una puerta, cuenta como cerrada)
   const abierta = id => document.getElementById(id)?.components.puerta?.abierta ?? false;
-  const p1 = abierta('puerta1'), p2 = abierta('puerta2'), p3 = abierta('puerta3');
+  const p1 = abierta('puerta1'), p2 = abierta('puerta2'), p3 = abierta('puerta3'), p4 = abierta('puerta4');
   const pasillo = { x0: p1 ? PASILLO.x0 : 3.25, x1: p2 ? PASILLO.x1 : 8.75, z0: PASILLO.z0, z1: PASILLO.z1 };
   const pasillo2 = { x0: PASILLO2.x0, x1: PASILLO2.x1, z0: p3 ? PASILLO2.z0 : 0.85, z1: PASILLO2.z1 };
-  const zonas = [SALA, pasillo, SALA2, pasillo2, SALA3, ARCO_ARRIBA, ...PASILLOS_ARRIBA, PASO_COMEDOR, COMEDOR];
+  // el hueco de la puerta del patio solo existe con ella abierta: se solapa con el patio, y si no,
+  // desde ese borde del patio se cruzaba la puerta cerrada
+  const pasoPatio = p4 ? PASO_PATIO : { x0: 1, x1: 0, z0: 1, z1: 0 };
+  const zonas = [SALA, pasillo, SALA2, pasillo2, SALA3, ARCO_ARRIBA, ...PASILLOS_ARRIBA, PASO_COMEDOR, COMEDOR, pasoPatio, PATIO];
   const uniones = [[0, 1, p1], [1, 2, p2], [1, 3, p3], [3, 4, true],
     [4, 5, enAlto], [5, 6, enAlto], [6, 7, true], [6, 8, true], [7, 9, true], [8, 9, true],
-    [4, 10, true], [10, 11, true]];
+    [4, 10, true], [10, 11, true], [1, 12, p4], [12, 13, p4]];
   const i = zonas.findIndex(z => dentro(cabeza, z) && (enAlto || !z.arriba));
   if (i < 0) return zonas.filter(z => enAlto || !z.arriba);   // fuera de todo (no debería pasar): que pueda volver a cualquiera
   const alcanzables = new Set([i]);
