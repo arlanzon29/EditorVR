@@ -1,0 +1,106 @@
+<!-- Posada: en el poblado, entre dos casas, con la puerta hacia la plaza (x = 156,5…168,5, z = -98…-89,
+     3,3 m de alto). Dentro: chimenea en la pared del oeste, mostrador al fondo con el camarero, y dos mesas
+     con clientes. El camarero da las misiones (js/posada.js); en la hoguera se asa el pescado. -->
+
+<!-- suelo de tablas y techo de madera con vigas -->
+<a-plane rotation="-90 0 0" position="162.5 0.02 -93.5" width="11.4" height="8.4" color="#ffffff" suelo-madera></a-plane>
+<a-plane rotation="90 0 0" position="162.5 3.1 -93.5" width="11.4" height="8.4" color="#ffffff" suelo-madera></a-plane>
+<a-entity>
+  <a-box position="158.5 2.98 -93.5" width="0.25" height="0.24" depth="8.4" color="#4a3424"></a-box>
+  <a-box position="160.75 2.98 -93.5" width="0.25" height="0.24" depth="8.4" color="#4a3424"></a-box>
+  <a-box position="163 2.98 -93.5" width="0.25" height="0.24" depth="8.4" color="#4a3424"></a-box>
+  <a-box position="165.25 2.98 -93.5" width="0.25" height="0.24" depth="8.4" color="#4a3424"></a-box>
+  <a-box position="167.25 2.98 -93.5" width="0.25" height="0.24" depth="8.4" color="#4a3424"></a-box>
+</a-entity>
+
+<!-- muros encalados de 30 cm, sobre un zócalo de piedra; el de delante, con la puerta -->
+<a-box position="159.1 1.65 -97.85" width="5.2" height="3.3" depth="0.3" color="#b9a98a"></a-box>
+<a-box position="165.9 1.65 -97.85" width="5.2" height="3.3" depth="0.3" color="#b9a98a"></a-box>
+<a-box position="162.5 2.85 -97.85" width="1.6" height="0.9" depth="0.3" color="#b9a98a"></a-box>
+<a-box position="162.5 1.65 -89.15" width="12" height="3.3" depth="0.3" color="#b9a98a"></a-box>
+<a-box position="156.65 1.65 -93.5" width="0.3" height="3.3" depth="8.4" color="#b9a98a"></a-box>
+<a-box position="168.35 1.65 -93.5" width="0.3" height="3.3" depth="8.4" color="#b9a98a"></a-box>
+<a-box position="159.09 0.25 -97.85" width="5.22" height="0.9" depth="0.34" piedra-mundo="tono: #a89e8b"></a-box>
+<a-box position="165.91 0.25 -97.85" width="5.22" height="0.9" depth="0.34" piedra-mundo="tono: #a89e8b"></a-box>
+<a-box position="162.5 0.25 -89.15" width="12.04" height="0.9" depth="0.34" piedra-mundo="tono: #a89e8b"></a-box>
+<a-box position="156.65 0.25 -93.5" width="0.34" height="0.9" depth="8.36" piedra-mundo="tono: #a89e8b"></a-box>
+<a-box position="168.35 0.25 -93.5" width="0.34" height="0.9" depth="8.36" piedra-mundo="tono: #a89e8b"></a-box>
+<!-- entramado de vigas, por fuera -->
+<a-box position="156.5 1.65 -98" width="0.2" height="3.3" depth="0.2" color="#3a2a1b"></a-box>
+<a-box position="168.5 1.65 -98" width="0.2" height="3.3" depth="0.2" color="#3a2a1b"></a-box>
+<a-box position="156.5 1.65 -89" width="0.2" height="3.3" depth="0.2" color="#3a2a1b"></a-box>
+<a-box position="168.5 1.65 -89" width="0.2" height="3.3" depth="0.2" color="#3a2a1b"></a-box>
+<a-box position="159.1 1.8 -98.03" width="5" height="0.1" depth="0.06" color="#3a2a1b"></a-box>
+<a-box position="165.9 1.8 -98.03" width="5" height="0.1" depth="0.06" color="#3a2a1b"></a-box>
+<a-box position="162.5 3.25 -98.04" width="12" height="0.14" depth="0.08" color="#3a2a1b"></a-box>
+<a-box position="162.5 3.25 -88.96" width="12" height="0.14" depth="0.08" color="#3a2a1b"></a-box>
+<a-box position="156.46 3.25 -93.5" width="0.08" height="0.14" depth="9" color="#3a2a1b"></a-box>
+<a-box position="168.54 3.25 -93.5" width="0.08" height="0.14" depth="9" color="#3a2a1b"></a-box>
+<a-entity tejado="ancho: 12; fondo: 9; pico: 2.6" position="162.5 3.32 -93.5"></a-entity>
+
+<!-- marco de la puerta, de madera, y la hoja abierta hacia dentro -->
+<a-box position="161.65 1.25 -97.85" width="0.2" height="2.5" depth="0.46" color="#3a2a1b"></a-box>
+<a-box position="163.35 1.25 -97.85" width="0.2" height="2.5" depth="0.46" color="#3a2a1b"></a-box>
+<a-box position="162.5 2.5 -97.85" width="1.9" height="0.18" depth="0.46" color="#3a2a1b"></a-box>
+<a-box position="162.5 0.03 -97.85" width="1.5" height="0.06" depth="0.46" piedra-mundo="tono: #9a907f"></a-box>
+<a-entity gltf-model="url(modelos/puerta-ancha.glb)" position="161.72 0.02 -97.6" rotation="0 -100 0"></a-entity>
+<a-entity macizo="ancho: 0.3; fondo: 1.1; alto: 2" position="161.5 0 -97.1"></a-entity>
+<a-entity cartel-madera="texto: La Posada" position="160.4 0 -99.4" rotation="0 180 0"></a-entity>
+
+<!-- obstáculos de los muros: 20 cm de más, para no meter la cabeza en ellos; la puerta queda entre medias -->
+<a-entity macizo="ancho: 5.7; fondo: 0.7; alto: 4" position="159.1 0 -97.85"></a-entity>
+<a-entity macizo="ancho: 5.7; fondo: 0.7; alto: 4" position="165.9 0 -97.85"></a-entity>
+<a-entity macizo="ancho: 12.4; fondo: 0.7; alto: 4" position="162.5 0 -89.15"></a-entity>
+<a-entity macizo="ancho: 0.7; fondo: 9.4; alto: 4" position="156.65 0 -93.5"></a-entity>
+<a-entity macizo="ancho: 0.7; fondo: 9.4; alto: 4" position="168.35 0 -93.5"></a-entity>
+
+<!-- chimenea en la pared del oeste: jambas, dintel, repisa, campana, fondo oscuro y solera -->
+<a-box position="157.1 0.8 -95.85" width="0.6" height="1.6" depth="0.5" piedra-mundo="tono: #e8d6b4"></a-box>
+<a-box position="157.1 0.8 -93.15" width="0.6" height="1.6" depth="0.5" piedra-mundo="tono: #e8d6b4"></a-box>
+<a-box position="157.15 1.775 -94.5" width="0.7" height="0.35" depth="3.2" piedra-mundo="tono: #e8d6b4"></a-box>
+<a-box position="157.2 1.99 -94.5" width="0.8" height="0.08" depth="3.4" color="#3a281a"></a-box>
+<a-box position="157.075 2.565 -94.5" width="0.55" height="1.07" depth="2.9" piedra-mundo="tono: #b8ab96"></a-box>
+<a-box position="156.87 0.8 -94.5" width="0.1" height="1.6" depth="2.2" color="#1e1813"></a-box>
+<a-box position="157.25 0.03 -94.5" width="0.9" height="0.06" depth="3.4" color="#9a907f"></a-box>
+<a-entity hoguera="intensidad: 1.4" position="157.3 0.06 -94.5"></a-entity>
+<a-entity macizo="ancho: 1.2; fondo: 3.6; alto: 3" position="157.35 0 -94.5"></a-entity>
+
+<!-- mostrador, con su vuelta hasta el muro para que no se pase detrás; jarras encima -->
+<a-box position="164.35 0.55 -90.6" width="7.7" height="1.1" depth="0.6" color="#4a3424"></a-box>
+<a-box position="160.3 0.55 -90.05" width="0.4" height="1.1" depth="1.5" color="#4a3424"></a-box>
+<a-box position="164.25 1.13 -90.6" width="8.0" height="0.06" depth="0.74" color="#5e4630"></a-box>
+<a-entity macizo="ancho: 8.3; fondo: 1.8; alto: 1.2" position="164.05 0 -90.2"></a-entity>
+<a-cylinder position="162.2 1.22 -90.6" radius="0.05" height="0.12" segments-radial="10" color="#5c3a22"></a-cylinder>
+<a-cylinder position="162.5 1.22 -90.5" radius="0.05" height="0.12" segments-radial="10" color="#5c3a22"></a-cylinder>
+<a-cylinder position="166 1.22 -90.65" radius="0.05" height="0.12" segments-radial="10" color="#5c3a22"></a-cylinder>
+<!-- detrás: toneles y una repisa con jarras -->
+<a-cylinder position="167.6 0.46 -89.8" radius="0.36" height="0.9" segments-radial="12" color="#4e3421"></a-cylinder>
+<a-cylinder position="160.95 0.46 -89.8" radius="0.36" height="0.9" segments-radial="12" color="#4e3421"></a-cylinder>
+<a-box position="164.25 1.75 -89.4" width="3.6" height="0.05" depth="0.2" color="#3a281a"></a-box>
+<a-cylinder position="163 1.86 -89.4" radius="0.06" height="0.16" segments-radial="10" color="#5c3a22"></a-cylinder>
+<a-cylinder position="164 1.86 -89.4" radius="0.06" height="0.16" segments-radial="10" color="#6a4a30"></a-cylinder>
+<a-cylinder position="165.3 1.86 -89.4" radius="0.06" height="0.16" segments-radial="10" color="#5c3a22"></a-cylinder>
+
+<!-- la mesa del este y la mesa junto al fuego, de tablones sobre caballetes -->
+<a-box position="165.7 0.74 -95" width="2.4" height="0.06" depth="0.9" color="#5e4630"></a-box>
+<a-box position="164.8 0.36 -95" width="0.1" height="0.72" depth="0.7" color="#3a281a"></a-box>
+<a-box position="166.6 0.36 -95" width="0.1" height="0.72" depth="0.7" color="#3a281a"></a-box>
+<a-entity macizo="ancho: 2.6; fondo: 1.1; alto: 1" position="165.7 0 -95"></a-entity>
+<a-cylinder position="165.4 0.83 -95.1" radius="0.05" height="0.12" segments-radial="10" color="#5c3a22"></a-cylinder>
+<a-box position="160.1 0.74 -94.6" width="2" height="0.06" depth="0.9" color="#5e4630"></a-box>
+<a-box position="159.35 0.36 -94.6" width="0.1" height="0.72" depth="0.7" color="#3a281a"></a-box>
+<a-box position="160.85 0.36 -94.6" width="0.1" height="0.72" depth="0.7" color="#3a281a"></a-box>
+<a-entity macizo="ancho: 2.2; fondo: 1.1; alto: 1" position="160.1 0 -94.6"></a-entity>
+<a-cylinder position="160.3 0.83 -94.5" radius="0.05" height="0.12" segments-radial="10" color="#5c3a22"></a-cylinder>
+
+<!-- luz: una lámpara de rueda y dos antorchas -->
+<a-entity lampara-rueda="techo: 0.7" position="163 2.3 -94"></a-entity>
+<a-entity antorcha position="168.2 1.9 -92" rotation="0 -90 0"></a-entity>
+<a-entity antorcha position="165.6 1.9 -97.7"></a-entity>
+
+<!-- la gente -->
+<a-entity criado="puntos: 161.8 -89.85 3, 166.9 -89.85 4; velocidad: 0.5; saludo: Pasa, pasa. ¿Qué te pongo?" camarero position="164 0 -89.85"></a-entity>
+<a-entity guardia="sentado: true; modelo: cliente-sentado; saludo: Se ven los peces desde el embarcadero del sur." cliente="tunica: #4d5a44; camisa: #7a7262" position="165.2 0 -95.95"></a-entity>
+<a-entity guardia="sentado: true; modelo: cliente-sentado; saludo: Por el bosque se llega a todas partes." cliente="tunica: #5a4436; camisa: #6d6656" position="166.3 0 -94.05" rotation="0 180 0"></a-entity>
+<a-entity guardia="sentado: true; modelo: cliente-sentado; saludo: El camarero no habla de otra cosa que de su boda." cliente="tunica: #3f4a5c; camisa: #736b5a" position="159.8 0 -95.55"></a-entity>
+<a-entity guardia="sentado: true; modelo: cliente-sentado; saludo: El pescado, asado en el fuego, alimenta más." cliente="tunica: #5c4a58; camisa: #6a6252" position="160.2 0 -93.65" rotation="0 180 0"></a-entity>

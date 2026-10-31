@@ -412,6 +412,19 @@ AFRAME.registerComponent('hoguera', {
     this.luz.setAttribute('light', { type: 'point', intensity: this.data.intensidad, distance: 8, color: '#ff9a50' });
     this.luz.setAttribute('position', '0 0.6 0.3');
     this.el.appendChild(this.luz);
+    // al apuntarla y apretar el gatillo, se asa lo que llevas (js/partida.js)
+    const rayo = document.createElement('a-box');
+    rayo.classList.add('clicable');
+    rayo.setAttribute('position', '0 0.4 0'); rayo.setAttribute('width', 1); rayo.setAttribute('height', 1); rayo.setAttribute('depth', 1);
+    rayo.setAttribute('material', 'visible: false');
+    this.el.appendChild(rayo);
+    let ultimo = 0;
+    rayo.addEventListener('mouseenter', () => { if (partida.estado.pescado === 'crudo') partida.avisar('Aprieta el gatillo para asar el pescado.'); });
+    rayo.addEventListener('mousedown', () => {
+      if (performance.now() - ultimo < 500) return;
+      ultimo = performance.now();
+      partida.asar();
+    });
   },
   tick(t) {
     const s = t / 1000;
@@ -718,7 +731,7 @@ AFRAME.registerComponent('criado', {
     // andar hacia el punto que toca, salvo que esté esperando o tenga al jugador delante
     let andando = false;
     if (this.espera > 0) this.espera -= dt;
-    else if (!cerca) {
+    else if (!cerca && !this.charlando) {   // (charlando: js/posada.js)
       const [x, z, pausa = 0] = this.ruta[this.i];
       const d = new THREE.Vector2(x - o.position.x, z - o.position.z), falta = d.length();
       const paso = this.data.velocidad * dt / 1000;
@@ -734,7 +747,7 @@ AFRAME.registerComponent('criado', {
         andando = true;
       }
     }
-    if (cerca) this.girarHacia(Math.atan2(aJugador.x, aJugador.y), dt);
+    if (cerca || this.charlando) this.girarHacia(Math.atan2(aJugador.x, aJugador.y), dt);
     // el paso: "a" sube al echar a andar y baja al pararse (sin saltos). Cada muslo va adelante y
     // atrás; la rodilla se dobla mientras la pierna vuela hacia delante y se estira antes de apoyar
     // el pie (y queda un poco flexionada al pisar). El brazo libre, al revés que su pierna; las
@@ -788,10 +801,10 @@ AFRAME.registerComponent('criado', {
 // estás a menos de 5 m y por delante de él, y a menos de 2 m te dice el "saludo". Mira hacia +z
 // local; con scale="-1 1 1" sale en espejo (lanza al otro lado). Es macizo: no se le atraviesa.
 AFRAME.registerComponent('guardia', {
-  schema: { saludo: { default: 'Paso libre, señor.' }, sentado: { default: false } },
+  schema: { saludo: { default: 'Paso libre, señor.' }, sentado: { default: false }, modelo: { default: '' }, callado: { default: false } },   // modelo: otro con las mismas piezas
   init() {
     // (sentado: herramientas/modelar-guardia-sentado.py)
-    this.el.setAttribute('gltf-model', `url(modelos/guardia${this.data.sentado ? '-sentado' : ''}.glb)`);
+    this.el.setAttribute('gltf-model', `url(modelos/${this.data.modelo || (this.data.sentado ? 'guardia-sentado' : 'guardia')}.glb)`);
     this.cuerpo = this.cabeza = null;
     this.el.addEventListener('model-loaded', e => {
       this.cuerpo = e.detail.model.getObjectByName('GuardiaCuerpo');
@@ -827,7 +840,7 @@ AFRAME.registerComponent('guardia', {
     this.miraPitch += (pitch - this.miraPitch) * Math.min(1, dt / 300);
     if (this.cabeza) this.cabeza.rotation.set(this.miraPitch, this.miraYaw, 0, 'YXZ');
     // saludo
-    if (dist < 2 && !this.saludado) { this.saludado = true; this.cartel.object3D.visible = true; this.ocultar = t + 3500; }
+    if (dist < 2 && !this.saludado && !this.data.callado) { this.saludado = true; this.cartel.object3D.visible = true; this.ocultar = t + 3500; }
     if (dist > 3) this.saludado = false;
     if (this.cartel.object3D.visible) {
       if (t > this.ocultar) this.cartel.object3D.visible = false;

@@ -1,7 +1,31 @@
 # El juego
 
-Diseño del juego, en conversación: todavía **no hay nada programado**. Un juego de exploración y
-aventura, con poca acción, en el que el avance es sobre todo lo que aprendes.
+Diseño del juego, en conversación. Un juego de exploración y aventura, con poca acción, en el que el
+avance es sobre todo lo que aprendes.
+
+## Qué está ya programado
+
+Núcleo (`js/partida.js`), posada (`salas/posada.html`, `js/posada.js`), pesca y comida, la misión de la boda y el banquete (`js/boda.js`).
+Cómo funciona: "El juego", en [README.md](README.md). **Todavía no:** cartas, mercado, personajes, enemigos,
+las demás misiones y la caza.
+
+Valores provisionales, en tablas al principio de `js/partida.js`, a la espera de que se confirmen:
+
+- Precios: castillo 1, acantilado 2, puerto 2, cueva 2, mazmorras 2, abadía 3. El castillo cuenta como una sola zona.
+- Comida: crudo 1, asado 3. Comerse el pescado deja sin encargo.
+- La boda: presupuesto 6, paga 5 monedas de plata. Aceptarla empieza un día nuevo. Lo pescado se estropea al acabar el día.
+- Se asa en cualquier hoguera. Se puede comer en cualquier sitio, desde el inventario.
+- Sin misión, comer no da puntos. 
+
+Decidido por el usuario: en la boda estás sentado a la mesa. Provisional: es en la plaza, al día siguiente de la entrega, espera hasta que vayas y no se puede repetir la misión hasta entonces.
+
+Decidido por el usuario: el inventario es una pestaña del pergamino. El pescado se lleva como una carta, visible en la mano, con el modelo 3D del pez delante. Solo se puede tener una carta de cada tipo: con un pescado encima, crudo o asado, no se coge otro. Solo es la carta a la vista: mazo, compra y venta siguen sin programar.
+
+Decidido por el usuario: la partida y cada día empiezan en la posada. El viaje rápido cobra todas las zonas por las que hay que pasar (del lago a la posada, 2: bosque y poblado), y dentro de la misma zona es gratis. El de cada zona se activa al visitarla; una partida nueva empieza sin zonas visitadas (`MAPA_TODAS` apagado).
+
+Decidido por el usuario: una misión cumplida se puede repetir hablando con quien la dio, y solo se paga la primera vez.
+
+Sin decidir: si se puede abandonar una misión (ahora no se puede).
 
 ## Reglas acordadas
 
@@ -38,7 +62,7 @@ aventura, con poca acción, en el que el avance es sobre todo lo que aprendes.
 ### Pescar, cazar y comer
 
 - Comer lo que se pesca o se caza da puntos, y cocinarlo en una hoguera da más todavía.
-- Se puede pescar y cazar **una vez al día**.
+- Con misión se puede pescar y cazar **una vez al día**. Sin misión se puede pescar todo lo que se quiera.
 
 ## Primera misión (tutorial): el pescado de la boda
 
@@ -50,7 +74,6 @@ El camarero tiene una boda y quiere dar un banquete con pescado. Hay que ir al l
 ## Propuestas sin confirmar
 
 - Precios de las zonas salvo bosque y montaña, y si todo el castillo cuenta como una sola zona.
-- Si cada día empieza en la posada (preferida) o en el castillo.
 - Qué objetos exactos se conservan: la propuesta es que lo de misión, como la llave, vuelva a su sitio, y que las cartas y las monedas se queden.
 - Valores de la comida: crudo 1 punto, asado 3.
 - Número de cartas que se llevan a una misión, y otros personajes (erudito, diplomático, ladrón).

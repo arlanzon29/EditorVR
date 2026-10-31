@@ -47,7 +47,7 @@ AFRAME.registerComponent('portal', {
     poner();
     e.addEventListener('mouseenter', () => { const m = e.getObject3D('mesh'); if (m) m.material.color.set('#ffd9a0'); });
     e.addEventListener('mouseleave', () => { const m = e.getObject3D('mesh'); if (m) m.material.color.set('#ffffff'); });
-    e.addEventListener('click', () => { if (!cambiandoDeZona) e.sceneEl.components.zonas.ir(d.zona, { x: d.x, z: d.z, giro: d.giro * Math.PI / 180 }); });
+    e.addEventListener('click', () => e.sceneEl.components.zonas.cruzar(d.zona, { x: d.x, z: d.z, giro: d.giro * Math.PI / 180 }));
   }
 });
 
@@ -71,9 +71,8 @@ AFRAME.registerComponent('puerta-portal', {
     this.el.appendChild(rayo);
     this.apuntada = false;
     rayo.addEventListener('mousedown', () => {
-      if (cambiandoDeZona) return;
+      if (!this.el.sceneEl.components.zonas.cruzar(d.zona, { x: d.x, y: d.y > -999 ? d.y : undefined, z: d.z, giro: d.giro * Math.PI / 180 })) return;
       this.hoja.setAttribute('animation', { property: 'rotation', to: '0 -80 0', dur: 500, easing: 'easeInQuad' });
-      this.el.sceneEl.components.zonas.ir(d.zona, { x: d.x, y: d.y > -999 ? d.y : undefined, z: d.z, giro: d.giro * Math.PI / 180 });
     });
   },
   tick() {
@@ -102,10 +101,23 @@ AFRAME.registerComponent('salida', {
     c.getWorldPosition(this.ojo);
     const dentro = this.ojo.x > d.x0 && this.ojo.x < d.x1 && this.ojo.z > d.z0 && this.ojo.z < d.z1;
     if (!dentro) { this.armada = true; return; }
-    if (this.armada)
-      this.el.sceneEl.components.zonas.ir(d.zona, { x: d.x, z: d.z, giro: d.giro * Math.PI / 180 });
+    if (this.armada && this.el.sceneEl.components.zonas.cruzar(d.zona, { x: d.x, z: d.z, giro: d.giro * Math.PI / 180 })) return;
+    // (si no se puede pagar, no vuelve a avisar hasta que se salga y se entre otra vez)
+    this.armada = false;
   }
 });
+
+// Un chapoteo: ruido corto, filtrado, generado aquí mismo. "c" es el componente, que guarda su audio.
+function chapotear(c) {
+  try {
+    const A = c.audio = c.audio || new (window.AudioContext || window.webkitAudioContext)();
+    const n = A.sampleRate * 0.35, b = A.createBuffer(1, n, A.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3);
+    const s = A.createBufferSource(), f = A.createBiquadFilter(), g = A.createGain();
+    f.type = 'lowpass'; f.frequency.value = 700; g.gain.value = 0.5;
+    s.buffer = b; s.connect(f); f.connect(g); g.connect(A.destination); s.start();
+  } catch (e) {}
+}
 
 // Pozo: la manivela, la cuerda y el cubo de duelas. Al apuntarle y apretar el gatillo, el cubo baja
 // girando la manivela, se llena abajo (se oye el chapoteo) y sube con agua; otra vez, se vacía.
@@ -162,17 +174,6 @@ AFRAME.registerComponent('pozo', {
     }
     this.fase = 'baja'; this.ms = 0;
   },
-  // un chapoteo: ruido corto, filtrado, generado aquí mismo
-  chapoteo() {
-    try {
-      const A = this.audio = this.audio || new (window.AudioContext || window.webkitAudioContext)();
-      const n = A.sampleRate * 0.35, b = A.createBuffer(1, n, A.sampleRate), d = b.getChannelData(0);
-      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3);
-      const s = A.createBufferSource(), f = A.createBiquadFilter(), g = A.createGain();
-      f.type = 'lowpass'; f.frequency.value = 700; g.gain.value = 0.5;
-      s.buffer = b; s.connect(f); f.connect(g); g.connect(A.destination); s.start();
-    } catch (e) {}
-  },
   colocar() {
     this.cubo.object3D.position.y = this.y;
     const largo = POZO_TORNO - (this.y + POZO_NUDO);
@@ -200,7 +201,7 @@ AFRAME.registerComponent('pozo', {
       const f = Math.min(1, this.ms / POZO_BAJA_MS);
       this.y = POZO_ARRIBA + (POZO_ABAJO - POZO_ARRIBA) * f * f;   // baja cada vez más deprisa
       this.manivela.object3D.rotation.x -= 0.012 * dt * (0.4 + f);
-      if (f === 1) { this.fase = 'llena'; this.ms = 0; this.chapoteo(); this.lleno = true; this.agua.setAttribute('visible', true); }
+      if (f === 1) { this.fase = 'llena'; this.ms = 0; chapotear(this); this.lleno = true; this.agua.setAttribute('visible', true); }
     } else if (this.fase === 'llena') {
       if (this.ms > POZO_LLENA_MS) { this.fase = 'sube'; this.ms = 0; }
     } else {
@@ -346,6 +347,9 @@ function formaDePez() {
 
 // Banco de peces: nadan en círculos justo bajo el agua y, de vez en cuando, uno salta. Marca una zona
 // de pesca. En bloque (InstancedMesh): una llamada de dibujo.
+// Pescar: apuntar al agua del banco y apretar el gatillo. Cae un corcho, se mece, se hunde y salta un pez;
+// con misión, una vez al día (js/partida.js).
+const PESCA_ESPERA_MS = 2500, PESCA_HUNDE_MS = 500;
 AFRAME.registerComponent('peces', {
   schema: { cuantos: { default: 18 }, radio: { default: 6 } },
   init() {
@@ -366,11 +370,53 @@ AFRAME.registerComponent('peces', {
     this.aros.forEach((a, i) => { a.position.x = (i - 1) * radio * 0.5; a.position.z = (i % 2) * radio * 0.4 - radio * 0.2; });
     const g = new THREE.Group();
     g.add(this.banco, ...this.aros);
+    // el corcho, oculto hasta que se pesca
+    this.corcho = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshBasicMaterial({ color: '#8c3a2a' }));
+    this.corcho.visible = false;
+    g.add(this.corcho);
     this.el.setObject3D('mesh', g);
+    this.espera = null;   // ms que lleva pescando
+    // lo que recibe el rayo: el agua del banco
+    const rayo = document.createElement('a-circle');
+    rayo.classList.add('clicable');
+    rayo.setAttribute('radius', radio + 1); rayo.setAttribute('rotation', '-90 0 0'); rayo.setAttribute('position', '0 0.1 0');
+    rayo.setAttribute('material', 'visible: false');
+    this.el.appendChild(rayo);
+    this.ultimo = 0;
+    rayo.addEventListener('mouseenter', () => { if (partida.puedePescar() && this.espera === null) partida.avisar('Aprieta el gatillo para pescar.'); });
+    rayo.addEventListener('mousedown', e => {
+      if (performance.now() - this.ultimo < 500) return;
+      this.ultimo = performance.now();
+      this.pescar(e.detail && e.detail.intersection && e.detail.intersection.point);
+    });
+  },
+  pescar(punto) {
+    if (this.espera !== null) return;
+    if (!partida.puedePescar()) return partida.avisar(partida.estado.pescado ? 'Ya llevas un pescado: solo una carta de cada tipo.' : 'Hoy ya has pescado: con misión, se puede una vez al día.');
+    const p = punto ? this.el.object3D.worldToLocal(punto.clone()) : new THREE.Vector3();
+    this.corcho.position.set(p.x, 0, p.z);
+    this.corcho.visible = true;
+    this.espera = 0;
+    chapotear(this);
+  },
+  // El corcho se mece, se hunde y salta un pez junto a él: el primero del banco, que ya estaba al caer
+  pasarPesca(t, ms) {
+    this.espera += ms;
+    this.corcho.position.y = this.espera < PESCA_ESPERA_MS ? 0.02 * Math.sin(t / 250) : -0.2 * (this.espera - PESCA_ESPERA_MS) / PESCA_HUNDE_MS;
+    if (this.espera < PESCA_ESPERA_MS + PESCA_HUNDE_MS) return;
+    const f = this.datos[0];
+    f.r = Math.hypot(this.corcho.position.x, this.corcho.position.z);
+    f.a = Math.atan2(this.corcho.position.z, this.corcho.position.x);
+    f.salto = 0;
+    this.corcho.visible = false;
+    this.espera = null;
+    chapotear(this);
+    partida.pescar();
   },
   tick(t, dt) {
     if (!dt) return;
     const s = Math.min(dt, 100) / 1000;
+    if (this.espera !== null) this.pasarPesca(t, s * 1000);
     this.datos.forEach((f, i) => {
       f.a += f.v * s;
       f.salto -= s;
@@ -390,7 +436,7 @@ AFRAME.registerComponent('peces', {
       a.material.opacity = 0.55 * (1 - f);
     });
   },
-  remove() { this.el.removeObject3D('mesh'); }
+  remove() { this.el.removeObject3D('mesh'); if (this.audio) this.audio.close(); }
 });
 
 // Pinos: un tronco y tres pisos de copa, en bloque, repartidos por el terreno por debajo de "altura" y

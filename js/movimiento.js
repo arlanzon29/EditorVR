@@ -83,6 +83,7 @@ const FUERA = [
 ];
 // Las demás zonas y sus pasos están en js/mundo.js.
 let cambiandoDeZona = false;   // mientras se carga una zona no se anda
+let enLaMesa = false;          // sentado a la mesa de la boda tampoco (js/boda.js)
 const ALTO_GALERIA = 4.4;   // altura del rellano de arriba de la sala 3 y de sus pasillos
 const dentro = (p, z) => p.x >= z.x0 && p.x <= z.x1 && p.z >= z.z0 && p.z <= z.z1;
 
@@ -196,7 +197,7 @@ AFRAME.registerComponent('andar-joystick', {
     window.addEventListener('blur', () => { this.mayusculas = false; });
   },
   tick(t, dt) {
-    if (!dt || enBarco) return;   // (en la barca, te mueve ella: js/lago.js)
+    if (!dt || enBarco || enLaMesa) return;   // (en la barca, te mueve ella: js/lago.js)
     const r = this.rig.object3D.position;
     if (t - this.guardado > 500) {
       this.guardado = t;

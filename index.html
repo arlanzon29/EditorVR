@@ -7,6 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/aframe@1.7.0/dist/aframe-master.min.js"></script>
 <!-- Comportamiento: componentes de A-Frame en js/ (el orden importa poco: se usan al arrancar) -->
 <script src="js/mundo.js"></script>
+<script src="js/partida.js"></script>
 <script src="js/rendimiento.js"></script>
 <script src="js/incluir.js"></script>
 <script src="js/zonas.js"></script>
@@ -15,6 +16,8 @@
 <script src="js/objetos.js"></script>
 <script src="js/lago.js"></script>
 <script src="js/poblado.js"></script>
+<script src="js/posada.js"></script>
+<script src="js/boda.js"></script>
 <script src="js/animales.js"></script>
 <script src="js/mapa.js"></script>
 <script src="js/arboles.js"></script>
@@ -24,7 +27,7 @@
 <body>
 <!-- La escena: aquí el jugador (rig) y la luz general. Las estancias están en salas/, con las
      coordenadas del mundo, y las carga el componente zonas (js/zonas.js) según dónde estés. -->
-<a-scene zonas cielo mapa informe-posicion foto-para-claude medidor luces-cercanas renderer="antialias: true; colorManagement: true" xr-mode-ui="enabled: true" background="color: #a9cfe8">
+<a-scene zonas cielo mapa partida informe-posicion foto-para-claude medidor luces-cercanas renderer="antialias: true; colorManagement: true" xr-mode-ui="enabled: true" background="color: #a9cfe8">
 
   <!-- Inicio: en la sala 3, mirando a la escalera -->
   <a-entity id="rig" position="6 0 7" rotation="0 180 0">

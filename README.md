@@ -25,7 +25,7 @@ Coordenadas en metros: **x** hacia la puerta de la sala 1 y el pasillo, **y** ha
 | **Exterior** | Campo alrededor de todo el castillo | Se sale por el portón en arco de la muralla del patio. Hierba, camino de tierra, árboles y montañas alrededor. Las salas 1 y 2 tienen piel por fuera y las galerías de arriba se ven como cadalsos de madera. |
 | **Bosque** | Al final del camino del exterior (x = -78…88, z = -198…-46) | Colinas de hasta unos 10 m, a mediodía. El camino lleva a un claro con piedras y se abre hacia el lago, el poblado y la montaña. |
 | **Lago** | Al norte del bosque (x = -78…88, z = -392…-202) | Mediodía. Lago con embarcadero en la orilla sur, en la isla (con una torre vieja) y en la orilla norte; una barca lleva de uno a otro. |
-| **Poblado** | Al este del bosque (x = 92…228, z = -190…-50) | Mediodía. Calle con doce casas de entramado, plaza con pozo y mercado, iglesia con torre, dos guardias y una moza. |
+| **Poblado** | Al este del bosque (x = 92…228, z = -190…-50) | Mediodía. Calle con doce casas de entramado, plaza con pozo y mercado, iglesia con torre, dos guardias y una moza. Junto a la plaza, la posada: chimenea, mostrador con el camarero y dos mesas con clientes. |
 | **Montaña** | Al oeste del bosque (x = -282…-82, z = -228…-10) | Mediodía. Cumbre nevada de unos 50 m a la que se puede subir, con mojón y atalaya. |
 | **Acantilado** | Al este del poblado (x = 232…327, z = -190…-50) | Atardecer sobre el mar. Llano a 20 m cortado a pico, faro con fuego, banco y farallones. |
 | **Puerto y playa** | Al norte del acantilado, con salida al mar (x = 92…345, z = -395…-202) | Mediodía. Solo se llega por el camino de la orilla norte del lago. Muelle de piedra, tres embarcaderos con barcas, casas de pescadores, barriles y redes. Siguiendo la costa al sur, una playa con barcas varadas, que acaba contra el acantilado. |
@@ -67,7 +67,7 @@ se sale de VR. Todas usan las coordenadas del mundo: el jugador no se teletransp
 - **Pendiente:** habitaciones en la planta de arriba del castillo.
 - **Portales** (`portal`, js/animales.js): un cartel; al apuntarle y apretar el gatillo te lleva a otra zona con la niebla cerrada. Así se baja a mazmorras y cueva, que están lejos del resto.
 - **Animales:** `ciervo` (también las cabras; bosque y montaña), `peces` con el cartel de la zona de pesca (lago) y `pinos` (montaña).
-- **Viaje rápido** (js/mapa.js): en el mapa, apuntar a un sello con el mando derecho y apretar el gatillo. Solo salen las zonas visitadas; `MAPA_TODAS`, para depurar, los enseña todos (ahora activado).
+- **Viaje rápido** (js/mapa.js): en el mapa, apuntar a un sello con el mando derecho y apretar el gatillo. Con misión se pagan todas las zonas del camino más barato (del lago a la posada, bosque y poblado: 2). El sello de una zona se activa al visitarla, y una partida nueva empieza sin ninguno salvo el de la posada; `MAPA_TODAS`, para depurar, los enseña todos (ahora apagado).
 - **Barca** (js/lago.js): apunta con el rayo a un cartel suyo y aprieta el gatillo. Te lleva sin dejarte andar y te deja en el embarcadero.
   Modelo: `herramientas/modelar-barca.py` → `modelos/barca.glb`.
 - **Letrero:** al entrar en una zona (también al abrir la página) aparece delante de ti una tabla de
@@ -79,6 +79,26 @@ se sale de VR. Todas usan las coordenadas del mundo: el jugador no se teletransp
 
 Para añadir una zona: su entrada en `MUNDO`, sus `PASOS`, su archivo en `salas/`, su `barrera` y su nombre en `SALAS_HORNEADAS` y
 `SUELOS_HORNEADOS` (rendimiento.js), y hornearla.
+
+## El juego
+
+Diseño y lo que falta: [JUEGO.md](JUEGO.md). Estado y reglas: [js/partida.js](js/partida.js), guardados en el navegador (`editorvr-partida`).
+Una partida nueva empieza dentro de la posada, y después se vuelve al sitio donde se estaba al recargar. Con **`?partidanueva`** en la dirección se empieza de cero (cada vez que se carga con ella); en la consola se ve en `partida.estado`.
+
+- **Sin misión** se pasea gratis. **Con misión** hay presupuesto de puntos: entrar en una zona cuesta su precio (`PRECIOS_ZONA`) y andar dentro es gratis.
+- **Sin puntos para esa zona** no se cruza y sale un aviso (`zonas.cruzar`, también en portales, puertas y viaje rápido). **Con cero**, intentar cruzar acaba el día.
+- **Terminar el día:** en el diario, con confirmación, o al quedarse sin puntos. Se vuelve a la posada con el presupuesto entero; lo aprendido y las monedas se quedan y lo pescado se pierde.
+- **Carta:** solo se puede tener una de cada tipo. Lo que llevas se ve como un naipe dibujado en canvas, con o sin misión: en VR, en el mando izquierdo; en el ordenador, abajo a la derecha. Por ahora solo el pescado, crudo o asado (`dibujarCartaPescado`), con el pez en 3D delante, el mismo de los bancos (`formaDePez`). También sale en el inventario, desde donde se come.
+- **Indicador:** una tablilla abajo a la izquierda de la vista, solo con misión. Los avisos salen en una tabla delante, unos segundos.
+- **Diario:** segunda pestaña del pergamino (A o Y): día, misión, lo aprendido, precios y el botón de terminar el día.
+- **Inventario:** tercera pestaña: las cartas que llevas, las monedas y el botón de comer. Los botones se apuntan en VR con el mando derecho; en el ordenador, con la hoja abierta, teclas **T** (diario) y **C** (inventario), porque la mira se mueve con el pergamino.
+- **Posada** ([salas/posada.html](salas/posada.html), [js/posada.js](js/posada.js)): junto a la plaza del poblado, con sello en el mapa. Al apuntar al camarero y apretar el gatillo, habla y se elige la respuesta (`partida.charlaCamarero`). Los clientes son `guardia` con `modelo: cliente-sentado` (`herramientas/modelar-cliente-sentado.py`) y `cliente` para la ropa.
+- **Pescar:** apuntar al agua del banco (`peces`) y apretar el gatillo, a menos de 4 m, por ejemplo desde el embarcadero sur; con misión, una vez al día, y sin misión, todo lo que se quiera, pero sin llevar ya uno encima. **Asar:** apuntar a cualquier `hoguera`. **Comer:** en el inventario.
+- **La boda:** aceptar con el camarero (6 puntos), bosque, lago, pescar, bosque, poblado y entregar: cobras en monedas. Después, el camarero ofrece repetirla, con el presupuesto entero y sin volver a pagar.
+
+### La boda
+
+Al día siguiente de entregar el pescado por primera vez ([js/boda.js](js/boda.js), `partida.bodaHoy`), el camarero no está en la posada y en la plaza, delante de la iglesia, hay una mesa con el banquete, el novio y seis invitados sentados, y la novia de pie (el modelo de la moza). Se espera hasta que vayas. Al apuntar a la silla libre y apretar el gatillo te sientas: no se anda (`enLaMesa`), los ojos quedan a 1,15 m y salen las frases del brindis, hasta pulsar **Levantarte**. Al empezar el día siguiente ya no está. No se hornea: solo existe ese día, y no cambia lo horneado del poblado.
 
 ## Controles
 
@@ -93,8 +113,9 @@ Para añadir una zona: su entrada en `MUNDO`, sus `PASOS`, su archivo en `salas/
 | **Gatillo lateral** apuntando a la pantalla | Cogerla y colocarla; se queda donde la sueltes. |
 | **Botón B** | Traer la pantalla del PC delante de ti. |
 | **Apretar el joystick derecho** | Poner o quitar la luz horneada (en el ordenador, tecla **H**). |
-| **Botón A o Y** | Abrir el pergamino: mapa (con una flecha que dice dónde estás), ayuda con todos los botones, y cerrar (en el ordenador, tecla **N**). |
+| **Botón A o Y** | Abrir el pergamino: mapa (con una flecha que dice dónde estás), diario de la partida, inventario, ayuda con todos los botones, y cerrar (en el ordenador, tecla **N**). |
 | **Gatillo** apuntando a un cartel de la barca | Subirte y viajar a ese destino. |
+| **Gatillo** apuntando al camarero, al agua de los peces o a una hoguera | Hablar, pescar o asar. |
 | **Botón X** o **apretar el joystick izquierdo** | Ocultar o enseñar el medidor de rendimiento, que sale encendido (en el ordenador, tecla **M**). |
 
 En VR cuenta tu altura real. Si estás sentado (las gafas, de media, por debajo de 1,30 m durante
@@ -193,7 +214,10 @@ Mientras se comparte la pantalla, cualquiera en la misma wifi que abra la págin
 | [js/zonas.js](js/zonas.js) | Cambio de zona y niebla. |
 | [js/lago.js](js/lago.js) | Agua, embarcaderos y barca. |
 | [js/poblado.js](js/poblado.js) | Casas, puestos, tumbas y columnas. |
-| [js/mapa.js](js/mapa.js) | El mapa de pergamino. |
+| [js/mapa.js](js/mapa.js) | El pergamino: mapa, diario, inventario y ayuda. |
+| [js/partida.js](js/partida.js) | El juego: estado, precios, puntos, día, misión, indicador y avisos. |
+| [js/posada.js](js/posada.js) | Tejado, clientes y camarero con su charla. |
+| [js/boda.js](js/boda.js) | El banquete de la plaza y sentarse a la mesa. |
 | [herramientas/](herramientas/) | Horneado (`hornear-castillo.py`, `recibir-estancia.js`) y la barca (`modelar-barca.py`). |
 | [js/incluir.js](js/incluir.js) | Componente `incluir`: descarga una estancia y la mete en la escena. |
 | [js/movimiento.js](js/movimiento.js) | Andar, girar, zonas, `SUPERFICIES`, obstáculos `macizo` y la mira del monitor. |
@@ -333,4 +357,4 @@ Medido en la vista previa del PC (octubre de 2026), sin y con horneado; **falta 
 - Por voz desde las gafas, y el modo Quest / modo ordenador: [VOZ.md](VOZ.md).
 - Instrucciones para Claude en este proyecto: [CLAUDE.md](CLAUDE.md).
 - Lo que se ha hecho y por qué: [HISTORIAL.md](HISTORIAL.md).
-- Diseño del juego (puntos, misiones, cartas), aún sin programar: [JUEGO.md](JUEGO.md).
+- Diseño del juego (puntos, misiones, cartas) y qué está programado: [JUEGO.md](JUEGO.md).

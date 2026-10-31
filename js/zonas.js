@@ -19,6 +19,7 @@ AFRAME.registerComponent('zonas', {
     this.cielo = new THREE.Color(MUNDO.castillo.fondo);
     this.colorNiebla = new THREE.Color(MUNDO.castillo.niebla);
     this.cabeza = new THREE.Vector3();
+    this.bueno = new THREE.Vector3();   // el último sitio donde se estaba sin meterse en una zona sin pagar
     this.cierre = 1;      // 0 abierta, 1 cerrada; se arranca cerrada mientras carga la primera zona
     this.actual = null;   // nombre de la zona cargada
     this.raiz = null;     // entidad con las estancias de la zona
@@ -82,11 +83,24 @@ AFRAME.registerComponent('zonas', {
     if (!c) return;
     c.getWorldPosition(this.cabeza);
     // la primera vez, cuando ya se ha vuelto al sitio guardado: cargar la zona donde se está
-    if (!this.actual && !cambiandoDeZona) this.ir((zonaEn(this.cabeza.x, this.cabeza.z) || MUNDO.castillo).nombre);
-    if (!cambiandoDeZona) {
-      // (con medio metro de margen: justo en el límite, el cambio no se dispara dos veces)
-      const aqui = zonaEn(this.cabeza.x, this.cabeza.z, 0.5);
-      if (this.actual && aqui && aqui.nombre !== this.actual) this.ir(aqui.nombre);
+    if (!this.actual && !cambiandoDeZona) {
+      if (partida.empezando) this.ir(INICIO_DIA.zona, INICIO_DIA);
+      else this.ir((zonaEn(this.cabeza.x, this.cabeza.z) || MUNDO.castillo).nombre);
+    }
+    if (!cambiandoDeZona && this.actual) {
+      const justo = zonaEn(this.cabeza.x, this.cabeza.z);
+      if (justo && justo.nombre !== this.actual && !partida.puedeEntrar(justo.nombre)) {
+        // sin puntos para esa zona no se cruza: de vuelta al sitio de antes (también si se ha ido andando de verdad)
+        const rig = document.getElementById('rig').object3D;
+        rig.position.x += this.bueno.x - this.cabeza.x;
+        rig.position.z += this.bueno.z - this.cabeza.z;
+        partida.entrar(justo.nombre);
+      } else {
+        this.bueno.copy(this.cabeza);
+        // (con medio metro de margen: justo en el límite, el cambio no se dispara dos veces)
+        const aqui = zonaEn(this.cabeza.x, this.cabeza.z, 0.5);
+        if (aqui && aqui.nombre !== this.actual) this.cruzar(aqui.nombre);
+      }
     }
     // cerrar mientras se cambia de zona; abrir cuando ya ha cargado
     const paso = Math.min(dt || 0, 100);
@@ -112,6 +126,12 @@ AFRAME.registerComponent('zonas', {
     const sol = document.getElementById('luz-sol');
     sol.setAttribute('light', a.sol);
     sol.object3D.position.set(...CIELOS[a.cielo].sol);
+  },
+  // Ir a otra zona pagando la entrada, o "precio" si se indica (js/partida.js). Devuelve si se ha podido.
+  cruzar(nombre, destino, precio) {
+    if (cambiandoDeZona || !partida.entrar(nombre, precio)) return false;
+    this.ir(nombre, destino);
+    return true;
   },
   // "destino" (x, z, giro): para los portales, que te llevan a otro sitio mientras la niebla está cerrada
   async ir(nombre, destino) {
