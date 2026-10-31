@@ -73,9 +73,21 @@ function fundirEstancia(el) {
     const fundida = new THREE.Mesh(geo, mat);
     fundida.name = 'fundida';
     el.object3D.add(fundida);
-    for (const o of piezas) o.visible = false;
+    // ocultas ya no se dibujan: su copia en la gráfica sobra (si se comparte con otra malla visible, se vuelve a subir)
+    for (const o of piezas) { o.visible = false; o.geometry.dispose(); }
   }
   return { antes, despues };
+}
+
+// Libera de la gráfica las geometrías, materiales y texturas de una estancia que se va a quitar
+// (three.js no lo hace solo). Si algo liberado se vuelve a usar, como las texturas de piedra que se
+// guardan para otras zonas, three.js lo sube de nuevo sin más.
+function liberarEstancia(el) {
+  el.object3D.traverse(o => {
+    if (!o.isMesh) return;
+    o.geometry.dispose();
+    for (const m of [].concat(o.material)) { if (m.map) m.map.dispose(); m.dispose(); }
+  });
 }
 
 // Luces puntuales: un número fijo de luces (6) que nunca se encienden ni se apagan, y que copian
@@ -97,11 +109,13 @@ AFRAME.registerComponent('luces-cercanas', {
     }
   },
   tick(t) {
-    // cada medio segundo: buscar luces nuevas (las salas cargan después) y elegir las más cercanas
+    // cada medio segundo: buscar las luces que hay (las salas cargan después y se descargan al
+    // cambiar de zona) y elegir las más cercanas
     if (t - this.cuando > 500) {
       this.cuando = t;
+      this.fuentes = [];
       this.el.object3D.traverse(o => {
-        if (o.isPointLight && !o.userData.viva && !o.userData.fuente) { o.userData.fuente = true; this.fuentes.push(o); }
+        if (o.isPointLight && !o.userData.viva) this.fuentes.push(o);
       });
       this.el.camera.getWorldPosition(this.ojo);
       // la que más cerca tiene su zona iluminada (distancia menos su alcance) va primero

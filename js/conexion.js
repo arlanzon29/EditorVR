@@ -13,13 +13,16 @@ AFRAME.registerComponent('pantalla-pc', {
     this.pedir = this.pedir.bind(this);
     this.pedir();
   },
+  remove() { this.parada = true; },   // al descargar la zona, que deje de pedir imágenes
   pedir() {
+    if (this.parada) return;
     const img = new Image(), t0 = performance.now();
     img.onload = () => {
+      if (this.parada) return;
       this.mostrar(img);
       setTimeout(this.pedir, Math.max(0, this.data.cada - (performance.now() - t0)));
     };
-    img.onerror = () => { this.aviso.setAttribute('visible', true); setTimeout(this.pedir, 3000); };
+    img.onerror = () => { if (this.parada) return; this.aviso.setAttribute('visible', true); setTimeout(this.pedir, 3000); };
     img.src = '/__pantalla.jpg?t=' + Date.now();
   },
   mostrar(img) {
@@ -134,7 +137,7 @@ AFRAME.registerComponent('informe-posicion', {
     const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.getWorldQuaternion(new THREE.Quaternion()));
     const andar = document.querySelector('[andar-joystick]')?.components['andar-joystick'];
     const rigY = andar ? andar.altura : document.getElementById('rig').object3D.position.y;   // altura del suelo que pisa
-    const zona = dentro(cabeza, SALA) ? 'sala 1' : dentro(cabeza, PASILLO) ? 'pasillo' : dentro(cabeza, SALA2) ? 'sala 2' : dentro(cabeza, PASILLO2) ? 'pasillo 2' : dentro(cabeza, SALA3) ? (rigY > 2 ? (rigY > 4.3 ? 'sala 3 (rellano de arriba)' : 'sala 3 (en la escalera)') : 'sala 3') : rigY > 4.3 && [ARCO_ARRIBA, ...PASILLOS_ARRIBA].some(z => dentro(cabeza, z)) ? 'pasillos de arriba (sala 3)' : [COMEDOR, PASO_COMEDOR].some(z => dentro(cabeza, z)) ? 'comedor' : [PATIO, PASO_PATIO].some(z => dentro(cabeza, z)) ? 'patio' : [PASO_PORTON, ...FUERA].some(z => dentro(cabeza, z)) ? 'exterior' : 'fuera';
+    const zona = dentro(cabeza, SALA) ? 'sala 1' : dentro(cabeza, PASILLO) ? 'pasillo' : dentro(cabeza, SALA2) ? 'sala 2' : dentro(cabeza, PASILLO2) ? 'pasillo 2' : dentro(cabeza, SALA3) ? (rigY > 2 ? (rigY > 4.3 ? 'sala 3 (rellano de arriba)' : 'sala 3 (en la escalera)') : 'sala 3') : rigY > 4.3 && [ARCO_ARRIBA, ...PASILLOS_ARRIBA].some(z => dentro(cabeza, z)) ? 'pasillos de arriba (sala 3)' : [COMEDOR, PASO_COMEDOR].some(z => dentro(cabeza, z)) ? 'comedor' : [PATIO, PASO_PATIO].some(z => dentro(cabeza, z)) ? 'patio' : [PASO_PORTON, ...FUERA].some(z => dentro(cabeza, z)) ? 'exterior' : [PASO_BOSQUE, BOSQUE].some(z => dentro(cabeza, z)) ? 'bosque' : 'fuera';
     // ¿qué tiene delante? (solo mallas visibles, sin el rig ni los rayos de los mandos)
     const rig = document.getElementById('rig').object3D;
     const mallas = [];

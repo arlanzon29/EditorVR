@@ -65,7 +65,9 @@ AFRAME.registerComponent('medidor', {
     g.fillStyle = '#ffffff';
     g.fillText(`${info.calls} llamadas${this.el.is('vr-mode') ? ' (2 ojos)' : ''}`, 20, 80);
     g.fillText(`${(info.triangles / 1000).toFixed(1)} mil triángulos`, 20, 124);
-    g.fillText(`${luces} luces`, 20, 168);
+    // geometrías y texturas vivas en la gráfica: si suben con cada cambio de zona, algo no se libera
+    const mem = this.el.renderer.info.memory;
+    g.fillText(`${luces} luces ${mem.geometries} geo ${mem.textures} tex`, 20, 168);
     this.tex.needsUpdate = true;
   }
 });

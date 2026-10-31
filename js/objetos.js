@@ -761,37 +761,3 @@ AFRAME.registerComponent('guardia', {
     }
   }
 });
-
-// Árbol sencillo para el campo: tronco algo inclinado y copa de varias bolas de verde apagado.
-// "semilla" cambia la forma (siempre la misma para la misma semilla); "alto" en metros. El tronco
-// es macizo.
-AFRAME.registerComponent('arbol', {
-  schema: { alto: { default: 6 }, semilla: { default: 1 } },
-  init() {
-    const { alto } = this.data;
-    let s = this.data.semilla * 9301 + 49297;
-    const azar = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-    const g = new THREE.Group();
-    const corteza = new THREE.MeshStandardMaterial({ color: '#4a3b2a', roughness: 1 });
-    const altoTronco = alto * (0.45 + azar() * 0.1);
-    const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.12 * alto / 6, 0.2 * alto / 6, altoTronco, 8), corteza);
-    tronco.position.y = altoTronco / 2;
-    tronco.rotation.z = (azar() - 0.5) * 0.12;
-    g.add(tronco);
-    const verdes = ['#4f5e33', '#56653a', '#47552e', '#5c6a3f'];
-    const n = 4 + Math.floor(azar() * 3);
-    for (let i = 0; i < n; i++) {
-      const r = alto * (0.16 + azar() * 0.1);
-      const bola = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1),
-        new THREE.MeshStandardMaterial({ color: verdes[Math.floor(azar() * verdes.length)], roughness: 1, flatShading: true }));
-      const a = azar() * Math.PI * 2, d = alto * 0.15 * azar();
-      bola.position.set(Math.cos(a) * d, altoTronco + r * 0.6 + azar() * alto * 0.2, Math.sin(a) * d);
-      g.add(bola);
-    }
-    g.rotation.y = azar() * Math.PI * 2;
-    this.el.setObject3D('mesh', g);
-    const p = this.el.object3D.position, rt = 0.35 * alto / 6;
-    SUPERFICIES.push({ x0: p.x - rt, x1: p.x + rt, z0: p.z - rt, z1: p.z + rt, y: altoTronco, macizo: true });
-  },
-  remove() { this.el.removeObject3D('mesh'); }
-});

@@ -209,6 +209,97 @@ function crearTexturaHierba() {
   return { tex, metros: M };
 }
 
+// Tierra de los caminos: marrón apagado con manchas, piedrecillas y dos rodadas. "alfa" da la
+// transparencia de cada píxel (u, v de 0 a 1), para que el borde se funda con la hierba.
+function crearTexturaTierra(alfa) {
+  const N = 256;
+  const c = document.createElement('canvas');
+  c.width = c.height = N;
+  const g = c.getContext('2d');
+  let semilla = 77;
+  const azar = () => (semilla = (semilla * 16807) % 2147483647) / 2147483647;
+  g.fillStyle = '#7f7052';
+  g.fillRect(0, 0, N, N);
+  for (let k = 0; k < 60; k++) {   // manchas
+    g.fillStyle = `hsla(${32 + azar() * 12}, ${18 + azar() * 14}%, ${28 + azar() * 20}%, 0.25)`;
+    const x = azar() * N, y = azar() * N, r = 8 + azar() * 30;
+    for (const dx of [0, -N, N]) { g.beginPath(); g.arc(x + dx, y, r, 0, 2 * Math.PI); g.fill(); }
+  }
+  g.fillStyle = 'rgba(70, 58, 40, 0.18)';   // rodadas de los carros, a lo largo del camino
+  g.fillRect(0, N * 0.3, N, N * 0.07); g.fillRect(0, N * 0.63, N, N * 0.07);
+  for (let k = 0; k < 900; k++) {   // piedrecillas
+    g.fillStyle = `hsla(35, 12%, ${25 + azar() * 40}%, 0.7)`;
+    g.fillRect(azar() * N, azar() * N, 1 + azar() * 2, 1 + azar() * 2);
+  }
+  const img = g.getImageData(0, 0, N, N);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++)
+    img.data[(y * N + x) * 4 + 3] = 255 * alfa(x / N, y / N);
+  g.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+const suave = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
+const METROS_TIERRA = 4;   // la textura cubre esto a lo largo del camino
+
+// Camino que serpentea: una cinta sobre el suelo que pasa por "puntos" (x z, x z, …: coordenadas del
+// mundo, separados por comas) con curvas suaves y el borde irregular, fundido con la hierba.
+let texturaCamino = null;
+AFRAME.registerComponent('camino', {
+  schema: { puntos: { type: 'string' }, ancho: { default: 2.4 }, y: { default: -0.03 } },
+  init() {
+    const { puntos, ancho, y } = this.data;
+    // el borde ondula en senos de frecuencia entera, para que la textura empalme al repetirse
+    const ondas = (u, a, b) => 0.05 * Math.sin(2 * Math.PI * (a * u + b)) + 0.035 * Math.sin(2 * Math.PI * (3 * a * u + 2 * b));
+    texturaCamino = texturaCamino || crearTexturaTierra((u, v) =>
+      suave(0.1 + ondas(u, 2, 0.1), 0.24 + ondas(u, 2, 0.1), v) * (1 - suave(0.76 + ondas(u, 3, 0.6), 0.9 + ondas(u, 3, 0.6), v)));
+    const curva = new THREE.CatmullRomCurve3(puntos.split(',').map(p => {
+      const [x, z] = p.trim().split(/\s+/).map(Number);
+      return new THREE.Vector3(x, y, z);
+    }), false, 'centripetal');
+    const n = Math.ceil(curva.getLength() / 0.5);   // un tramo cada medio metro
+    const pos = [], nor = [], uv = [], ind = [];
+    for (let i = 0; i <= n; i++) {
+      const p = curva.getPointAt(i / n), t = curva.getTangentAt(i / n), nx = -t.z, nz = t.x, l = Math.hypot(nx, nz) || 1;
+      for (const lado of [-1, 1]) {
+        pos.push(p.x + lado * nx / l * ancho / 2, y, p.z + lado * nz / l * ancho / 2);
+        nor.push(0, 1, 0);
+        uv.push(i / n * curva.getLength() / METROS_TIERRA, (lado + 1) / 2);
+      }
+      if (i < n) { const a = i * 2; ind.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setIndex(ind);
+    const malla = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: texturaCamino, transparent: true, depthWrite: false, roughness: 1 }));
+    malla.renderOrder = 1;   // por encima de los claros
+    this.el.setObject3D('mesh', malla);
+  },
+  remove() { this.el.removeObject3D('mesh'); }
+});
+
+// Claro de tierra: un círculo de "radio" en la entidad, con el borde fundido con la hierba.
+let texturaClaro = null;
+AFRAME.registerComponent('claro', {
+  schema: { radio: { default: 7 } },
+  init() {
+    texturaClaro = texturaClaro || crearTexturaTierra((u, v) => {
+      const a = Math.atan2(v - 0.5, u - 0.5);
+      return 1 - suave(0.36 + 0.03 * Math.sin(5 * a) + 0.02 * Math.sin(11 * a), 0.5, Math.hypot(u - 0.5, v - 0.5));
+    });
+    const lado = this.data.radio * 2;
+    const malla = new THREE.Mesh(new THREE.PlaneGeometry(lado, lado),
+      new THREE.MeshStandardMaterial({ map: texturaClaro, transparent: true, depthWrite: false, roughness: 1 }));
+    malla.rotation.x = -Math.PI / 2;
+    this.el.setObject3D('mesh', malla);
+  },
+  remove() { this.el.removeObject3D('mesh'); }
+});
+
 AFRAME.registerComponent('suelo-hierba', {
   init() {
     const aplicar = () => {

@@ -61,8 +61,10 @@ cambiar la escena (`index.html`, `salas/`, `js/`, `modelos/`) no, la página se 
   trasera coincide con la otra cara y asoma parpadeando. Separarlo 1 o 2 cm (las antorchas del patio).
 - Las cajas inclinadas se giran con un cuaternión al cargar (`loaded`), no con el atributo
   `rotation`: A-Frame aplica los ejes en otro orden y salen torcidas.
-- Cada cosa en su archivo: una estancia nueva, archivo nuevo en `salas/` (y su `incluir` en
-  `index.html`); un componente, en el `js/` que le toque. No volver a meterlo todo en `index.html`.
+- Cada cosa en su archivo: una estancia nueva, archivo nuevo en `salas/` (y su nombre en `ZONAS`,
+  en `js/zonas.js`); un componente, en el `js/` que le toque. No volver a meterlo todo en `index.html`.
+- Las zonas se descargan: un componente con temporizadores o escuchas fuera de su entidad necesita
+  `remove()` que los pare (como `pantalla-pc`), y nada debe guardar referencias a piezas de otra zona.
 - Las estancias se cargan después de arrancar la escena: el código que busque algo de una sala
   (`getElementById`, `querySelector`) tiene que aguantar que todavía no exista.
 - Cambios grandes: un script de Node en el scratchpad que reemplaza texto exacto y falla si no

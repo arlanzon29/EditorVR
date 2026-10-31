@@ -4,8 +4,8 @@
 
 <!-- campo: 5 cm por debajo de los suelos de las salas, para no coincidir con ellos -->
 <a-plane rotation="-90 0 0" position="5 -0.05 0" width="200" height="200" color="#ffffff" suelo-hierba></a-plane>
-<!-- camino de tierra desde el portón -->
-<a-plane rotation="-90 0 0" position="6 -0.035 -26" width="2.4" height="38" color="#8a7a5a"></a-plane>
+<!-- camino de tierra desde el portón hasta el bosque (sigue en bosque.html: los puntos del final coinciden) -->
+<a-entity camino="puntos: 6 -6.9, 6.2 -10, 8 -15, 7.6 -20, 4.5 -25, 3.6 -30, 6 -35, 8 -40, 6.6 -44, 6 -45, 5.5 -49"></a-entity>
 
 <!-- piel exterior de la sala 1 y de la sala 2: en el fondo del hueco de sus ventanas (35 cm
      dentro del muro), en cuatro trozos alrededor de él (x o z = -1…1, y = 0,95…2,25), para que
@@ -40,6 +40,11 @@
   <a-entity arbol="alto: 5.5; semilla: 11" position="1 0 -20"></a-entity>
   <a-entity arbol="alto: 5; semilla: 12" position="11 0 -23"></a-entity>
   <a-entity arbol="alto: 6; semilla: 13" position="-1 0 -38"></a-entity>
+  <!-- donde empieza el bosque, a los lados del final del camino -->
+  <a-entity arbol="alto: 8; semilla: 14" position="2 0 -44"></a-entity>
+  <a-entity arbol="alto: 9; semilla: 15" position="10 0 -44.5"></a-entity>
+  <a-entity arbol="alto: 7.5; semilla: 16" position="-3 0 -43.5"></a-entity>
+  <a-entity arbol="alto: 8.5; semilla: 17" position="14.5 0 -43"></a-entity>
 </a-entity>
 
 <!-- colinas a lo lejos: medias bolas aplastadas, de verdes cada vez más grises -->

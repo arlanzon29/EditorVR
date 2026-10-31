@@ -8,16 +8,18 @@
 <!-- Comportamiento: componentes de A-Frame en js/ (el orden importa poco: se usan al arrancar) -->
 <script src="js/rendimiento.js"></script>
 <script src="js/incluir.js"></script>
+<script src="js/zonas.js"></script>
 <script src="js/movimiento.js"></script>
 <script src="js/texturas.js"></script>
 <script src="js/objetos.js"></script>
+<script src="js/arboles.js"></script>
 <script src="js/conexion.js"></script>
 <script src="js/medidor.js"></script>
 </head>
 <body>
-<!-- La escena: aquí el jugador (rig), la luz general y las estancias. Cada estancia está en
-     salas/ y se carga con el componente incluir; sus coordenadas son las del mundo. -->
-<a-scene informe-posicion foto-para-claude medidor luces-cercanas renderer="antialias: true; colorManagement: true" xr-mode-ui="enabled: true" background="color: #a9cfe8">
+<!-- La escena: aquí el jugador (rig) y la luz general. Las estancias están en salas/, con las
+     coordenadas del mundo, y las carga el componente zonas (js/zonas.js) según dónde estés. -->
+<a-scene zonas informe-posicion foto-para-claude medidor luces-cercanas renderer="antialias: true; colorManagement: true" xr-mode-ui="enabled: true" background="color: #a9cfe8">
 
   <!-- Inicio: en la sala 3, mirando a la escalera -->
   <a-entity id="rig" position="6 0 7" rotation="0 180 0">
@@ -34,16 +36,6 @@
   <!-- Luz suave: todo blanco, pero con la sombra justa para distinguir suelo, paredes y techo -->
   <a-entity light="type: ambient; intensity: 2.2; color: #fff"></a-entity>
   <a-entity light="type: directional; intensity: 1.2; color: #fff" position="1 3 2"></a-entity>
-
-  <!-- Estancias -->
-  <a-entity incluir="salas/sala1.html"></a-entity>
-  <a-entity incluir="salas/pasillo.html"></a-entity>
-  <a-entity incluir="salas/sala2.html"></a-entity>
-  <a-entity incluir="salas/pasillo2.html"></a-entity>
-  <a-entity incluir="salas/sala3.html"></a-entity>
-  <a-entity incluir="salas/comedor.html"></a-entity>
-  <a-entity incluir="salas/patio.html"></a-entity>
-  <a-entity incluir="salas/exterior.html"></a-entity>
 </a-scene>
 </body>
 </html>

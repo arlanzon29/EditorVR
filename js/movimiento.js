@@ -30,6 +30,10 @@ AFRAME.registerComponent('giro-por-pasos', {
 // Andar con el joystick izquierdo, hacia donde miras (sin subir ni bajar).
 const VELOCIDAD = 1.5;   // m/s
 const VELOCIDAD_MIRAR = 2.2;   // rad/s con el stick derecho del mando de Xbox, a tope
+const MIRAR_VERTICAL = 0.6;    // en vertical, esta parte de esa velocidad
+const CONGELADO_MS = 700;      // un eje idéntico durante este tiempo: no lo está moviendo una mano
+const QUIETO_MS = 2000;        // un eje a medias sin separarse 0,08 de un punto durante este tiempo: tampoco
+const SALTO_MANO = 0.08, SALTO_MS = 150;   // una mano mueve el eje al menos esto en este tiempo; el mando solo, no
 // En VR cuenta la altura real de las gafas; si estás sentado (las gafas, de media, por debajo de
 // SENTADO_BAJO; se vuelve a "de pie" por encima de SENTADO_ALTO) se suma SUBIR_SENTADO.
 const SENTADO_BAJO = 1.3, SENTADO_ALTO = 1.4, SUBIR_SENTADO = 0.35;
@@ -72,6 +76,10 @@ const FUERA = [
   { x0: -30, x1: 40, z0: 14.65, z1: 45 },      // por detrás (norte)
   { x0: 14.6, x1: 40, z0: -45, z1: 45 },       // al este de la sala 2 y de la sala 3
 ];
+// Bosque, otra zona (js/zonas.js): se entra por el final del camino (x = 4,8…7,2, z = -45).
+const PASO_BOSQUE = { x0: 5.05, x1: 6.95, z0: -47, z1: -44 };
+const BOSQUE = { x0: -24, x1: 36, z0: -100, z1: -46 };
+let cambiandoDeZona = false;   // mientras se carga una zona no se anda
 const ALTO_GALERIA = 4.4;   // altura del rellano de arriba de la sala 3 y de sus pasillos
 const dentro = (p, z) => p.x >= z.x0 && p.x <= z.x1 && p.z >= z.z0 && p.z <= z.z1;
 
@@ -88,11 +96,12 @@ function zonasPermitidas(cabeza, altura) {
   // el hueco de la puerta del patio solo existe con ella abierta: se solapa con el patio, y si no,
   // desde ese borde del patio se cruzaba la puerta cerrada
   const pasoPatio = p4 ? PASO_PATIO : { x0: 1, x1: 0, z0: 1, z1: 0 };
-  const zonas = [SALA, pasillo, SALA2, pasillo2, SALA3, ARCO_ARRIBA, ...PASILLOS_ARRIBA, PASO_COMEDOR, COMEDOR, pasoPatio, PATIO, PASO_PORTON, ...FUERA];
+  const zonas = [SALA, pasillo, SALA2, pasillo2, SALA3, ARCO_ARRIBA, ...PASILLOS_ARRIBA, PASO_COMEDOR, COMEDOR, pasoPatio, PATIO, PASO_PORTON, ...FUERA, PASO_BOSQUE, BOSQUE];
   const uniones = [[0, 1, p1], [1, 2, p2], [1, 3, p3], [3, 4, true],
     [4, 5, enAlto], [5, 6, enAlto], [6, 7, true], [6, 8, true], [7, 9, true], [8, 9, true],
     [4, 10, true], [10, 11, true], [1, 12, p4], [12, 13, p4],
-    [13, 14, true], ...FUERA.map((_, i) => [14, 15 + i, true])];
+    [13, 14, true], ...FUERA.map((_, i) => [14, 15 + i, true]),
+    [15, 15 + FUERA.length, true], [15 + FUERA.length, 16 + FUERA.length, true]];
   const i = zonas.findIndex(z => dentro(cabeza, z) && (enAlto || !z.arriba));
   if (i < 0) return zonas.filter(z => enAlto || !z.arriba);   // fuera de todo (no debería pasar): que pueda volver a cualquiera
   const alcanzables = new Set([i]);
@@ -187,6 +196,7 @@ AFRAME.registerComponent('andar-joystick', {
     } else { this.ajusteVR = undefined; this.mediaGafas = undefined; this.sentado = false; }
     r.y += (this.altura + (this.ajusteVR ?? 0) - r.y) * Math.min(1, dt / 80);   // subir y bajar escalones con suavidad
     this.mandoPC(dt);
+    if (cambiandoDeZona) return;
     const mx = THREE.MathUtils.clamp(this.x + this.tx + this.gx, -1, 1), my = THREE.MathUtils.clamp(this.y + this.ty + this.gy, -1, 1);
     if (Math.hypot(mx, my) < 0.15) return;   // zona muerta
     const s = Math.min(dt / 1000, 0.05) * VELOCIDAD;
@@ -227,27 +237,44 @@ AFRAME.registerComponent('andar-joystick', {
     if (this.el.sceneEl.is('vr-mode') || !navigator.getGamepads) return;
     const m = [...navigator.getGamepads()].find(g => g && g.connected && g.mapping === 'standard');
     if (!m) return;
-    // reposo: lo que marca cada stick sin tocarlo. Hay mandos que no vuelven a 0 (uno de Xbox por
-    // Bluetooth dejaba el stick derecho en -0,7 y la vista subía sola). Empieza en 0 (al ver el
-    // mando puede que se estén tocando los sticks); se ajusta solo, despacio, cuando un eje está
-    // quieto cerca del reposo, y el botón Vista (8), con los sticks sueltos, lo pone donde estén.
+    // reposo: lo que marca cada stick sin tocarlo, que no siempre es 0. Lo sigue mientras el eje no
+    // está activo (ver zona, abajo); el botón Vista (8), con los sticks sueltos, lo pone donde estén.
     if (this.mandoId !== m.id + m.index) {
       this.mandoId = m.id + m.index;
       this.reposo = m.axes.map(() => 0);
-      this.ejesAntes = m.axes.slice();
+      this.ancla = m.axes.slice();
       this.quietoMs = m.axes.map(() => 0);
+      this.exacto = m.axes.slice();
+      this.igualMs = m.axes.map(() => 0);
+      this.ref = m.axes.slice();
+      this.refMs = m.axes.map(() => 0);
+      this.activo = m.axes.map(() => false);
     }
     if (m.buttons[8] && m.buttons[8].pressed) this.reposo = m.axes.slice();
     // cada eje, de -1 a 1 contando desde el reposo hasta cada tope; zona muerta y reescalado para
     // que el movimiento empiece suave al salir de ella
     const zona = i => {
+      // Este mando de Xbox, sin tocarlo, resbala solo: el eje vertical derecho va despacio de 0 a
+      // -0,681 (medido: unos 0,1 por segundo) y se queda ahí, al milésimo. Se distingue de una mano
+      // por la rapidez: un eje no cuenta ("activo") hasta que da un salto en poco tiempo; mientras
+      // no, lo que marque es su reposo.
+      if (Math.abs(m.axes[i] - this.ref[i]) > SALTO_MANO) { this.activo[i] = true; this.ref[i] = m.axes[i]; this.refMs[i] = 0; }
+      else if ((this.refMs[i] += dt) > SALTO_MS) { this.ref[i] = m.axes[i]; this.refMs[i] = 0; }
+      // "quieto": sin separarse de un mismo punto (estos sticks tiemblan unas centésimas sin tocarlos)
+      if (Math.abs(m.axes[i] - this.ancla[i]) > 0.08) { this.ancla[i] = m.axes[i]; this.quietoMs[i] = 0; }
+      else this.quietoMs[i] += dt;
+      // idéntico al milésimo un rato (una mano siempre tiembla, salvo a tope): tampoco es una mano
+      if (m.axes[i] !== this.exacto[i]) { this.exacto[i] = m.axes[i]; this.igualMs[i] = 0; }
+      else this.igualMs[i] += dt;
+      const valor = Math.abs(m.axes[i]);
+      const soltado = (this.quietoMs[i] > 300 && (valor < 0.15 || Math.abs(m.axes[i] - this.reposo[i]) < ZONA_MUERTA))
+        || (this.igualMs[i] > CONGELADO_MS && valor < 0.98)
+        // al soltarlo también puede quedarse a medias, moviéndose solo centésimas (medido: 19 s en
+        // -0,65, andando solo hasta chocar): 2 s sin separarse de un punto, salvo cerca del tope, no es una mano
+        || (this.quietoMs[i] > QUIETO_MS && valor < 0.9);
+      if (soltado) this.activo[i] = false;
+      if (!this.activo[i]) { this.reposo[i] = m.axes[i]; return 0; }
       const r = this.reposo[i] || 0, bruto = m.axes[i] - r;
-      const quieto = Math.abs(m.axes[i] - (this.ejesAntes[i] ?? m.axes[i])) < 0.01;
-      this.quietoMs[i] = quieto ? (this.quietoMs[i] || 0) + dt : 0;
-      if (quieto && Math.abs(bruto) < 0.35) this.reposo[i] = r + bruto * Math.min(1, dt / 1000);   // ~1 s en seguirlo
-      // stick derecho clavado 3 s lejos del centro, pero no a tope: es su reposo (una mano no lo deja
-      // tan quieto, y si lo hiciera, la vista ya estaría en el techo o el suelo)
-      else if (i >= 2 && this.quietoMs[i] > 3000 && Math.abs(m.axes[i]) < 0.9) this.reposo[i] = m.axes[i];
       if (Math.abs(bruto) < ZONA_MUERTA) return 0;
       const v = bruto / (bruto > 0 ? 1 - r : 1 + r), a = Math.abs(v);
       return a < ZONA_MUERTA ? 0 : Math.sign(v) * Math.min(1, (a - ZONA_MUERTA) / (1 - ZONA_MUERTA));
@@ -257,8 +284,11 @@ AFRAME.registerComponent('andar-joystick', {
     const camara = document.querySelector('[camera]');
     const lc = camara.components['look-controls'], s = Math.min(dt, 50) / 1000 * VELOCIDAD_MIRAR;
     if (lc) {
-      lc.yawObject.rotation.y -= zona(2) * s;
-      lc.pitchObject.rotation.x = THREE.MathUtils.clamp(lc.pitchObject.rotation.x - zona(3) * s, -Math.PI / 2, Math.PI / 2);
+      // al cuadrado, para poder apuntar despacio con poca inclinación; en vertical, más lento: el
+      // recorrido es corto (de suelo a techo) y a toda velocidad se pasaba de largo
+      const curva = v => v * Math.abs(v);
+      lc.yawObject.rotation.y -= curva(zona(2)) * s;
+      lc.pitchObject.rotation.x = THREE.MathUtils.clamp(lc.pitchObject.rotation.x - curva(zona(3)) * s * MIRAR_VERTICAL, -Math.PI / 2, Math.PI / 2);
     }
     // botones: cuentan al pulsarlos, no mientras se siguen apretando
     const antes = this.botones || [];
@@ -274,7 +304,6 @@ AFRAME.registerComponent('andar-joystick', {
     if (g && pulsa(4)) g.girar(PASO_GIRO);    // LB: 30° a la izquierda
     if (g && pulsa(5)) g.girar(-PASO_GIRO);   // RB: 30° a la derecha
     this.botones = m.buttons.map(b => b.pressed);
-    this.ejesAntes = m.axes.slice();
   }
 });
 

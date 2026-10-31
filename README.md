@@ -23,6 +23,7 @@ Coordenadas en metros: **x** hacia la puerta de la sala 1 y el pasillo, **y** ha
 | **Sala 2** | 5 × 5 m (x = 9…14) | Como la sala 1: piedra, techo con vigas, ventana rústica, biblioteca, mesa separada de la pared y silla pegada a ella. |
 | **Patio** | 6 × 6 m, fuera (x = 3…9, z = -6,6…-0,6) | Patio de armas entre la sala 1 y la sala 2: se sale por la puerta de la pared izquierda del pasillo, enfrente de la de la sala 3. Suelo de losas, muralla almenada de 4 m, pozo con postes sobre el brocal, torno con manivela y cubo de duelas con aros y asa, antorchas junto a la puerta y cielo. |
 | **Exterior** | Campo alrededor de todo el castillo | Se sale por el portón en arco de la muralla del patio. Hierba, camino de tierra, árboles y colinas a lo lejos. Las salas 1 y 2 tienen piel por fuera y las galerías de arriba se ven como cadalsos de madera. |
+| **Bosque** | Otra zona, al final del camino del exterior (x = -24…36, z = -100…-46) | El camino sigue serpenteando entre los árboles hasta un claro con piedras. Ver [Zonas](#zonas). |
 | **Pasillo 2** | 3,4 m (x = 5,4…6,6, z = 0,6…4) | Ramal que lleva a la sala 3. A mitad, una antorcha de pared en cada lado, con la llama y la luz temblando. |
 | **Sala 3** | 12 × 10 m, 7,5 m de alto (x = 0…12, z = 4…14) | La grande. Muros de piedra de 40 cm con arcos arriba, techo con 8 vigas y la escalera. |
 | **Comedor** | 12 × 10 m, 4,2 m de alto (x = -12,4…-0,4, z = 4…14) | A la derecha de la sala 3 entrando, por un gran arco con dovelas en su muro, guardado por dos guardias con lanza y escudo. Suelo de losas, techo de madera con 8 vigas, tres ventanas en arco con reja, chimenea con hoguera, mesa de 7 m con bancos y sillón, dos lámparas de rueda, estandartes y antorchas. Un criado con una jarra da vueltas a la mesa. |
@@ -39,6 +40,24 @@ Coordenadas en metros: **x** hacia la puerta de la sala 1 y el pasillo, **y** ha
 Al pie del tramo central, a cada lado, un caballero de piedra sobre su pedestal, mirando a la
 entrada. El frente de la escalera es de sillares de piedra, las pisadas de losas de roca y las barandillas
 doradas. Se puede subir andando; los tramos son macizos y no se pueden atravesar.
+
+## Zonas
+
+El mundo se reparte en zonas (`ZONAS` en [js/zonas.js](js/zonas.js): `castillo`, con todas las
+estancias de arriba, y `bosque`) y **solo hay una cargada a la vez**. Es la misma página, así que no
+se sale de VR. Todas usan las coordenadas del mundo: el jugador no se teletransporta, el camino sigue.
+
+- **Niebla:** a menos de 10 m del final del camino (x = 6, z = -45) se espesa. Al cruzarlo se cierra
+  del todo, no se puede andar, se cambia de zona y se abre al terminar. Volver funciona igual.
+- **Letrero:** al entrar en una zona (también al abrir la página) aparece delante de ti una tabla de
+  madera con su nombre (`titulo` en `ZONAS`), unos 5 s, y se desvanece.
+- **Al salir de una zona:** se liberan geometrías, materiales y texturas (`liberarEstancia`), se
+  quitan sus entidades y se vacía `SUPERFICIES`. Las puertas vuelven a estar cerradas al regresar.
+- **Comprobar que no se pierde memoria:** el medidor enseña las geometrías y texturas vivas
+  (`geo`, `tex`), que deben volver a los mismos valores tras cada ida y vuelta.
+
+Para añadir una zona: sus archivos en `salas/`, su título y su lista en `ZONAS`, su rectángulo en `zonasPermitidas`
+(unido por un paso) y su límite en el `tick` de `zonas`.
 
 ## Controles
 
@@ -72,9 +91,13 @@ pulsar cualquier botón con la página delante; dentro de las gafas no cuenta):
 | **LB / RB** | Girar 30° a la izquierda / derecha. |
 | **Vista** (dos cuadraditos) | Recalibrar los sticks: soltarlos y pulsarlo si la vista o el jugador se mueven solos. |
 
-Los sticks se calibran solos: el reposo se ajusta despacio cuando están quietos cerca del centro,
-y si el derecho se queda clavado 3 s lejos del centro (un mando de Xbox por Bluetooth lo dejaba en
--0,7 y la vista subía sola), se toma eso como su reposo. El informe de posición (`/__posicion`)
+Este mando resbala solo: sin tocarlo, el eje vertical derecho va despacio (unos 0,1 por segundo) de 0
+a -0,681 y se queda ahí, y al tocarlo vuelve a 0. Por eso un eje no cuenta hasta que da un salto rápido,
+como el que da una mano (`SALTO_MANO`, `SALTO_MS`), y deja de contar al soltarlo, si marca lo mismo
+al milésimo 0,7 s o si, a medias, no se separa de un punto en 2 s (`QUIETO_MS`: el izquierdo se quedó en
+-0,65 tras soltarlo y se andaba solo); mientras no cuenta, lo que marque es su reposo. Un stick movido muy despacio no se
+nota hasta el primer movimiento rápido. Mirar va al cuadrado de la inclinación, para apuntar despacio, y en vertical al 60 %
+de la velocidad (`MIRAR_VERTICAL`). El informe de posición (`/__posicion`)
 incluye los mandos que ve el navegador y lo que marcan, para diagnosticar.
 
 Al recargar la página vuelves al sitio donde estabas y la pantalla sigue donde la dejaste (se
@@ -139,10 +162,12 @@ Mientras se comparte la pantalla, cualquiera en la misma wifi que abra la págin
 
 | Archivo | Qué tiene |
 |---|---|
-| [index.html](index.html) | La escena: el jugador (`rig`, cámara y mandos), la luz general y una entidad `incluir` por estancia. |
-| [salas/](salas/) | Una estancia por archivo, en coordenadas del mundo: `sala1.html`, `pasillo.html`, `sala2.html`, `pasillo2.html`, `sala3.html`, `comedor.html`, `patio.html`, `exterior.html`. Solo etiquetas de A-Frame. |
-| [js/incluir.js](js/incluir.js) | Componente `incluir`: descarga una estancia al arrancar y la mete en la escena. |
+| [index.html](index.html) | La escena: el jugador (`rig`, cámara y mandos) y la luz general. |
+| [salas/](salas/) | Una estancia por archivo, en coordenadas del mundo: `sala1.html`, `pasillo.html`, `sala2.html`, `pasillo2.html`, `sala3.html`, `comedor.html`, `patio.html`, `exterior.html`, `bosque.html`. Solo etiquetas de A-Frame. |
+| [js/zonas.js](js/zonas.js) | Qué estancias tiene cada zona, cambio de zona y niebla. |
+| [js/incluir.js](js/incluir.js) | Componente `incluir`: descarga una estancia y la mete en la escena. |
 | [js/movimiento.js](js/movimiento.js) | Andar, girar, zonas, `SUPERFICIES`, obstáculos `macizo` y la mira del monitor. |
+| [js/arboles.js](js/arboles.js) | Árboles dibujados en bloque, con versión de cerca y de lejos según la distancia. |
 | [js/texturas.js](js/texturas.js) | Texturas de canvas y `suelo-madera`, `pared-piedra`, `piedra-mundo`. |
 | [js/objetos.js](js/objetos.js) | Puerta, antorcha, estatua, biblioteca, escalera, muros con arcos, pasillos de arriba, y lo del comedor (hoguera, lámpara de rueda, mesa, estandarte). |
 | [js/rendimiento.js](js/rendimiento.js) | Para el Quest: al cargar cada estancia junta lo fijo en pocas mallas (`fundirEstancia`), y solo usa 6 luces puntuales, siempre las mismas, que copian a las más cercanas (`luces-cercanas`: si cambia cuántas luces hay, el navegador recompila y da un tirón). |
@@ -150,7 +175,7 @@ Mientras se comparte la pantalla, cualquiera en la misma wifi que abra la págin
 | [js/conexion.js](js/conexion.js) | Pantalla del PC, objetos que se cogen e informe de posición para Claude. |
 | [modelos/](modelos/) | Modelos de Blender (`.glb`) y el `.blend` para retocarlos. |
 
-Para añadir una estancia: un archivo nuevo en `salas/`, su línea `incluir` en `index.html`, y
+Para añadir una estancia: un archivo nuevo en `salas/`, su nombre en `ZONAS` (js/zonas.js), y
 sus zonas en `js/movimiento.js` (`zonasPermitidas`) si se puede andar por ella.
 
 ### Componentes
@@ -161,12 +186,14 @@ sus zonas en `js/movimiento.js` (`zonasPermitidas`) si se puede andar por ella.
   hasta 35 cm, sin caídas, sin atravesar lo macizo). Desde el HTML de una sala, `macizo="ancho; fondo;
   alto"` añade un obstáculo que no se puede atravesar (la chimenea del comedor).
 - **Materiales:** `suelo-madera`, `pared-piedra` (planos), `piedra-mundo` (cajas, con la textura
-  alineada en el mundo; `tono` la tiñe), `suelo-hierba` (el campo).
+  alineada en el mundo; `tono` la tiñe), `suelo-hierba` (el campo), `camino` (cinta de tierra con curvas
+  por una lista de puntos, con el borde fundido con la hierba; no impide andar fuera de ella) y `claro`
+  (círculo de tierra igual).
 - **Objetos:** `puerta`, `antorcha` (carga el modelo, pone su luz, salvo con `luz: false`, y hace temblar la llama), `estatua` (caballero con
   pedestal macizo), `biblioteca`, `escalera-sala3`, `muro-arcos` (con `entrada` a ras de suelo,
   recta o en arco con `entradaArco`), `arco-ciego` (con `hueco: false`, marco de dovelas de un arco
   abierto), `pasillos-arriba`; en el comedor, `hoguera`, `lampara-rueda`, `mesa-comedor` (mesa,
-  bancos, sillón, vajilla y candeleros; maciza), `estandarte`, `guardia` (quieto, respira, te mira, te saluda y es macizo) `arbol` (copa de bolas y tronco macizo) y `criado` (anda por una ruta de
+  bancos, sillón, vajilla y candeleros; maciza), `estandarte`, `guardia` (quieto, respira, te mira, te saluda y es macizo) y `criado` (anda por una ruta de
   puntos, mueve piernas y brazo, respira, te sigue con la cabeza y te saluda si te acercas).
 - **Modelos de Blender** en `modelos/` (glTF binario, `.glb`), con `gltf-model="url(modelos/...)"`:
   `antorcha.glb` (`Soporte`, una sola pieza con el hierro, el mango y la brea, y la `Llama`
@@ -189,6 +216,9 @@ sus zonas en `js/movimiento.js` (`zonasPermitidas`) si se puede andar por ella.
   - `guardia.glb`: guardia con cota de malla, sobreveste granate con cruz, yelmo con nasal, lanza
     y escudo de cometa. Piezas `GuardiaCuerpo` y `GuardiaCabeza` (pivote en el cuello); 2,6 m con
     la lanza; origen entre los pies; mira hacia +z.
+  - `arboles.glb`: tres árboles (`Arbol1`, `Arbol2`, `Arbol3`), con el color en los vértices. Cada uno,
+    `_Cerca_` (ramas, raíces y mechones; unos 3.000 triángulos) y `_Lejos_` (unos 420), con `_Tronco` y
+    `_Copa`. Origen en la base. Si cambia lo que miden, actualizar `ALTO_MODELOS` en js/arboles.js.
   - `modelos.blend`: el archivo de Blender con todos, para retocarlos y volver a exportar.
 - **Conexión con el PC y Claude:** `pantalla-pc`, `agarrable`, `informe-posicion`
   (`foto-para-claude`, pendiente).
@@ -213,6 +243,9 @@ lo peor es mirar el castillo entero desde fuera.
 - **6 luces fijas:** las luces de la escena no se dibujan; 6 luces que siempre están encendidas
   copian a las 6 más cercanas. Si cambiara cuántas luces hay, el navegador recompilaría los
   materiales y daría un tirón (pasaba al entrar en las salas).
+- **Árboles en bloque** ([js/arboles.js](js/arboles.js)): `arbol="alto; semilla"` no crea mallas; todos
+  se dibujan con `InstancedMesh`, unas 12 llamadas como mucho sean cuantos sean. A menos de 18 m usan
+  la versión de cerca y a más de 22 m la de lejos.
 - **Modelos de Blender en pocas piezas:** una por material, salvo lo que se anima aparte.
 - **Medidor** (botón X, joystick izquierdo apretado o tecla M): imágenes por segundo, la peor,
   llamadas, triángulos y luces.
