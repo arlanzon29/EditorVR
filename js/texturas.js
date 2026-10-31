@@ -225,8 +225,6 @@ function crearTexturaTierra(alfa) {
     const x = azar() * N, y = azar() * N, r = 8 + azar() * 30;
     for (const dx of [0, -N, N]) { g.beginPath(); g.arc(x + dx, y, r, 0, 2 * Math.PI); g.fill(); }
   }
-  g.fillStyle = 'rgba(70, 58, 40, 0.18)';   // rodadas de los carros, a lo largo del camino
-  g.fillRect(0, N * 0.3, N, N * 0.07); g.fillRect(0, N * 0.63, N, N * 0.07);
   for (let k = 0; k < 900; k++) {   // piedrecillas
     g.fillStyle = `hsla(35, 12%, ${25 + azar() * 40}%, 0.7)`;
     g.fillRect(azar() * N, azar() * N, 1 + azar() * 2, 1 + azar() * 2);
@@ -248,7 +246,7 @@ const METROS_TIERRA = 4;   // la textura cubre esto a lo largo del camino
 // mundo, separados por comas) con curvas suaves y el borde irregular, fundido con la hierba.
 let texturaCamino = null;
 AFRAME.registerComponent('camino', {
-  schema: { puntos: { type: 'string' }, ancho: { default: 2.4 }, y: { default: -0.03 } },   // y: sobre el terreno
+  schema: { puntos: { type: 'string' }, ancho: { default: 2.4 }, y: { default: -0.03 } },   // y: sin terreno de malla, a esa altura
   init() {
     const { puntos, ancho, y } = this.data;
     // el borde ondula en senos de frecuencia entera, para que la textura empalme al repetirse
@@ -263,20 +261,21 @@ AFRAME.registerComponent('camino', {
     const pos = [], nor = [], uv = [], ind = [];
     for (let i = 0; i <= n; i++) {
       const p = curva.getPointAt(i / n), t = curva.getTangentAt(i / n), nx = -t.z, nz = t.x, l = Math.hypot(nx, nz) || 1;
-      for (const lado of [-1, 1]) {
-        const bx = p.x + lado * nx / l * ancho / 2, bz = p.z + lado * nz / l * ancho / 2;
-        pos.push(bx, alturaTerreno(bx, bz) + y, bz);
+      // cinco puntos de borde a borde, pegados a la malla del terreno: si no, en las cuestas la cinta queda en el aire
+      for (let k = 0; k < 5; k++) {
+        const lado = k / 2 - 1, bx = p.x + lado * nx / l * ancho / 2, bz = p.z + lado * nz / l * ancho / 2;
+        pos.push(bx, mallaTerreno ? alturaMalla(bx, bz) + 0.015 : alturaTerreno(bx, bz) + y, bz);
         nor.push(0, 1, 0);
-        uv.push(i / n * curva.getLength() / METROS_TIERRA, (lado + 1) / 2);
+        uv.push(i / n * curva.getLength() / METROS_TIERRA, k / 4);
       }
-      if (i < n) { const a = i * 2; ind.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+      if (i < n) for (let k = 0; k < 4; k++) { const a = i * 5 + k; ind.push(a, a + 1, a + 5, a + 1, a + 6, a + 5); }
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
     geo.setIndex(ind);
-    const malla = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: texturaCamino, transparent: true, depthWrite: false, roughness: 1 }));
+    const malla = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: texturaCamino, transparent: true, depthWrite: false, roughness: 1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
     malla.renderOrder = 1;   // por encima de los claros
     this.el.setObject3D('mesh', malla);
   },
@@ -384,9 +383,9 @@ AFRAME.registerComponent('cielo', {
 // Terreno de una zona: una malla cada 3 m, con la altura de alturaTerreno (mundo.js). De hierba; o, si
 // la zona tiene "color" (la montaña, el acantilado), pintada por vértices y sin textura.
 AFRAME.registerComponent('terreno', {
-  schema: { x0: { default: 0 }, x1: { default: 0 }, z0: { default: 0 }, z1: { default: 0 } },
+  schema: { x0: { default: 0 }, x1: { default: 0 }, z0: { default: 0 }, z1: { default: 0 }, paso: { default: 3 } },
   init() {
-    const { x0, x1, z0, z1 } = this.data, PASO = 3;
+    const { x0, x1, z0, z1, paso: PASO } = this.data;
     texturaHierba = texturaHierba || crearTexturaHierba();
     const nx = Math.round((x1 - x0) / PASO), nz = Math.round((z1 - z0) / PASO), pos = [], uv = [], ind = [];
     for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) {
@@ -395,7 +394,8 @@ AFRAME.registerComponent('terreno', {
       uv.push(x / texturaHierba.metros, -z / texturaHierba.metros);
       if (i < nx && j < nz) { const a = j * (nx + 1) + i, b = a + nx + 1; ind.push(a, b, a + 1, a + 1, b, b + 1); }
     }
-    const pintar = zonaCargada.color;
+    mallaTerreno = { x0, z0, paso: PASO };
+    const pintar = zonaCargada.color && zonaCargada.color.bind(zonaCargada);
     const geo = new THREE.BufferGeometry();
     if (pintar) {
       const col = [], c = new THREE.Color();
@@ -407,6 +407,32 @@ AFRAME.registerComponent('terreno', {
     geo.setIndex(ind);
     geo.computeVertexNormals();
     this.el.setObject3D('mesh', new THREE.Mesh(geo, new THREE.MeshStandardMaterial(pintar ? { vertexColors: true, roughness: 1, flatShading: true } : { map: texturaHierba.tex, roughness: 1 })));
+  },
+  remove() { this.el.removeObject3D('mesh'); }
+});
+
+// Montañas alrededor de una zona llana: una malla de vértices pintados, con su sol pero sin hornear, que
+// empieza a subir a "desde" metros del rectángulo x0…z1 y llega hasta "hasta" metros.
+AFRAME.registerComponent('montes', {
+  schema: { x0: { default: 0 }, x1: { default: 0 }, z0: { default: 0 }, z1: { default: 0 }, desde: { default: 28 }, hasta: { default: 300 } },
+  init() {
+    const { x0, x1, z0, z1, desde, hasta } = this.data, PASO = 12;
+    const nx = Math.ceil((x1 - x0 + 2 * hasta) / PASO), nz = Math.ceil((z1 - z0 + 2 * hasta) / PASO), pos = [], col = [], ind = [], c = new THREE.Color();
+    for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) {
+      const x = x0 - hasta + i * PASO, z = z0 - hasta + j * PASO;
+      const d = Math.hypot(Math.max(0, x0 - x, x - x1), Math.max(0, z0 - z, z - z1));
+      const h = rampa(desde, desde + 95, d) * (44 + 17 * Math.sin(x * 0.041 + 1) * Math.cos(z * 0.037) + 11 * Math.sin(x * 0.095 + z * 0.08) + 5 * Math.sin(z * 0.19 - x * 0.13)) - 2;
+      pos.push(x, h, z);
+      const n = h + 3 * Math.sin(x * 0.27) * Math.cos(z * 0.31);
+      c.set(n > 46 ? '#a9acb2' : n > 26 ? '#67645e' : n > 13 ? '#5f6545' : '#4f6330'); col.push(c.r, c.g, c.b);
+      if (i < nx && j < nz) { const a = j * (nx + 1) + i, b = a + nx + 1; ind.push(a, b, a + 1, a + 1, b, b + 1); }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    geo.setIndex(ind);
+    geo.computeVertexNormals();
+    this.el.setObject3D('mesh', new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true })));
   },
   remove() { this.el.removeObject3D('mesh'); }
 });

@@ -4,13 +4,19 @@
 <a-entity terreno="x0: -170; x1: 180; z0: -480; z1: -150"></a-entity>
 <a-entity agua="ancho: 190; fondo: 180" position="5 -0.6 -300"></a-entity>
 <a-entity camino="puntos: 6 -195, 6 -203, 7 -212, 5 -222, 5 -231; y: 0.08"></a-entity>
-<a-entity barrera="x0: -78.3; x1: 88.3; z0: -392.3; z1: -201.7; huecos: z1 4.6 7.4"></a-entity>
+<a-entity barrera="x0: -78.3; x1: 88.3; z0: -392.3; z1: -201.7; huecos: z1 4.6 7.4, x1 -346.4 -343.6"></a-entity>
 
+<!-- de la orilla norte sale el único camino al puerto -->
+<a-entity camino="puntos: 5 -370, 30 -378, 60 -365, 84 -345, 90 -345, 96 -345; y: 0.08"></a-entity>
 <!-- embarcaderos: al sur, en la isla y al norte -->
 <a-entity embarcadero="x0: 5; z0: -231; x1: 5; z1: -244"></a-entity>
 <a-entity embarcadero="x0: 26; z0: -300; x1: 14; z1: -300"></a-entity>
 <a-entity embarcadero="x0: 5; z0: -369; x1: 5; z1: -356"></a-entity>
-<a-entity barca="paradas: sur 7.2 -243 5 -243, isla 15 -297.8 15 -300, norte 7.2 -357 5 -357"></a-entity>
+<a-entity barca="paradas: sur 7.4 -242.5 5 -242.5 z, isla 17 -297.6 17 -300 x, norte 7.4 -357.5 5 -357.5 z"></a-entity>
+
+<!-- zona de pesca: un banco de peces cerca del embarcadero sur, y su cartel -->
+<a-entity peces="cuantos: 18; radio: 5" position="20 -0.6 -244"></a-entity>
+<a-entity cartel-madera="texto: Zona de pesca" position="10 0.1 -231" rotation="0 180 0"></a-entity>
 
 <!-- en la isla, una torre vieja -->
 <a-box position="43 4 -300" width="3.6" height="5" depth="3.6" piedra-mundo="tono: #a39c8e"></a-box>
@@ -108,7 +114,6 @@
   <a-entity arbol="alto: 6.7; semilla: 577" position="-69.34 0 -229.16"></a-entity>
   <a-entity arbol="alto: 7.0; semilla: 578" position="139.31 0 -234.36"></a-entity>
   <a-entity arbol="alto: 6.4; semilla: 579" position="73.36 0 -224.92"></a-entity>
-  <a-entity arbol="alto: 6.7; semilla: 580" position="83.99 0 -345.74"></a-entity>
   <a-entity arbol="alto: 8.5; semilla: 581" position="-122.93 0 -247.44"></a-entity>
   <a-entity arbol="alto: 10.0; semilla: 582" position="23.89 0 -403.41"></a-entity>
   <a-entity arbol="alto: 8.4; semilla: 583" position="-106.58 0 -217.95"></a-entity>

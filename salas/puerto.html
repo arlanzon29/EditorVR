@@ -1,0 +1,153 @@
+<!-- Puerto: otra zona (ver js/mundo.js), al norte del acantilado y con salida al mar. Solo se llega desde el
+     norte del lago. Arriba, el puerto pesquero, con su muelle de piedra, tres embarcaderos, casas y barcas;
+     siguiendo la costa hacia el sur, la playa, que acaba contra el acantilado. Es mediodía. -->
+
+<a-entity terreno="x0: 60; x1: 420; z0: -440; z1: -170"></a-entity>
+<a-entity agua="ancho: 1400; fondo: 1400; color: #3a7392; opacidad: 1; metros: 20" position="900 -0.3 -320"></a-entity>
+<a-entity camino="puntos: 84 -345, 96 -345, 140 -348, 200 -352, 250 -345, 285 -349, 303 -349; ancho: 3; y: 0.08"></a-entity>
+<a-entity camino="puntos: 285 -349, 282 -320, 282 -300, 272 -260, 270 -232; y: 0.08"></a-entity>
+<a-entity barrera="x0: 91.7; x1: 345.3; z0: -395.3; z1: -201.7; huecos: x0 -346.4 -343.6"></a-entity>
+
+<!-- el muelle de piedra, a lo largo de la orilla, y tres embarcaderos -->
+<a-box position="306 0.2 -349" width="2.4" height="1.4" depth="74" piedra-mundo="tono: #9a948a"></a-box>
+<a-entity macizo="ancho: 2.5; fondo: 74; alto: 0.9" position="306 0 -349"></a-entity>
+<a-entity embarcadero="x0: 307; z0: -332; x1: 331; z1: -332; alto: 0.9"></a-entity>
+<a-entity embarcadero="x0: 307; z0: -350; x1: 331; z1: -350; alto: 0.9"></a-entity>
+<a-entity embarcadero="x0: 307; z0: -368; x1: 331; z1: -368; alto: 0.9"></a-entity>
+<a-entity gltf-model="url(modelos/barca.glb)" position="318 -0.3 -335.6" rotation="0 90 0"></a-entity>
+<a-entity gltf-model="url(modelos/barca.glb)" position="324 -0.3 -346.4" rotation="0 90 0"></a-entity>
+<a-entity gltf-model="url(modelos/barca.glb)" position="314 -0.3 -353.6" rotation="0 90 0"></a-entity>
+<a-entity gltf-model="url(modelos/barca.glb)" position="326 -0.3 -371.6" rotation="0 90 0"></a-entity>
+<a-entity gltf-model="url(modelos/barca.glb)" position="318 -0.3 -364.4" rotation="0 90 0"></a-entity>
+
+<!-- las casas de los pescadores -->
+<a-entity casa="ancho: 6; fondo: 5; cal: #c9b998; techo: #6e5c33" position="291 0.9 -331" rotation="0 90 0"></a-entity>
+<a-entity casa="ancho: 7; fondo: 5; cal: #bfb6a0; techo: #675531" position="291 0.9 -345" rotation="0 90 0"></a-entity>
+<a-entity casa="ancho: 6; fondo: 5; cal: #c4b596; techo: #73613a" position="291 0.9 -358" rotation="0 90 0"></a-entity>
+<a-entity casa="ancho: 7; fondo: 5; cal: #c9b998; techo: #6e5c33" position="291 0.9 -372" rotation="0 90 0"></a-entity>
+<a-entity casa="ancho: 6; fondo: 5; cal: #bfb6a0; techo: #675531" position="272 0.92 -338" rotation="0 90 0"></a-entity>
+<a-entity casa="ancho: 6; fondo: 6; cal: #c4b596; techo: #73613a" position="272 0.95 -366" rotation="0 90 0"></a-entity>
+
+<!-- barriles, cajas y redes secándose -->
+<a-cylinder position="301 1.3 -327" radius="0.3" height="0.8" segments-radial="10" color="#4e3421"></a-cylinder>
+<a-entity macizo="ancho: 0.6; fondo: 0.6; alto: 1.7000000000000002" position="301 0 -327"></a-entity>
+<a-cylinder position="301.7 1.3 -327.6" radius="0.3" height="0.8" segments-radial="10" color="#4e3421"></a-cylinder>
+<a-entity macizo="ancho: 0.6; fondo: 0.6; alto: 1.7000000000000002" position="301.7 0 -327.6"></a-entity>
+<a-cylinder position="300.6 1.3 -328.4" radius="0.3" height="0.8" segments-radial="10" color="#4e3421"></a-cylinder>
+<a-entity macizo="ancho: 0.6; fondo: 0.6; alto: 1.7000000000000002" position="300.6 0 -328.4"></a-entity>
+<a-cylinder position="302 1.3 -355" radius="0.3" height="0.8" segments-radial="10" color="#4e3421"></a-cylinder>
+<a-entity macizo="ancho: 0.6; fondo: 0.6; alto: 1.7000000000000002" position="302 0 -355"></a-entity>
+<a-cylinder position="302 1.3 -356" radius="0.3" height="0.8" segments-radial="10" color="#4e3421"></a-cylinder>
+<a-entity macizo="ancho: 0.6; fondo: 0.6; alto: 1.7000000000000002" position="302 0 -356"></a-entity>
+<a-cylinder position="301 1.3 -374" radius="0.3" height="0.8" segments-radial="10" color="#4e3421"></a-cylinder>
+<a-entity macizo="ancho: 0.6; fondo: 0.6; alto: 1.7000000000000002" position="301 0 -374"></a-entity>
+<a-box position="300 1.3 -339" width="0.8" height="0.8" depth="0.8" color="#5e4630" rotation="0 1 0"></a-box>
+<a-entity macizo="ancho: 0.9; fondo: 0.9; alto: 1.7" position="300 0 -339"></a-entity>
+<a-box position="301 1.2 -340.2" width="0.6" height="0.6" depth="0.6" color="#5e4630" rotation="0 15 0"></a-box>
+<a-entity macizo="ancho: 0.7; fondo: 0.7; alto: 1.5" position="301 0 -340.2"></a-entity>
+<a-box position="301.5 1.25 -362" width="0.7" height="0.7" depth="0.7" color="#5e4630" rotation="0 39 0"></a-box>
+<a-entity macizo="ancho: 0.7999999999999999; fondo: 0.7999999999999999; alto: 1.6" position="301.5 0 -362"></a-entity>
+<a-box position="300.5 1.35 -363" width="0.9" height="0.9" depth="0.9" color="#5e4630" rotation="0 33 0"></a-box>
+<a-entity macizo="ancho: 1; fondo: 1; alto: 1.8" position="300.5 0 -363"></a-entity>
+<a-box position="298 1.9 -351" width="0.1" height="2" depth="0.1" color="#3a2a1b"></a-box>
+<a-box position="298 1.9 -347" width="0.1" height="2" depth="0.1" color="#3a2a1b"></a-box>
+<a-box position="298 2.1 -349" width="0.03" height="1.5" depth="3.9" color="#4b5147"></a-box>
+<a-box position="298 2.85 -349" width="0.05" height="0.05" depth="4" color="#3a2a1b"></a-box>
+<a-entity macizo="ancho: 0.3; fondo: 4.2; alto: 2.9" position="298 0 -349"></a-entity>
+<a-box position="298 1.9 -322" width="0.1" height="2" depth="0.1" color="#3a2a1b"></a-box>
+<a-box position="298 1.9 -318" width="0.1" height="2" depth="0.1" color="#3a2a1b"></a-box>
+<a-box position="298 2.1 -320" width="0.03" height="1.5" depth="3.9" color="#4b5147"></a-box>
+<a-box position="298 2.85 -320" width="0.05" height="0.05" depth="4" color="#3a2a1b"></a-box>
+<a-entity macizo="ancho: 0.3; fondo: 4.2; alto: 2.9" position="298 0 -320"></a-entity>
+
+<!-- un pescador por el muelle -->
+<a-entity criado="puntos: 301 -323 2, 301 -372 3" position="301 0.9 -323"></a-entity>
+
+<!-- la playa: barcas varadas y rocas; al fondo, el acantilado -->
+<a-entity gltf-model="url(modelos/barca.glb)" position="279 0.6 -270" rotation="-5 70 4"></a-entity>
+<a-entity macizo="ancho: 2; fondo: 4.8; alto: 1.2" position="279 0 -270"></a-entity>
+<a-entity gltf-model="url(modelos/barca.glb)" position="278 0.64 -255" rotation="-5 100 4"></a-entity>
+<a-entity macizo="ancho: 2; fondo: 4.8; alto: 1.24" position="278 0 -255"></a-entity>
+<a-dodecahedron position="285 0.72 -222" radius="1.6" color="#6f6d65" material="roughness: 1; flatShading: true" macizo="ancho: 2.4; fondo: 2.4; alto: 1.92"></a-dodecahedron>
+<a-dodecahedron position="280 0.62 -230" radius="1" color="#6f6d65" material="roughness: 1; flatShading: true" macizo="ancho: 1.5; fondo: 1.5; alto: 1.37"></a-dodecahedron>
+<a-dodecahedron position="292 0.71 -218" radius="2.2" color="#6f6d65" material="roughness: 1; flatShading: true" macizo="ancho: 3.3; fondo: 3.3; alto: 2.36"></a-dodecahedron>
+<a-dodecahedron position="286 0.57 -290" radius="1.1" color="#7a776c" material="roughness: 1; flatShading: true" macizo="ancho: 1.65; fondo: 1.65; alto: 1.4"></a-dodecahedron>
+
+<!-- árboles, tierra adentro -->
+<a-entity>
+  <a-entity arbol="alto: 6.9; semilla: 900" position="81.37 0 -407.41"></a-entity>
+  <a-entity arbol="alto: 9.5; semilla: 901" position="151.74 0 -381.05"></a-entity>
+  <a-entity arbol="alto: 5.7; semilla: 902" position="61.89 0 -247.23"></a-entity>
+  <a-entity arbol="alto: 9.6; semilla: 903" position="124.65 0 -268.72"></a-entity>
+  <a-entity arbol="alto: 7.4; semilla: 904" position="130.35 0 -241.67"></a-entity>
+  <a-entity arbol="alto: 9.7; semilla: 905" position="203.04 0 -315.03"></a-entity>
+  <a-entity arbol="alto: 5.8; semilla: 906" position="181.6 0 -332.01"></a-entity>
+  <a-entity arbol="alto: 7.0; semilla: 907" position="83.07 0 -297.79"></a-entity>
+  <a-entity arbol="alto: 6.9; semilla: 908" position="214.66 0 -333.82"></a-entity>
+  <a-entity arbol="alto: 6.8; semilla: 909" position="206.95 0 -296.49"></a-entity>
+  <a-entity arbol="alto: 7.0; semilla: 910" position="111.88 0 -417.97"></a-entity>
+  <a-entity arbol="alto: 6.9; semilla: 911" position="239.75 0 -429.61"></a-entity>
+  <a-entity arbol="alto: 7.4; semilla: 912" position="163.72 0 -238.7"></a-entity>
+  <a-entity arbol="alto: 9.4; semilla: 913" position="177.02 0 -380.64"></a-entity>
+  <a-entity arbol="alto: 5.5; semilla: 914" position="228.61 0 -277.85"></a-entity>
+  <a-entity arbol="alto: 8.2; semilla: 915" position="70.64 0 -233.05"></a-entity>
+  <a-entity arbol="alto: 5.6; semilla: 916" position="128.74 0 -328.52"></a-entity>
+  <a-entity arbol="alto: 8.8; semilla: 917" position="73.93 0 -369.9"></a-entity>
+  <a-entity arbol="alto: 6.9; semilla: 918" position="196.06 0 -237.4"></a-entity>
+  <a-entity arbol="alto: 9.9; semilla: 919" position="208.27 0 -426.34"></a-entity>
+  <a-entity arbol="alto: 10.5; semilla: 920" position="183.27 0 -422.88"></a-entity>
+  <a-entity arbol="alto: 9.6; semilla: 921" position="232.43 0 -308.02"></a-entity>
+  <a-entity arbol="alto: 6.6; semilla: 922" position="230.48 0 -377.15"></a-entity>
+  <a-entity arbol="alto: 8.1; semilla: 923" position="183.79 0 -287.06"></a-entity>
+  <a-entity arbol="alto: 9.2; semilla: 924" position="215.59 0 -296.26"></a-entity>
+  <a-entity arbol="alto: 7.9; semilla: 925" position="269.64 0 -389.6"></a-entity>
+  <a-entity arbol="alto: 9.1; semilla: 926" position="207.25 0 -397.32"></a-entity>
+  <a-entity arbol="alto: 6.1; semilla: 927" position="195.73 0 -384.6"></a-entity>
+  <a-entity arbol="alto: 7.3; semilla: 928" position="107.81 0 -249.31"></a-entity>
+  <a-entity arbol="alto: 9.9; semilla: 929" position="151.27 0 -354.72"></a-entity>
+  <a-entity arbol="alto: 6.8; semilla: 930" position="147.09 0 -367.66"></a-entity>
+  <a-entity arbol="alto: 6.3; semilla: 931" position="181.37 0 -218.71"></a-entity>
+  <a-entity arbol="alto: 8.8; semilla: 932" position="220.29 0 -287.72"></a-entity>
+  <a-entity arbol="alto: 8.2; semilla: 933" position="81.64 0 -280.5"></a-entity>
+  <a-entity arbol="alto: 6.0; semilla: 934" position="206.46 0 -413.18"></a-entity>
+  <a-entity arbol="alto: 7.1; semilla: 935" position="239.44 0 -241.66"></a-entity>
+  <a-entity arbol="alto: 9.8; semilla: 936" position="86.33 0 -398.35"></a-entity>
+  <a-entity arbol="alto: 10.1; semilla: 937" position="128.82 0 -254.27"></a-entity>
+  <a-entity arbol="alto: 8.4; semilla: 938" position="78.6 0 -234.28"></a-entity>
+  <a-entity arbol="alto: 5.9; semilla: 939" position="96.96 0 -327.49"></a-entity>
+  <a-entity arbol="alto: 10.1; semilla: 940" position="79.75 0 -417.36"></a-entity>
+  <a-entity arbol="alto: 6.7; semilla: 941" position="222.15 0 -384.03"></a-entity>
+  <a-entity arbol="alto: 10.0; semilla: 942" position="209.24 0 -405.48"></a-entity>
+  <a-entity arbol="alto: 10.3; semilla: 943" position="224.86 0 -414.67"></a-entity>
+  <a-entity arbol="alto: 7.8; semilla: 944" position="76.09 0 -293.26"></a-entity>
+  <a-entity arbol="alto: 7.4; semilla: 945" position="257.86 0 -433.91"></a-entity>
+  <a-entity arbol="alto: 9.3; semilla: 946" position="170.14 0 -262.86"></a-entity>
+  <a-entity arbol="alto: 7.8; semilla: 947" position="81.63 0 -318.31"></a-entity>
+  <a-entity arbol="alto: 7.1; semilla: 948" position="254.21 0 -260.55"></a-entity>
+  <a-entity arbol="alto: 8.9; semilla: 949" position="117.66 0 -367.2"></a-entity>
+  <a-entity arbol="alto: 7.2; semilla: 950" position="270.39 0 -420.62"></a-entity>
+  <a-entity arbol="alto: 6.7; semilla: 951" position="186.77 0 -415.53"></a-entity>
+  <a-entity arbol="alto: 7.2; semilla: 952" position="171.65 0 -428.97"></a-entity>
+  <a-entity arbol="alto: 6.7; semilla: 953" position="216.92 0 -343.41"></a-entity>
+  <a-entity arbol="alto: 10.1; semilla: 954" position="81.71 0 -369.63"></a-entity>
+  <a-entity arbol="alto: 7.9; semilla: 955" position="182.08 0 -313.4"></a-entity>
+  <a-entity arbol="alto: 9.0; semilla: 956" position="64.3 0 -276.89"></a-entity>
+  <a-entity arbol="alto: 9.4; semilla: 957" position="249.89 0 -327.22"></a-entity>
+  <a-entity arbol="alto: 10.3; semilla: 958" position="158.16 0 -331.14"></a-entity>
+  <a-entity arbol="alto: 6.8; semilla: 959" position="68.66 0 -364.42"></a-entity>
+  <a-entity arbol="alto: 9.7; semilla: 960" position="110.18 0 -314.78"></a-entity>
+  <a-entity arbol="alto: 6.7; semilla: 961" position="237.61 0 -358.54"></a-entity>
+  <a-entity arbol="alto: 8.8; semilla: 962" position="199.94 0 -255.41"></a-entity>
+  <a-entity arbol="alto: 10.4; semilla: 963" position="259.55 0 -397.57"></a-entity>
+  <a-entity arbol="alto: 10.2; semilla: 964" position="74.11 0 -275.63"></a-entity>
+  <a-entity arbol="alto: 9.7; semilla: 965" position="101.72 0 -379.66"></a-entity>
+  <a-entity arbol="alto: 6.8; semilla: 966" position="193.62 0 -392.65"></a-entity>
+  <a-entity arbol="alto: 9.2; semilla: 967" position="153.08 0 -422.57"></a-entity>
+  <a-entity arbol="alto: 6.9; semilla: 968" position="124.61 0 -411.33"></a-entity>
+  <a-entity arbol="alto: 6.9; semilla: 969" position="143.84 0 -309.6"></a-entity>
+  <a-entity arbol="alto: 6.2; semilla: 970" position="169.97 0 -390.99"></a-entity>
+  <a-entity arbol="alto: 5.7; semilla: 971" position="197.66 0 -309.36"></a-entity>
+  <a-entity arbol="alto: 10.5; semilla: 972" position="173.97 0 -332.51"></a-entity>
+  <a-entity arbol="alto: 7.4; semilla: 973" position="169.02 0 -419.68"></a-entity>
+  <a-entity arbol="alto: 7.9; semilla: 974" position="170.48 0 -277.48"></a-entity>
+</a-entity>

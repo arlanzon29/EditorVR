@@ -66,20 +66,22 @@ AFRAME.registerComponent('embarcadero', {
   }
 });
 
-// Barca: espera atracada en una parada, con un cartel por cada otro destino. Al apuntar a uno y
-// apretar el gatillo te subes y te lleva: no se puede andar durante el viaje, y al llegar te deja en
-// el embarcadero. Cada parada: "clave x z xBajar zBajar" (dónde atraca y dónde te deja), separadas por
-// comas. Empieza en la parada más cercana a ti, por si se recarga la página estando en la isla.
+// Barca: espera atracada en una parada. En el embarcadero, un poste con una tabla por cada otro destino:
+// al apuntar a una y apretar el gatillo te subes y te lleva, sentado en la popa y mirando a proa; no se
+// puede andar durante el viaje, y al llegar te deja en el embarcadero. Cada parada: "clave x z xBajar zBajar
+// eje" (dónde atraca, dónde te deja y a lo largo de qué eje va el embarcadero), separadas por comas. Empieza
+// en la parada más cercana a ti, por si se recarga la página estando en la isla.
 const ETIQUETAS_BARCA = { sur: 'A la orilla sur', isla: 'A la isla', norte: 'A la orilla norte' };
 const BARCA_VELOCIDAD = 5;     // metros por segundo, en la parte rápida del viaje
-const BARCA_ALTURA = -0.15;    // a qué altura van los pies en la barca
+const BARCA_ALTURA = 0.15;     // cuánto más arriba que el agua van los pies
+const BARCA_POPA = 1.15;       // cuánto más atrás del centro de la barca vas
 let enBarco = false;           // mientras se viaja no se anda (lo mira andar-joystick)
 AFRAME.registerComponent('barca', {
   schema: { paradas: { type: 'string' }, y: { default: -0.6 } },
   init() {
     this.paradas = this.data.paradas.split(',').map(p => {
-      const [clave, x, z, xB, zB] = p.trim().split(/\s+/);
-      return { clave, x: +x, z: +z, xB: +xB, zB: +zB };
+      const [clave, x, z, xB, zB, eje] = p.trim().split(/\s+/);
+      return { clave, x: +x, z: +z, xB: +xB, zB: +zB, eje };
     });
     this.rig = document.getElementById('rig').object3D;
     this.modelo = document.createElement('a-entity');
@@ -87,51 +89,83 @@ AFRAME.registerComponent('barca', {
     this.el.appendChild(this.modelo);
     const yo = this.rig.position;
     this.actual = this.paradas.reduce((m, p, i) => Math.hypot(p.xB - yo.x, p.zB - yo.z) < Math.hypot(this.paradas[m].xB - yo.x, this.paradas[m].zB - yo.z) ? i : m, 0);
-    this.el.object3D.position.set(this.paradas[this.actual].x, this.data.y, this.paradas[this.actual].z);
+    const p = this.paradas[this.actual];
+    this.el.object3D.position.set(p.x, this.data.y, p.z);
+    this.el.object3D.rotation.y = this.rumboDeAtraque(p);
     this.viaje = null;
+    // el poste, en el embarcadero: no va en la barca, que te lo pondría delante de la cara
+    this.poste = document.createElement('a-entity');
+    this.poste.classList.add('cartel');
+    this.el.parentEl.appendChild(this.poste);
+    const palo = document.createElement('a-box');
+    palo.classList.add('cartel');
+    palo.setAttribute('position', '0 0.85 0'); palo.setAttribute('width', 0.09); palo.setAttribute('height', 1.7); palo.setAttribute('depth', 0.09); palo.setAttribute('color', '#3a281a');
+    this.poste.appendChild(palo);
     this.carteles = [0, 1].map(k => this.crearCartel(k));
     this.ponerCarteles();
   },
-  // Tabla de madera con el destino escrito en un canvas (con tildes), en un poste de la barca.
+  // atracada a lo largo del embarcadero, con la proa hacia fuera
+  rumboDeAtraque(p) { return p.eje === 'x' ? (p.x < 30 ? -Math.PI / 2 : Math.PI / 2) : (p.z > -300 ? Math.PI : 0); },
+  // Tabla con el destino escrito en un canvas (con tildes). Dos caras, para que se lea bien por los dos lados.
   crearCartel(k) {
     const lienzo = document.createElement('canvas');
     lienzo.width = 512; lienzo.height = 128;
     const tex = new THREE.CanvasTexture(lienzo);
     tex.colorSpace = THREE.SRGBColorSpace;
-    const e = document.createElement('a-plane');
-    e.classList.add('clicable', 'cartel');
-    e.setAttribute('width', 1.1); e.setAttribute('height', 0.275);
-    e.setAttribute('position', `0 ${1.9 - k * 0.34} 0`);
-    e.setAttribute('material', 'shader: flat; side: double');
-    e.addEventListener('loaded', () => { e.getObject3D('mesh').material.map = tex; e.getObject3D('mesh').material.needsUpdate = true; });
-    e.addEventListener('click', () => this.viajar(e.destino));
-    e.addEventListener('mouseenter', () => { if (e.getObject3D('mesh')) e.getObject3D('mesh').material.color.set('#ffd9a0'); });
-    e.addEventListener('mouseleave', () => { if (e.getObject3D('mesh')) e.getObject3D('mesh').material.color.set('#ffffff'); });
-    e.lienzo = lienzo; e.tex = tex;
-    this.el.appendChild(e);
+    const e = document.createElement('a-entity');
+    e.classList.add('cartel');
+    e.setAttribute('position', `0 ${1.5 - k * 0.32} 0`);
+    const hoja = new THREE.PlaneGeometry(1.05, 0.26), materiales = [0, 1].map(() => new THREE.MeshBasicMaterial({ map: tex }));
+    const grupo = new THREE.Group();
+    materiales.forEach((m, i) => { const h = new THREE.Mesh(hoja, m); h.position.z = i ? -0.05 : 0.05; h.rotation.y = i * Math.PI; grupo.add(h); });
+    e.setObject3D('tabla', grupo);
+    const rayo = document.createElement('a-box');
+    rayo.classList.add('clicable');
+    rayo.setAttribute('width', 1.05); rayo.setAttribute('height', 0.26); rayo.setAttribute('depth', 0.1); rayo.setAttribute('material', 'visible: false');
+    let ultimo = 0;
+    rayo.addEventListener('mousedown', () => {
+      if (performance.now() - ultimo < 500) return;
+      ultimo = performance.now();
+      this.viajar(e.destino);
+    });
+    rayo.addEventListener('mouseenter', () => materiales.forEach(m => m.color.set('#ffcc33')));
+    rayo.addEventListener('mouseleave', () => materiales.forEach(m => m.color.set('#ffffff')));
+    e.appendChild(rayo);
+    e.lienzo = lienzo; e.tex = tex; e.materiales = materiales;
+    this.poste.appendChild(e);
     return e;
   },
   ponerCarteles() {
-    const destinos = this.paradas.map((p, i) => i).filter(i => i !== this.actual);
+    const p = this.paradas[this.actual], destinos = this.paradas.map((q, i) => i).filter(i => i !== this.actual);
+    // en el borde del embarcadero contrario a la barca, y con las tablas de cara a quien viene por él
+    const dx = p.xB - p.x, dz = p.zB - p.z, d = Math.hypot(dx, dz) || 1;
+    this.poste.object3D.position.set(p.xB + dx / d * 0.8, 0.25, p.zB + dz / d * 0.8);
+    this.poste.object3D.rotation.y = p.eje === 'x' ? Math.PI / 2 : 0;
+    this.poste.object3D.visible = true;
     this.carteles.forEach((e, k) => {
       e.destino = destinos[k];
+      e.materiales.forEach(m => m.color.set('#ffffff'));
       const g = e.lienzo.getContext('2d'), W = e.lienzo.width, H = e.lienzo.height;
       g.fillStyle = '#3a2a1b'; g.fillRect(0, 0, W, H);
       g.strokeStyle = '#17100a'; g.lineWidth = 8; g.strokeRect(4, 4, W - 8, H - 8);
       g.font = '600 56px Georgia, serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillStyle = '#e4d3a8'; g.fillText(ETIQUETAS_BARCA[this.paradas[destinos[k]].clave], W / 2, H / 2 + 3);
       e.tex.needsUpdate = true;
-      e.object3D.visible = true;
     });
   },
   viajar(i) {
-    if (this.viaje || i === undefined) return;
+    if (this.viaje || i === undefined || cambiandoDeZona) return;
     const a = this.paradas[this.actual], b = this.paradas[i];
     this.viaje = { a, b, i, t: 0, dura: Math.hypot(b.x - a.x, b.z - a.z) / BARCA_VELOCIDAD + 3 };
     enBarco = true;
-    for (const e of this.carteles) e.object3D.visible = false;
-    this.rig.position.set(a.x, BARCA_ALTURA, a.z);
+    this.poste.object3D.visible = false;
     this.giroMeta = Math.atan2(b.x - a.x, b.z - a.z);
+    this.subirRig();
+  },
+  // en la popa, de pie sobre el suelo de la barca; la barca gira, tú no: marea
+  subirRig() {
+    const o = this.el.object3D;
+    this.rig.position.set(o.position.x - Math.sin(o.rotation.y) * BARCA_POPA, this.data.y + BARCA_ALTURA + (o.position.y - this.data.y), o.position.z - Math.cos(o.rotation.y) * BARCA_POPA);
   },
   tick(t, dt) {
     const o = this.el.object3D;
@@ -143,19 +177,21 @@ AFRAME.registerComponent('barca', {
     const f = rampa(0, 1, v.t);   // arranca y frena con suavidad
     o.position.x = v.a.x + (v.b.x - v.a.x) * f;
     o.position.z = v.a.z + (v.b.z - v.a.z) * f;
-    // la proa se va girando hacia el destino (a ti no te gira: marea)
-    let dg = this.giroMeta - o.rotation.y;
+    // la proa se va girando hacia el destino y, al final, hacia su atraque
+    const meta = v.t > 0.8 ? this.rumboDeAtraque(v.b) : this.giroMeta;
+    let dg = meta - o.rotation.y;
     dg = Math.atan2(Math.sin(dg), Math.cos(dg));
     o.rotation.y += dg * Math.min(1, dt / 1200);
-    this.rig.position.set(o.position.x, BARCA_ALTURA + o.position.y - this.data.y, o.position.z);
+    this.subirRig();
     if (v.t < 1) return;
+    o.rotation.y = this.rumboDeAtraque(v.b);
     this.actual = v.i;
     this.viaje = null;
     enBarco = false;
-    this.rig.position.set(v.b.xB, v.b.y || 0.25, v.b.zB);
+    this.rig.position.set(v.b.xB, 0.25, v.b.zB);
     const andar = document.querySelector('[andar-joystick]').components['andar-joystick'];
     if (andar) andar.altura = 0.25;
     this.ponerCarteles();
   },
-  remove() { enBarco = false; }
+  remove() { enBarco = false; if (this.poste.parentNode) this.poste.parentNode.removeChild(this.poste); }
 });

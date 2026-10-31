@@ -9,7 +9,7 @@
 //    como está. Las piezas fundidas se ocultan, pero siguen en su sitio (y su HTML, igual).
 //  - luces-cercanas: solo 6 luces puntuales, siempre las mismas, que copian a las más cercanas.
 
-const NO_FUNDIR = '[barca], [agua], [puerta], [agarrable], [antorcha], [criado], [guardia], [hoguera], [lampara-rueda], [barrera], [gltf-model], [text], .clicable, .cartel';
+const NO_FUNDIR = '[barca], [agua], [camino], [claro], [ciervo], [peces], [portal], [puerta-portal], [salida], [pozo], [pinos], [cartel-madera], [puerta], [agarrable], [antorcha], [criado], [guardia], [hoguera], [lampara-rueda], [barrera], [gltf-model], [text], .clicable, .cartel';
 
 function fundirEstancia(el) {
   el.object3D.updateMatrixWorld(true);
@@ -83,6 +83,7 @@ function fundirEstancia(el) {
 // (three.js no lo hace solo). Si algo liberado se vuelve a usar, como las texturas de piedra que se
 // guardan para otras zonas, three.js lo sube de nuevo sin más.
 function liberarEstancia(el) {
+  luzTemblando = luzTemblando.filter(t => { let dentro = false; el.object3D.traverse(o => { if (o.material === t.m) dentro = true; }); return !dentro; });
   el.object3D.traverse(o => {
     if (!o.isMesh) return;
     o.geometry.dispose();
@@ -94,10 +95,15 @@ function liberarEstancia(el) {
 // componentes y sus obstáculos; solo cambia lo que se dibuja: las piezas fijas se ocultan y en su lugar
 // va un modelo con todas ellas (modelos/horneado/<sala>.glb) y su imagen de luz (<sala>-luz.jpg).
 // Lo que se mueve (NO_FUNDIR), lo transparente y lo enorme de fuera (hierba, colinas) sigue como estaba.
-const SALAS_HORNEADAS = ['sala1', 'pasillo', 'sala2', 'pasillo2', 'sala3', 'comedor', 'patio', 'exterior', 'bosque', 'lago', 'poblado', 'montana', 'acantilado', 'abadia'];
+const SALAS_HORNEADAS = ['sala1', 'pasillo', 'sala2', 'pasillo2', 'sala3', 'comedor', 'patio', 'exterior', 'bosque', 'lago', 'poblado', 'montana', 'acantilado', 'abadia', 'puerto', 'capilla', 'cueva', 'mazmorras'];
 // el suelo de cada zona de campo va aparte, en su propia imagen de luz: { estancia: su suelo }
-const SUELOS_HORNEADOS = { exterior: 'campo', bosque: 'campo-bosque', lago: 'campo-lago', poblado: 'campo-poblado', montana: 'campo-montana', acantilado: 'campo-acantilado', abadia: 'campo-abadia' };
+const SUELOS_HORNEADOS = { exterior: 'campo', bosque: 'campo-bosque', lago: 'campo-lago', poblado: 'campo-poblado', montana: 'campo-montana', acantilado: 'campo-acantilado', abadia: 'campo-abadia', puerto: 'campo-puerto', cueva: 'campo-cueva' };
 const ESCALA_LUZ = 2;   // la imagen guarda la luz dividida por esto: lo que pasa de 1 también cabe
+// Donde hay fuego, la luz horneada tiembla un poco, como las llamas: basta cambiar un número del material,
+// no cuesta nada. Va por estancia entera, así que tiene que ser muy suave.
+const SALAS_CON_FUEGO = ['sala1', 'sala2', 'pasillo2', 'sala3', 'comedor', 'capilla', 'mazmorras', 'cueva', 'campo-cueva', 'abadia'];
+const TEMBLOR_LUZ = 0.04;
+let luzTemblando = [];
 const texturasHorneadas = new Map();   // los modelos repiten piedra y madera: una sola copia de cada una
 
 function esHorneable(o, raiz, sala) {
@@ -110,7 +116,7 @@ function esHorneable(o, raiz, sala) {
   if (sala === 'campo') return ent.matches('[suelo-hierba]');
   if (sala.startsWith('campo-')) return ent.matches('[terreno]');
   if (MODELOS_HORNEADOS.test(ent.getAttribute('gltf-model'))) return true;
-  return !ent.closest(NO_FUNDIR) && !ent.closest('[suelo-hierba], [terreno], [camino], [claro], [arbol]') && !(parseFloat(ent.getAttribute('radius')) > 5);
+  return !ent.closest(NO_FUNDIR) && !ent.closest('[suelo-hierba], [terreno], [camino], [claro], [arbol], [montes]') && !(parseFloat(ent.getAttribute('radius')) > 5);
 }
 
 // Los modelos de Blender que no se mueven también van horneados: su original no se llega a ver.
@@ -124,9 +130,10 @@ document.addEventListener('model-loaded', e => {
 function hornearEstancia(el, sala) {
   return new Promise(listo => {
     const ent = document.createElement('a-entity');
-    const luz = new THREE.TextureLoader().load(`modelos/horneado/${sala}-luz.jpg`, t => {
-      t.colorSpace = THREE.SRGBColorSpace; t.flipY = false; t.channel = 1; t.needsUpdate = true;
-    });
+    // (configurada ya: si un material se dibujara antes de que llegue la imagen, se quedaría con
+    // las coordenadas equivocadas y saldría negro)
+    const luz = new THREE.TextureLoader().load(`modelos/horneado/${sala}-luz.jpg`);
+    luz.colorSpace = THREE.SRGBColorSpace; luz.flipY = false; luz.channel = 1;
     ent.addEventListener('model-error', () => { ent.remove(); luz.dispose(); console.error('Sin horneado: ' + sala); listo(); });
     ent.addEventListener('model-loaded', e => {
       el.object3D.traverse(o => {
@@ -144,6 +151,7 @@ function hornearEstancia(el, sala) {
         }
         // sin cálculo de luces, lo más barato que hay: las 6 luces solo afectan a lo que se mueve
         o.material = new THREE.MeshBasicMaterial({ map: mapa, vertexColors: true, lightMap: llama ? null : luz, lightMapIntensity: Math.PI * ESCALA_LUZ });
+        if (!llama && SALAS_CON_FUEGO.includes(sala)) luzTemblando.push({ m: o.material, fase: luzTemblando.length * 1.9 });
         v.dispose();
       });
       if (Object.values(SUELOS_HORNEADOS).includes(sala)) luzEnCaminos(el, e.detail.model, luz);
@@ -179,7 +187,7 @@ function luzEnCaminos(el, modelo, luz) {
     }
     malla.geometry.setAttribute('uv1', new THREE.BufferAttribute(uv1, 2));
     const v = malla.material;
-    malla.material = new THREE.MeshBasicMaterial({ map: v.map, transparent: true, depthWrite: false, lightMap: luz, lightMapIntensity: Math.PI * ESCALA_LUZ });
+    malla.material = new THREE.MeshBasicMaterial({ map: v.map, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, lightMap: luz, lightMapIntensity: Math.PI * ESCALA_LUZ });
     v.dispose();
   }
 }
@@ -259,6 +267,11 @@ AFRAME.registerComponent('luces-cercanas', {
     }
   },
   tick(t) {
+    const s = t / 1000;
+    for (const l of luzTemblando) {
+      const v = 0.5 * Math.sin(s * 7.3 + l.fase) + 0.3 * Math.sin(s * 13.1 + 1.7 + l.fase) + 0.2 * Math.sin(s * 23.7 + 4.1);
+      l.m.lightMapIntensity = Math.PI * ESCALA_LUZ * (1 + TEMBLOR_LUZ * v);
+    }
     // cada medio segundo: buscar las luces que hay (las salas cargan después y se descargan al
     // cambiar de zona) y elegir las más cercanas
     if (t - this.cuando > 500) {

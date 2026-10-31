@@ -21,13 +21,17 @@ Coordenadas en metros: **x** hacia la puerta de la sala 1 y el pasillo, **y** ha
 | **Sala 1** | 6 × 6 m, 3 m de alto (x, z = -3…3) | Paredes de piedra, suelo de tablas, techo de madera con 5 vigas. Ventana rústica hundida en el muro (marco de madera con 12 cuarterones, alféizar; por ella se ve el campo de fuera). Mesa, silla y biblioteca en la esquina. La pantalla del PC, a la izquierda de la ventana. |
 | **Pasillo** | 6 m (x = 3…9), 1,2 m de ancho | Paredes de piedra y suelo de madera. Puerta a la sala 1, puerta a la sala 2 al fondo y, a mitad, a la derecha, puerta a la sala 3. |
 | **Sala 2** | 5 × 5 m (x = 9…14) | Como la sala 1: piedra, techo con vigas, ventana rústica, biblioteca, mesa separada de la pared y silla pegada a ella. |
-| **Patio** | 6 × 6 m, fuera (x = 3…9, z = -6,6…-0,6) | Patio de armas entre la sala 1 y la sala 2: se sale por la puerta de la pared izquierda del pasillo, enfrente de la de la sala 3. Suelo de losas, muralla almenada de 4 m, pozo con postes sobre el brocal, torno con manivela y cubo de duelas con aros y asa, antorchas junto a la puerta y cielo. |
-| **Exterior** | Campo alrededor de todo el castillo | Se sale por el portón en arco de la muralla del patio. Hierba, camino de tierra, árboles y colinas a lo lejos. Las salas 1 y 2 tienen piel por fuera y las galerías de arriba se ven como cadalsos de madera. |
+| **Patio** | 6 × 6 m, fuera (x = 3…9, z = -6,6…-0,6) | Patio de armas entre la sala 1 y la sala 2: se sale por la puerta de la pared izquierda del pasillo, enfrente de la de la sala 3. Suelo de losas, muralla almenada de 4 m, pozo con postes sobre el brocal, torno con manivela y cubo de duelas con aros y asa (con el gatillo, el cubo baja y sube con agua), antorchas junto a la puerta y cielo. |
+| **Exterior** | Campo alrededor de todo el castillo | Se sale por el portón en arco de la muralla del patio. Hierba, camino de tierra, árboles y montañas alrededor. Las salas 1 y 2 tienen piel por fuera y las galerías de arriba se ven como cadalsos de madera. |
 | **Bosque** | Al final del camino del exterior (x = -78…88, z = -198…-46) | Colinas de hasta unos 10 m, a mediodía. El camino lleva a un claro con piedras y se abre hacia el lago, el poblado y la montaña. |
 | **Lago** | Al norte del bosque (x = -78…88, z = -392…-202) | Mediodía. Lago con embarcadero en la orilla sur, en la isla (con una torre vieja) y en la orilla norte; una barca lleva de uno a otro. |
 | **Poblado** | Al este del bosque (x = 92…228, z = -190…-50) | Mediodía. Calle con doce casas de entramado, plaza con pozo y mercado, iglesia con torre, dos guardias y una moza. |
 | **Montaña** | Al oeste del bosque (x = -282…-82, z = -228…-10) | Mediodía. Cumbre nevada de unos 50 m a la que se puede subir, con mojón y atalaya. |
 | **Acantilado** | Al este del poblado (x = 232…327, z = -190…-50) | Atardecer sobre el mar. Llano a 20 m cortado a pico, faro con fuego, banco y farallones. |
+| **Puerto y playa** | Al norte del acantilado, con salida al mar (x = 92…345, z = -395…-202) | Mediodía. Solo se llega por el camino de la orilla norte del lago. Muelle de piedra, tres embarcaderos con barcas, casas de pescadores, barriles y redes. Siguiendo la costa al sur, una playa con barcas varadas, que acaba contra el acantilado. |
+| **Capilla** | Enfrente del comedor, al otro lado de la sala 3 (x = 12,4…24,4, z = 4…14) | Simétrica del comedor: arco con dos guardias, bancos, altar con cruz, tres vidrieras y lámpara de rueda. |
+| **Mazmorras** | Bajo tierra (x = 1345…1355). Se baja por la puerta del arco ciego de la derecha de la escalera de la sala 3 | Pasillo con celdas enrejadas, una abierta, y la sala del carcelero. Solo antorchas. Se llega arriba de la escalera, que se baja andando, y se sale subiéndola. |
+| **Cueva** | Bajo tierra (x = 1004…1130). Se entra por la boca de roca, al este del camino del bosque | Túnel que se abre a una gran sala con lago oscuro, cristales que brillan y estalactitas. |
 | **Abadía en ruinas** | Al norte de la montaña (x = -282…-82, z = -430…-232) | De noche, con luna y estrellas. Nave sin techo, columnas rotas, camposanto y hogueras. |
 | **Pasillo 2** | 3,4 m (x = 5,4…6,6, z = 0,6…4) | Ramal que lleva a la sala 3. A mitad, una antorcha de pared en cada lado, con la llama y la luz temblando. |
 | **Sala 3** | 12 × 10 m, 7,5 m de alto (x = 0…12, z = 4…14) | La grande. Muros de piedra de 40 cm con arcos arriba, techo con 8 vigas y la escalera. |
@@ -55,10 +59,15 @@ se sale de VR. Todas usan las coordenadas del mundo: el jugador no se teletransp
   niebla se espesa. Al cruzar se cierra del todo, no se puede andar, se cambia de zona y se abre al terminar.
 - **Hora:** cada zona tiene la suya (`cielo` en `MUNDO`, recetas en `CIELOS`, js/texturas.js): cielo, niebla y luz general
   cambian con la niebla cerrada.
+- **Montañas del castillo:** `montes` (texturas.js), una malla alrededor, sin hornear.
 - **Terreno:** `altura` de cada zona; `alturaTerreno` da la de la zona cargada, plana alrededor de los pasos. La usan el andar, los
   árboles, el camino, la valla y la malla `terreno` (de hierba o, con `color`, pintada por vértices). Por debajo de `agua` no se pisa.
 - **Límites:** una valla luminosa invisible (`barrera`, objetos.js) se enciende a menos de 4 m del borde, y de lejos no se dibuja.
   Si cambia un límite o un paso, hay que cambiarla también (`huecos`).
+- **Pendiente:** habitaciones en la planta de arriba del castillo.
+- **Portales** (`portal`, js/animales.js): un cartel; al apuntarle y apretar el gatillo te lleva a otra zona con la niebla cerrada. Así se baja a mazmorras y cueva, que están lejos del resto.
+- **Animales:** `ciervo` (también las cabras; bosque y montaña), `peces` con el cartel de la zona de pesca (lago) y `pinos` (montaña).
+- **Viaje rápido** (js/mapa.js): en el mapa, apuntar a un sello con el mando derecho y apretar el gatillo. Solo salen las zonas visitadas; `MAPA_TODAS`, para depurar, los enseña todos (ahora activado).
 - **Barca** (js/lago.js): apunta con el rayo a un cartel suyo y aprieta el gatillo. Te lleva sin dejarte andar y te deja en el embarcadero.
   Modelo: `herramientas/modelar-barca.py` → `modelos/barca.glb`.
 - **Letrero:** al entrar en una zona (también al abrir la página) aparece delante de ti una tabla de
@@ -78,12 +87,13 @@ Para añadir una zona: su entrada en `MUNDO`, sus `PASOS`, su archivo en `salas/
 | Control | Qué hace |
 |---|---|
 | **Joystick izquierdo** | Andar hacia donde miras. Sube y baja escalones; no deja atravesar paredes ni puertas cerradas, ni caerse. |
+| **Gatillo lateral izquierdo** | Correr, mientras se aprieta (2,5 veces más rápido). En el ordenador, **Mayúsculas**; con mando de Xbox, **LT**. |
 | **Joystick derecho** a un lado | Girar 30°. |
 | **Gatillo** apuntando a una puerta | Abrirla o cerrarla (el rayo se pone verde, la aldaba brilla y sale el cartel). |
 | **Gatillo lateral** apuntando a la pantalla | Cogerla y colocarla; se queda donde la sueltes. |
 | **Botón B** | Traer la pantalla del PC delante de ti. |
-| **Botón Y** | Enseñar u ocultar el mapa, con una flecha que dice dónde estás (en el ordenador, tecla **N**). |
-| **Botón A** | Poner o quitar la luz horneada (en el ordenador, tecla **H**). |
+| **Apretar el joystick derecho** | Poner o quitar la luz horneada (en el ordenador, tecla **H**). |
+| **Botón A o Y** | Abrir el pergamino: mapa (con una flecha que dice dónde estás), ayuda con todos los botones, y cerrar (en el ordenador, tecla **N**). |
 | **Gatillo** apuntando a un cartel de la barca | Subirte y viajar a ese destino. |
 | **Botón X** o **apretar el joystick izquierdo** | Ocultar o enseñar el medidor de rendimiento, que sale encendido (en el ordenador, tecla **M**). |
 
@@ -289,8 +299,8 @@ En el castillo es un **atardecer**: sol bajo y anaranjado por el oeste (`CIELOS`
 Todo el castillo lleva la luz calculada en Blender, también la hierba, con la sombra del castillo y de
 los árboles (`campo`, en su propia imagen; el camino usa esa misma imagen, `luzEnCaminos`, para que la
 sombra siga por encima). Las demás zonas se hornean igual, cada una a su hora. No van horneados lo que se mueve, lo transparente, el agua,
-las colinas ni los árboles: usan la luz general. El **botón A** (en el ordenador, la tecla
-**H**) recarga el castillo con o sin ella, sin salir de VR; sin hornear, sale el letrero "Sin hornear".
+las colinas ni los árboles: usan la luz general. **Apretar el joystick derecho** (en el ordenador, la tecla **H**) recarga la zona con o sin ella, sin salir de VR;
+sin hornear, sale el letrero "Sin hornear".
 Con **`?sinhornear`** en la dirección se empieza sin ella.
 
 - **Las estancias se cargan igual**, con sus componentes y obstáculos; solo cambia lo que se dibuja:
@@ -305,9 +315,10 @@ Con **`?sinhornear`** en la dirección se empieza sin ella.
   3. `blender --background --python herramientas/hornear-castillo.py -- <carpeta>/<zona>.json <salida> 256`
      (minuto y medio) y copiar a `modelos/horneado/` los `.glb`, los `.jpg` y el `.blend`. Los vatios
      por unidad de luz, el sol y el cielo se ajustan en ese script.
+- En las estancias con fuego (`SALAS_CON_FUEGO`) la luz horneada tiembla un 4 %, toda a la vez, para acompañar a las llamas.
 - Las puertas y los personajes no están en Blender: no dan sombra, y la luz pasa por las puertas como si
   estuvieran abiertas. Las antorchas no tiemblan en lo horneado: solo su llama y lo que se mueve.
-- Sin hornear (botón A), el castillo se ve mucho más oscuro: la luz general es ya la del atardecer.
+- Sin hornear (tecla H), el castillo se ve mucho más oscuro: la luz general es ya la del atardecer.
 
 Medido en la vista previa del PC (octubre de 2026), sin y con horneado; **falta medirlo en el Quest**:
 

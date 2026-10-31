@@ -21,7 +21,8 @@ AFRAME.registerComponent('casa', {
   init() {
     const { ancho: A, fondo: F, alto: H, cal, techo } = this.data, MADERA = '#3a2a1b';
     const el = this.el, c = (x, y, z, w, h, d, attrs) => piezaCaja(el, x, y, z, w, h, d, attrs);
-    c(0, 0.3, 0, A + 0.1, 0.6, F + 0.1, { 'piedra-mundo': 'tono: #b5ab98' });
+    // (el zócalo sigue 1,5 m bajo tierra: en una cuesta, la casa no queda en el aire)
+    c(0, -0.45, 0, A + 0.1, 2.1, F + 0.1, { 'piedra-mundo': 'tono: #b5ab98' });
     c(0, 0.6 + (H - 0.6) / 2, 0, A, H - 0.6, F, { color: cal });
     // vigas vistas por las cuatro caras: esquinas, una a media altura y arriba
     for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) c(sx * A / 2, H / 2 + 0.3, sz * F / 2, 0.16, H - 0.6, 0.16, { color: MADERA });

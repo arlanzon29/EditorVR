@@ -23,12 +23,12 @@ AFRAME.registerComponent('zonas', {
     this.actual = null;   // nombre de la zona cargada
     this.raiz = null;     // entidad con las estancias de la zona
     this.crearLetrero();
-    // Para comparar: el botón A, o la tecla H, recarga la zona con la otra luz, sin salir de VR
+    // Para comparar: apretar el joystick derecho, o la tecla H, recarga la zona con la otra luz, sin salir de VR
     window.addEventListener('keydown', e => { if (e.code === 'KeyH') this.cambiarLuz(); });
     const enganchar = () => {
       const m = document.querySelector('[laser-controls="hand: right"]');
       if (!m) return setTimeout(enganchar, 500);
-      m.addEventListener('abuttondown', () => this.cambiarLuz());
+      m.addEventListener('thumbstickdown', () => this.cambiarLuz());
     };
     enganchar();
   },
@@ -113,7 +113,8 @@ AFRAME.registerComponent('zonas', {
     sol.setAttribute('light', a.sol);
     sol.object3D.position.set(...CIELOS[a.cielo].sol);
   },
-  async ir(nombre) {
+  // "destino" (x, z, giro): para los portales, que te llevan a otro sitio mientras la niebla está cerrada
+  async ir(nombre, destino) {
     cambiandoDeZona = true;
     this.abriendo = false;
     while (this.cierre < 1) await new Promise(r => setTimeout(r, 30));
@@ -124,6 +125,14 @@ AFRAME.registerComponent('zonas', {
       SUPERFICIES.length = 0;
     }
     zonaCargada = MUNDO[nombre];
+    mallaTerreno = null;
+    if (destino) {
+      const rig = document.getElementById('rig').object3D, y = destino.y ?? alturaTerreno(destino.x, destino.z);
+      rig.position.set(destino.x, y, destino.z);
+      rig.rotation.y = destino.giro || 0;
+      const andar = document.querySelector('[andar-joystick]').components['andar-joystick'];
+      if (andar) andar.altura = y;
+    }
     this.ponerAtmosfera(MUNDO[nombre]);
     const raiz = this.raiz = document.createElement('a-entity');
     const cargadas = MUNDO[nombre].salas.map(sala => {

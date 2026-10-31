@@ -88,7 +88,7 @@ AFRAME.registerComponent('puerta', {
       if (!r || !r.data.enabled) continue;
       const toca = r.intersectedEls.some(e => this.el.contains(e));
       if (el.hasAttribute('laser-controls')) {
-        const color = r.intersectedEls.some(e => e.closest('[puerta]')) ? RAYO_PUERTA : RAYO;
+        const color = r.intersectedEls.some(e => e.closest('[puerta], [pozo], [puerta-portal]')) ? RAYO_PUERTA : RAYO;
         if (r.data.lineColor !== color) el.setAttribute('raycaster', 'lineColor', color);
       }
       apuntada = apuntada || toca;
@@ -788,19 +788,20 @@ AFRAME.registerComponent('criado', {
 // estás a menos de 5 m y por delante de él, y a menos de 2 m te dice el "saludo". Mira hacia +z
 // local; con scale="-1 1 1" sale en espejo (lanza al otro lado). Es macizo: no se le atraviesa.
 AFRAME.registerComponent('guardia', {
-  schema: { saludo: { default: 'Paso libre, señor.' } },
+  schema: { saludo: { default: 'Paso libre, señor.' }, sentado: { default: false } },
   init() {
-    this.el.setAttribute('gltf-model', 'url(modelos/guardia.glb)');
+    // (sentado: herramientas/modelar-guardia-sentado.py)
+    this.el.setAttribute('gltf-model', `url(modelos/guardia${this.data.sentado ? '-sentado' : ''}.glb)`);
     this.cuerpo = this.cabeza = null;
     this.el.addEventListener('model-loaded', e => {
       this.cuerpo = e.detail.model.getObjectByName('GuardiaCuerpo');
       this.cabeza = e.detail.model.getObjectByName('GuardiaCabeza');
     });
-    const p = this.el.object3D.position, r = 0.4;   // la lanza y el escudo sobresalen
+    const p = this.el.object3D.position, r = this.data.sentado ? 0.65 : 0.4;   // la lanza y el escudo sobresalen; sentado, también las piernas
     SUPERFICIES.push({ x0: p.x - r, x1: p.x + r, z0: p.z - r, z1: p.z + r, y: 1.8, macizo: true });
     // el cartel cuelga de la sala, encima de él, no del guardia: en el guardia en espejo
     // (scale -1) girarlo hacia el jugador lo dejaba torcido
-    this.cartel = cartelDeTexto(this.el.parentEl, this.data.saludo, `${p.x} 2 ${p.z}`);
+    this.cartel = cartelDeTexto(this.el.parentEl, this.data.saludo, `${p.x} ${this.data.sentado ? 1.6 : 2} ${p.z}`);
     this.respiro = Math.random() * 10;
     this.miraYaw = 0; this.miraPitch = 0;
     this.saludado = false;

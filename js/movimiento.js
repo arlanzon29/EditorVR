@@ -29,6 +29,7 @@ AFRAME.registerComponent('giro-por-pasos', {
 
 // Andar con el joystick izquierdo, hacia donde miras (sin subir ni bajar).
 const VELOCIDAD = 1.5;   // m/s
+const CORRER = 2.5;      // veces más rápido al correr: gatillo lateral izquierdo, Mayúsculas o gatillo LT del mando
 const VELOCIDAD_MIRAR = 2.2;   // rad/s con el stick derecho del mando de Xbox, a tope
 const MIRAR_VERTICAL = 0.6;    // en vertical, esta parte de esa velocidad
 const CONGELADO_MS = 700;      // un eje idéntico durante este tiempo: no lo está moviendo una mano
@@ -57,6 +58,9 @@ const PASILLOS_ARRIBA = [
 // Comedor: ampliación a la derecha de la sala 3 (entrando), al otro lado de su muro (x = 0…-0,4),
 // por un arco abierto de 2,4 m (z = 6…8,4). Planta baja, 4,2 m de alto (debajo de los pasillos de arriba).
 const COMEDOR = { x0: -12.15, x1: -0.65, z0: 4.25, z1: 13.75 };
+// La capilla, simétrica del comedor, al otro lado de la sala 3
+const CAPILLA = { x0: 12.65, x1: 24.15, z0: 4.25, z1: 13.75 };
+const PASO_CAPILLA = { x0: 11.65, x1: 12.75, z0: 6.35, z1: 8.05 };
 const PASO_COMEDOR = { x0: -0.75, x1: 0.35, z0: 6.35, z1: 8.05 };   // el hueco del arco, a través del muro
 // Patio de armas, fuera, entre la sala 1 y la sala 2 (x = 3…9, z = -6,6…-0,6), con la muralla
 // alrededor. Se sale por la puerta 4, en la pared izquierda del pasillo; el paso es el hueco de la
@@ -74,7 +78,8 @@ const FUERA = [
   { x0: -30, x1: -3.7, z0: -45, z1: 3.35 },    // al oeste de la sala 1, hasta el muro del comedor
   { x0: -30, x1: -13.05, z0: -45, z1: 45 },    // al oeste del comedor
   { x0: -30, x1: 40, z0: 14.65, z1: 45 },      // por detrás (norte)
-  { x0: 14.6, x1: 40, z0: -45, z1: 45 },       // al este de la sala 2 y de la sala 3
+  { x0: 14.6, x1: 40, z0: -45, z1: 3.35 },     // al este de la sala 2, hasta el muro de la capilla
+  { x0: 25.05, x1: 40, z0: -45, z1: 45 },      // al este de la capilla
 ];
 // Las demás zonas y sus pasos están en js/mundo.js.
 let cambiandoDeZona = false;   // mientras se carga una zona no se anda
@@ -95,7 +100,7 @@ function zonasPermitidas(cabeza, altura) {
   // el hueco de la puerta del patio solo existe con ella abierta: se solapa con el patio, y si no,
   // desde ese borde del patio se cruzaba la puerta cerrada
   const pasoPatio = p4 ? PASO_PATIO : { x0: 1, x1: 0, z0: 1, z1: 0 };
-  const zonas = [SALA, pasillo, SALA2, pasillo2, SALA3, ARCO_ARRIBA, ...PASILLOS_ARRIBA, PASO_COMEDOR, COMEDOR, pasoPatio, PATIO, PASO_PORTON, ...FUERA, ...PASOS.map(p => p.andar), ...ZONAS_DE_ANDAR.map(z => z.andar)];
+  const zonas = [SALA, pasillo, SALA2, pasillo2, SALA3, ARCO_ARRIBA, ...PASILLOS_ARRIBA, PASO_COMEDOR, COMEDOR, pasoPatio, PATIO, PASO_PORTON, ...FUERA, ...PASOS.map(p => p.andar), ...ZONAS_DE_ANDAR.map(z => z.andar), PASO_CAPILLA, CAPILLA];
   const uniones = [[0, 1, p1], [1, 2, p2], [1, 3, p3], [3, 4, true],
     [4, 5, enAlto], [5, 6, enAlto], [6, 7, true], [6, 8, true], [7, 9, true], [8, 9, true],
     [4, 10, true], [10, 11, true], [1, 12, p4], [12, 13, p4],
@@ -104,7 +109,8 @@ function zonasPermitidas(cabeza, altura) {
     ...PASOS.flatMap((p, k) => {
       const i = 15 + FUERA.length + k, n = nombre => nombre === 'castillo' ? 15 : 15 + FUERA.length + PASOS.length + ZONAS_DE_ANDAR.indexOf(MUNDO[nombre]);
       return [[n(p.a), i, true], [i, n(p.b), true]];
-    })];
+    }),
+    [4, zonas.length - 2, true], [zonas.length - 2, zonas.length - 1, true]];
   const i = zonas.findIndex(z => dentro(cabeza, z) && (enAlto || !z.arriba));
   if (i < 0) return zonas.filter(z => enAlto || !z.arriba);   // fuera de todo (no debería pasar): que pueda volver a cualquiera
   const alcanzables = new Set([i]);
@@ -131,6 +137,7 @@ function sueloEn(p, actual) {
     encima = true;
   }
   if (!encima && terreno < (zonaCargada.agua ?? -Infinity)) return null;   // al agua no se entra
+  if (zonaCargada.pared && zonaCargada.pared(p.x, p.z)) return null;       // ni en la roca de la cueva
   return suelo < actual - ESCALON_MAX ? null : suelo;
 }
 
@@ -146,7 +153,7 @@ AFRAME.registerComponent('macizo', {
 
 // dónde estaba (localStorage); la clave lleva el punto de inicio del rig, para que al cambiarlo
 // en el HTML se empiece allí y no en el sitio guardado de antes
-const CLAVE_SITIO = 'editorvr-sitio';
+const CLAVE_SITIO = 'editorvr-sitio-2';   // (cambiar el número hace que todos vuelvan a empezar en el punto de inicio)
 
 AFRAME.registerComponent('andar-joystick', {
   init() {
@@ -181,6 +188,12 @@ AFRAME.registerComponent('andar-joystick', {
     };
     if (this.el.sceneEl.hasLoaded) volver(); else this.el.sceneEl.addEventListener('loaded', volver, { once: true });
     this.el.addEventListener('thumbstickmoved', e => { this.x = e.detail.x; this.y = e.detail.y; });
+    this.corriendo = false; this.mayusculas = false;
+    this.el.addEventListener('gripdown', () => { this.corriendo = true; });
+    this.el.addEventListener('gripup', () => { this.corriendo = false; });
+    window.addEventListener('keydown', e => { if (e.key === 'Shift') this.mayusculas = true; });
+    window.addEventListener('keyup', e => { if (e.key === 'Shift') this.mayusculas = false; });
+    window.addEventListener('blur', () => { this.mayusculas = false; });
   },
   tick(t, dt) {
     if (!dt || enBarco) return;   // (en la barca, te mueve ella: js/lago.js)
@@ -205,7 +218,9 @@ AFRAME.registerComponent('andar-joystick', {
     if (cambiandoDeZona) return;
     const mx = THREE.MathUtils.clamp(this.x + this.tx + this.gx, -1, 1), my = THREE.MathUtils.clamp(this.y + this.ty + this.gy, -1, 1);
     if (Math.hypot(mx, my) < 0.15) return;   // zona muerta
-    const s = Math.min(dt / 1000, 0.05) * VELOCIDAD;
+    const mando = this.el.sceneEl.is('vr-mode') ? null : [...navigator.getGamepads()].find(g => g && g.mapping === 'standard');
+    const corre = this.corriendo || this.mayusculas || (mando && mando.buttons[6] && mando.buttons[6].value > 0.5);
+    const s = Math.min(dt / 1000, 0.05) * VELOCIDAD * (corre ? CORRER : 1);
     const cam = document.querySelector('[camera]').object3D;
     const delante = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.getWorldQuaternion(new THREE.Quaternion()));
     delante.y = 0; delante.normalize();

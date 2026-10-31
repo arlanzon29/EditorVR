@@ -26,6 +26,24 @@ AFRAME.registerSystem('arbol', {
   crearPiezas(gltf) {
     this.piezas = ALTO_MODELOS.map(() => ({ Cerca: [], Lejos: [] }));
     gltf.scene.updateMatrixWorld(true);
+    // la versión de lejos: el tronco es más bajo que la copa, y sus bultos no caen justo encima, así
+    // que a veces quedaban separados. Se alarga hasta el centro de la copa, que lo tapa.
+    for (const k of [1, 2, 3]) {
+      const copa = gltf.scene.getObjectByName(`Arbol${k}_Lejos_Copa`), tronco = gltf.scene.getObjectByName(`Arbol${k}_Lejos_Tronco`);
+      const detallada = gltf.scene.getObjectByName(`Arbol${k}_Cerca_Copa`);
+      if (!copa || !tronco || !detallada) continue;
+      copa.geometry.computeBoundingBox();
+      tronco.geometry.computeBoundingBox();
+      // y la copa ocupa lo mismo que la de cerca: si no, el árbol cambia de volumen al alejarte
+      detallada.geometry.computeBoundingBox();
+      const de = copa.geometry.boundingBox, a = detallada.geometry.boundingBox, Q = copa.geometry.attributes.position;
+      const ajustar = (v, e) => a.min[e] + (v - de.min[e]) * (a.max[e] - a.min[e]) / (de.max[e] - de.min[e]);
+      for (let i = 0; i < Q.count; i++) Q.setXYZ(i, ajustar(Q.getX(i), 'x'), ajustar(Q.getY(i), 'y'), ajustar(Q.getZ(i), 'z'));
+      copa.geometry.computeBoundingBox();
+      const c = copa.geometry.boundingBox, alto = tronco.geometry.boundingBox.max.y, P = tronco.geometry.attributes.position;
+      for (let i = 0; i < P.count; i++) if (P.getY(i) > alto * 0.8) P.setY(i, (c.min.y + c.max.y) / 2);
+      tronco.geometry.computeVertexNormals();
+    }
     gltf.scene.traverse(o => {
       const m = o.isMesh && o.name.match(/^Arbol(\d)_(Cerca|Lejos)_/);
       if (!m) return;

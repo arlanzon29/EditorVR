@@ -1,5 +1,5 @@
 <!-- Exterior: campo delante del castillo, al que se sale por el portón de la muralla del patio.
-     Hierba, camino de tierra, árboles y colinas a lo lejos. Además, la piel de fuera de las salas
+     Hierba, camino de tierra, árboles y montañas alrededor. Además, la piel de fuera de las salas
      que dan al campo (por dentro sus paredes solo tienen cara hacia dentro). -->
 
 <!-- campo: 5 cm por debajo de los suelos de las salas, para no coincidir con ellos -->
@@ -28,6 +28,9 @@
 <!-- valla luminosa en el límite del campo (FUERA en js/movimiento.js), abierta donde el camino sigue al bosque -->
 <a-entity barrera="x0: -30.3; x1: 40.3; z0: -45.3; z1: 45.3; huecos: z0 4.6 7.4"></a-entity>
 
+<!-- el castillo, rodeado de montañas -->
+<a-entity montes="x0: -31; x1: 41; z0: -46; z1: 46"></a-entity>
+
 <!-- árboles (x z alto semilla) -->
 <a-entity>
   <a-entity arbol="alto: 7; semilla: 1" position="-8 0 -14"></a-entity>
@@ -50,12 +53,3 @@
   <a-entity arbol="alto: 8.5; semilla: 17" position="14.5 0 -43"></a-entity>
 </a-entity>
 
-<!-- colinas a lo lejos: medias bolas aplastadas, de verdes cada vez más grises -->
-<a-entity>
-  <a-sphere position="-40 -0.05 -80" radius="30" scale="1 0.300 1" segments-width="24" segments-height="12" theta-length="90" color="#6f7a5a" material="roughness: 1"></a-sphere>
-  <a-sphere position="0 -0.05 -95" radius="40" scale="1 0.300 1" segments-width="24" segments-height="12" theta-length="90" color="#748066" material="roughness: 1"></a-sphere>
-  <a-sphere position="45 -0.05 -85" radius="32" scale="1 0.313 1" segments-width="24" segments-height="12" theta-length="90" color="#6c7858" material="roughness: 1"></a-sphere>
-  <a-sphere position="-75 -0.05 -40" radius="28" scale="1 0.286 1" segments-width="24" segments-height="12" theta-length="90" color="#77826a" material="roughness: 1"></a-sphere>
-  <a-sphere position="80 -0.05 -45" radius="30" scale="1 0.300 1" segments-width="24" segments-height="12" theta-length="90" color="#737e63" material="roughness: 1"></a-sphere>
-  <a-sphere position="-60 -0.05 -110" radius="45" scale="1 0.311 1" segments-width="24" segments-height="12" theta-length="90" color="#7c8770" material="roughness: 1"></a-sphere>
-</a-entity>
