@@ -248,7 +248,7 @@ const METROS_TIERRA = 4;   // la textura cubre esto a lo largo del camino
 // mundo, separados por comas) con curvas suaves y el borde irregular, fundido con la hierba.
 let texturaCamino = null;
 AFRAME.registerComponent('camino', {
-  schema: { puntos: { type: 'string' }, ancho: { default: 2.4 }, y: { default: -0.03 } },
+  schema: { puntos: { type: 'string' }, ancho: { default: 2.4 }, y: { default: -0.03 } },   // y: sobre el terreno
   init() {
     const { puntos, ancho, y } = this.data;
     // el borde ondula en senos de frecuencia entera, para que la textura empalme al repetirse
@@ -264,7 +264,8 @@ AFRAME.registerComponent('camino', {
     for (let i = 0; i <= n; i++) {
       const p = curva.getPointAt(i / n), t = curva.getTangentAt(i / n), nx = -t.z, nz = t.x, l = Math.hypot(nx, nz) || 1;
       for (const lado of [-1, 1]) {
-        pos.push(p.x + lado * nx / l * ancho / 2, y, p.z + lado * nz / l * ancho / 2);
+        const bx = p.x + lado * nx / l * ancho / 2, bz = p.z + lado * nz / l * ancho / 2;
+        pos.push(bx, alturaTerreno(bx, bz) + y, bz);
         nor.push(0, 1, 0);
         uv.push(i / n * curva.getLength() / METROS_TIERRA, (lado + 1) / 2);
       }
@@ -296,6 +297,116 @@ AFRAME.registerComponent('claro', {
       new THREE.MeshStandardMaterial({ map: texturaClaro, transparent: true, depthWrite: false, roughness: 1 }));
     malla.rotation.x = -Math.PI / 2;
     this.el.setObject3D('mesh', malla);
+  },
+  remove() { this.el.removeObject3D('mesh'); }
+});
+
+// Cielo: una cúpula con degradado, nubes y el sol, dibujada en un canvas, siempre centrada en la
+// cabeza. La niebla también la tapa, para el cambio de zona. Cada zona pone el suyo (js/mundo.js).
+const CIELOS = {
+  atardecer: {
+    sol: [-1, 0.2, 0.25], tierra: '#b98a70', nubeAlta: '150, 110, 140', nubeBaja: '250, 170, 120', radioSol: 14, resplandor: 420,
+    degradado: [[0, '#2c3a68'], [0.55, '#6d5f8c'], [0.82, '#c97f78'], [0.95, '#f0a766'], [1, '#f7c07a']],
+    brillo: ['rgba(255, 225, 160, 0.95)', 'rgba(255, 190, 110, 0.7)', 'rgba(255, 150, 80, 0)'],
+    horneado: { energia: 5, color: [1, 0.5, 0.22], abajo: [1, 0.42, 0.18], medio: [0.62, 0.3, 0.38], arriba: [0.1, 0.14, 0.38], fuerza: 0.8 },
+  },
+  mediodia: {
+    sol: [0.4, 1, 0.3], tierra: '#b9cfd8', nubeAlta: '255, 255, 255', nubeBaja: '255, 255, 255', radioSol: 16, resplandor: 260,
+    degradado: [[0, '#3f78c0'], [0.6, '#6ea5dc'], [0.92, '#b4d4ec'], [1, '#d8e8ef']],
+    brillo: ['rgba(255, 255, 240, 0.95)', 'rgba(255, 255, 230, 0.5)', 'rgba(255, 255, 230, 0)'],
+    horneado: { energia: 4, color: [1, 0.96, 0.88], abajo: [0.7, 0.85, 1], medio: [0.5, 0.7, 1], arriba: [0.25, 0.45, 0.9], fuerza: 1 },
+  },
+};
+// el mismo atardecer, con el sol sobre el mar (al este)
+CIELOS.atardecerMar = Object.assign({}, CIELOS.atardecer, { sol: [1, 0.18, -0.2] });
+CIELOS.noche = {
+  sol: [-0.45, 0.65, 0.5], tierra: '#10151f', nubeAlta: '110, 125, 165', nubeBaja: '80, 90, 125', radioSol: 26, resplandor: 200, estrellas: true,
+  degradado: [[0, '#050814'], [0.6, '#0a1128'], [0.92, '#1a2542'], [1, '#2a3555']],
+  brillo: ['rgba(235, 240, 255, 0.95)', 'rgba(190, 205, 240, 0.35)', 'rgba(170, 190, 240, 0)'],
+  horneado: { energia: 0.5, color: [0.6, 0.72, 1], abajo: [0.1, 0.13, 0.25], medio: [0.05, 0.08, 0.2], arriba: [0.02, 0.03, 0.1], fuerza: 0.5 },
+};
+function dibujarCielo(d) {
+  const c = document.createElement('canvas');
+  c.width = 2048; c.height = 1024;
+  const g = c.getContext('2d'), W = c.width, H = c.height;
+  const grad = g.createLinearGradient(0, 0, 0, H / 2);
+  for (const [p, col] of d.degradado) grad.addColorStop(p, col);
+  g.fillStyle = grad; g.fillRect(0, 0, W, H / 2);
+  g.fillStyle = d.tierra; g.fillRect(0, H / 2, W, H / 2);
+  if (d.estrellas) {
+    let e = 23;
+    const az = () => (e = (e * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 1400; i++) {
+      g.fillStyle = `rgba(230, 235, 255, ${0.3 + az() * 0.7})`;
+      const y = az(); g.fillRect(az() * W, y * y * H * 0.48, 1 + az() * 1.5, 1 + az() * 1.5);
+    }
+  }
+  // bandas de nubes, alargadas
+  let s = 11;
+  const azar = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 60; i++) {
+    const x = azar() * W, y = H * (0.2 + azar() * 0.26), an = 80 + azar() * 260, al = 3 + azar() * 9;
+    g.fillStyle = `rgba(${y > H * 0.36 ? d.nubeBaja : d.nubeAlta}, ${0.12 + azar() * 0.2})`;
+    for (const dx of [0, W, -W]) { g.beginPath(); g.ellipse(x + dx, y, an, al, 0, 0, Math.PI * 2); g.fill(); }
+  }
+  // resplandor y disco del sol (en la esfera, u = 0 mira hacia -x y crece hacia +z)
+  const sol = new THREE.Vector3(...d.sol).normalize();
+  const x = ((Math.atan2(sol.z, -sol.x) / (Math.PI * 2) + 1) % 1) * W, y = H * (0.5 - Math.asin(sol.y) / Math.PI);
+  for (const dx of [0, W, -W]) {
+    const r = g.createRadialGradient(x + dx, y, 0, x + dx, y, d.resplandor);
+    r.addColorStop(0, d.brillo[0]); r.addColorStop(0.05, d.brillo[1]); r.addColorStop(1, d.brillo[2]);
+    g.fillStyle = r; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#fff6dc'; g.beginPath(); g.arc(x + dx, y, d.radioSol, 0, Math.PI * 2); g.fill();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+AFRAME.registerComponent('cielo', {
+  init() {
+    this.texturas = {};
+    this.cupula = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), new THREE.MeshBasicMaterial({ side: THREE.BackSide, depthWrite: false }));
+    this.cupula.renderOrder = -1;
+    this.cupula.frustumCulled = false;
+    this.el.object3D.add(this.cupula);
+    this.ojo = new THREE.Vector3();
+    this.poner('atardecer');
+  },
+  poner(nombre) {
+    this.cupula.material.map = this.texturas[nombre] = this.texturas[nombre] || dibujarCielo(CIELOS[nombre]);
+    this.cupula.material.needsUpdate = true;
+  },
+  tick() {
+    if (this.el.camera) this.cupula.position.copy(this.el.camera.getWorldPosition(this.ojo));
+  }
+});
+
+// Terreno de una zona: una malla cada 3 m, con la altura de alturaTerreno (mundo.js). De hierba; o, si
+// la zona tiene "color" (la montaña, el acantilado), pintada por vértices y sin textura.
+AFRAME.registerComponent('terreno', {
+  schema: { x0: { default: 0 }, x1: { default: 0 }, z0: { default: 0 }, z1: { default: 0 } },
+  init() {
+    const { x0, x1, z0, z1 } = this.data, PASO = 3;
+    texturaHierba = texturaHierba || crearTexturaHierba();
+    const nx = Math.round((x1 - x0) / PASO), nz = Math.round((z1 - z0) / PASO), pos = [], uv = [], ind = [];
+    for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) {
+      const x = x0 + i * PASO, z = z0 + j * PASO;
+      pos.push(x, alturaTerreno(x, z) - 0.05, z);
+      uv.push(x / texturaHierba.metros, -z / texturaHierba.metros);
+      if (i < nx && j < nz) { const a = j * (nx + 1) + i, b = a + nx + 1; ind.push(a, b, a + 1, a + 1, b, b + 1); }
+    }
+    const pintar = zonaCargada.color;
+    const geo = new THREE.BufferGeometry();
+    if (pintar) {
+      const col = [], c = new THREE.Color();
+      for (let k = 0; k < pos.length; k += 3) { c.set(pintar(pos[k], pos[k + 1], pos[k + 2])); col.push(c.r, c.g, c.b); }
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    }
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setIndex(ind);
+    geo.computeVertexNormals();
+    this.el.setObject3D('mesh', new THREE.Mesh(geo, new THREE.MeshStandardMaterial(pintar ? { vertexColors: true, roughness: 1, flatShading: true } : { map: texturaHierba.tex, roughness: 1 })));
   },
   remove() { this.el.removeObject3D('mesh'); }
 });

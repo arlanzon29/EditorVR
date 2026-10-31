@@ -1,0 +1,149 @@
+<!-- Lago: otra zona (ver js/mundo.js), al norte del bosque. Una barca lleva del embarcadero de la orilla
+     sur a la isla y a la orilla norte. Es mediodía. -->
+
+<a-entity terreno="x0: -170; x1: 180; z0: -480; z1: -150"></a-entity>
+<a-entity agua="ancho: 190; fondo: 180" position="5 -0.6 -300"></a-entity>
+<a-entity camino="puntos: 6 -195, 6 -203, 7 -212, 5 -222, 5 -231; y: 0.08"></a-entity>
+<a-entity barrera="x0: -78.3; x1: 88.3; z0: -392.3; z1: -201.7; huecos: z1 4.6 7.4"></a-entity>
+
+<!-- embarcaderos: al sur, en la isla y al norte -->
+<a-entity embarcadero="x0: 5; z0: -231; x1: 5; z1: -244"></a-entity>
+<a-entity embarcadero="x0: 26; z0: -300; x1: 14; z1: -300"></a-entity>
+<a-entity embarcadero="x0: 5; z0: -369; x1: 5; z1: -356"></a-entity>
+<a-entity barca="paradas: sur 7.2 -243 5 -243, isla 15 -297.8 15 -300, norte 7.2 -357 5 -357"></a-entity>
+
+<!-- en la isla, una torre vieja -->
+<a-box position="43 4 -300" width="3.6" height="5" depth="3.6" piedra-mundo="tono: #a39c8e"></a-box>
+<a-box position="41.5 6.85 -298.5" width="0.8" height="0.7" depth="0.8" piedra-mundo="tono: #a39c8e"></a-box>
+<a-box position="44.5 6.85 -298.5" width="0.8" height="0.7" depth="0.8" piedra-mundo="tono: #a39c8e"></a-box>
+<a-box position="41.5 6.85 -301.5" width="0.8" height="0.7" depth="0.8" piedra-mundo="tono: #a39c8e"></a-box>
+<a-box position="44.5 6.85 -301.5" width="0.8" height="0.7" depth="0.8" piedra-mundo="tono: #a39c8e"></a-box>
+<a-entity macizo="ancho: 3.8; fondo: 3.8; alto: 6.5" position="43 0 -300"></a-entity>
+
+<!-- piedras en las orillas -->
+<a-dodecahedron position="-10 0.5 -226" radius="0.9" color="#77756c" material="roughness: 1; flatShading: true" macizo="ancho: 1.44; fondo: 1.44; alto: 1.49"></a-dodecahedron>
+<a-dodecahedron position="22 0.4 -229" radius="0.7" color="#6d6b62" material="roughness: 1; flatShading: true" macizo="ancho: 1.12; fondo: 1.12; alto: 1.17"></a-dodecahedron>
+<a-dodecahedron position="-14 0.5 -372" radius="1" color="#77756c" material="roughness: 1; flatShading: true" macizo="ancho: 1.6; fondo: 1.6; alto: 1.6"></a-dodecahedron>
+<a-dodecahedron position="30 0.4 -368" radius="0.8" color="#7c7a70" material="roughness: 1; flatShading: true" macizo="ancho: 1.28; fondo: 1.28; alto: 1.28"></a-dodecahedron>
+
+<!-- árboles -->
+<a-entity>
+  <a-entity arbol="alto: 7.6; semilla: 500" position="-127.39 0 -365.36"></a-entity>
+  <a-entity arbol="alto: 6.5; semilla: 501" position="133.05 0 -337.83"></a-entity>
+  <a-entity arbol="alto: 6.8; semilla: 502" position="-115.67 0 -271.02"></a-entity>
+  <a-entity arbol="alto: 10.3; semilla: 503" position="-19.02 0 -383.23"></a-entity>
+  <a-entity arbol="alto: 6.5; semilla: 504" position="132.35 0 -287.24"></a-entity>
+  <a-entity arbol="alto: 7.9; semilla: 505" position="4.88 0 -408.3"></a-entity>
+  <a-entity arbol="alto: 9.5; semilla: 506" position="-82.02 0 -327.78"></a-entity>
+  <a-entity arbol="alto: 6.7; semilla: 507" position="-87.17 0 -400.06"></a-entity>
+  <a-entity arbol="alto: 7.2; semilla: 508" position="-37.33 0 -376.74"></a-entity>
+  <a-entity arbol="alto: 7.6; semilla: 509" position="-118.92 0 -281.14"></a-entity>
+  <a-entity arbol="alto: 9.7; semilla: 510" position="123.84 0 -245.44"></a-entity>
+  <a-entity arbol="alto: 8.9; semilla: 511" position="26.94 0 -415.49"></a-entity>
+  <a-entity arbol="alto: 8.2; semilla: 512" position="-15.97 0 -213.37"></a-entity>
+  <a-entity arbol="alto: 5.7; semilla: 513" position="-128.28 0 -234.95"></a-entity>
+  <a-entity arbol="alto: 9.0; semilla: 514" position="118.11 0 -287.08"></a-entity>
+  <a-entity arbol="alto: 9.5; semilla: 515" position="-95.94 0 -400.22"></a-entity>
+  <a-entity arbol="alto: 6.3; semilla: 516" position="75.87 0 -439.73"></a-entity>
+  <a-entity arbol="alto: 7.6; semilla: 517" position="124.14 0 -320.7"></a-entity>
+  <a-entity arbol="alto: 7.6; semilla: 518" position="-121.06 0 -343.64"></a-entity>
+  <a-entity arbol="alto: 9.4; semilla: 519" position="-16.05 0 -400.36"></a-entity>
+  <a-entity arbol="alto: 7.3; semilla: 520" position="117.1 0 -347.61"></a-entity>
+  <a-entity arbol="alto: 5.9; semilla: 521" position="-84.09 0 -424.95"></a-entity>
+  <a-entity arbol="alto: 10.3; semilla: 522" position="-88.66 0 -314.19"></a-entity>
+  <a-entity arbol="alto: 9.7; semilla: 523" position="125.76 0 -373.71"></a-entity>
+  <a-entity arbol="alto: 7.3; semilla: 524" position="-85.36 0 -224.42"></a-entity>
+  <a-entity arbol="alto: 9.7; semilla: 525" position="-116.52 0 -387"></a-entity>
+  <a-entity arbol="alto: 8.9; semilla: 526" position="-104.26 0 -333.53"></a-entity>
+  <a-entity arbol="alto: 7.7; semilla: 527" position="-114.95 0 -301.75"></a-entity>
+  <a-entity arbol="alto: 6.1; semilla: 528" position="-128.49 0 -420.03"></a-entity>
+  <a-entity arbol="alto: 10.5; semilla: 529" position="93.28 0 -295.79"></a-entity>
+  <a-entity arbol="alto: 9.7; semilla: 530" position="-103.98 0 -206.86"></a-entity>
+  <a-entity arbol="alto: 8.8; semilla: 531" position="88.95 0 -436.48"></a-entity>
+  <a-entity arbol="alto: 9.2; semilla: 532" position="109.39 0 -230.83"></a-entity>
+  <a-entity arbol="alto: 9.6; semilla: 533" position="-88.69 0 -277.28"></a-entity>
+  <a-entity arbol="alto: 6.7; semilla: 534" position="-45.55 0 -407.47"></a-entity>
+  <a-entity arbol="alto: 8.6; semilla: 535" position="55.28 0 -409.16"></a-entity>
+  <a-entity arbol="alto: 6.2; semilla: 536" position="136.61 0 -252.1"></a-entity>
+  <a-entity arbol="alto: 9.6; semilla: 537" position="-125.63 0 -396.91"></a-entity>
+  <a-entity arbol="alto: 8.9; semilla: 538" position="-127.92 0 -320.47"></a-entity>
+  <a-entity arbol="alto: 9.8; semilla: 539" position="-102.29 0 -419.11"></a-entity>
+  <a-entity arbol="alto: 8.0; semilla: 540" position="-62.35 0 -410.34"></a-entity>
+  <a-entity arbol="alto: 7.5; semilla: 541" position="105.8 0 -212.88"></a-entity>
+  <a-entity arbol="alto: 9.4; semilla: 542" position="35.73 0 -418.9"></a-entity>
+  <a-entity arbol="alto: 8.2; semilla: 543" position="-126.11 0 -226.16"></a-entity>
+  <a-entity arbol="alto: 9.2; semilla: 544" position="-123.92 0 -304.56"></a-entity>
+  <a-entity arbol="alto: 8.2; semilla: 545" position="-107.13 0 -365.65"></a-entity>
+  <a-entity arbol="alto: 6.5; semilla: 546" position="103.59 0 -329.3"></a-entity>
+  <a-entity arbol="alto: 6.2; semilla: 547" position="89.64 0 -371.11"></a-entity>
+  <a-entity arbol="alto: 10.0; semilla: 548" position="81.14 0 -230.46"></a-entity>
+  <a-entity arbol="alto: 9.5; semilla: 549" position="9.52 0 -433.18"></a-entity>
+  <a-entity arbol="alto: 6.2; semilla: 550" position="-108.58 0 -390.42"></a-entity>
+  <a-entity arbol="alto: 10.3; semilla: 551" position="-81.3 0 -356.37"></a-entity>
+  <a-entity arbol="alto: 6.8; semilla: 552" position="-99.15 0 -358.66"></a-entity>
+  <a-entity arbol="alto: 9.2; semilla: 553" position="-64.84 0 -234.84"></a-entity>
+  <a-entity arbol="alto: 6.4; semilla: 554" position="-85.82 0 -409.81"></a-entity>
+  <a-entity arbol="alto: 7.4; semilla: 555" position="-76.18 0 -410.03"></a-entity>
+  <a-entity arbol="alto: 8.1; semilla: 556" position="-126.69 0 -384.51"></a-entity>
+  <a-entity arbol="alto: 10.3; semilla: 557" position="-93.45 0 -223.37"></a-entity>
+  <a-entity arbol="alto: 7.8; semilla: 558" position="139.99 0 -386.29"></a-entity>
+  <a-entity arbol="alto: 7.9; semilla: 559" position="-38.17 0 -209.31"></a-entity>
+  <a-entity arbol="alto: 6.3; semilla: 560" position="87.39 0 -398.69"></a-entity>
+  <a-entity arbol="alto: 7.3; semilla: 561" position="-99.58 0 -237.48"></a-entity>
+  <a-entity arbol="alto: 7.9; semilla: 562" position="113.39 0 -376.35"></a-entity>
+  <a-entity arbol="alto: 7.7; semilla: 563" position="-90.93 0 -374.07"></a-entity>
+  <a-entity arbol="alto: 5.5; semilla: 564" position="121.79 0 -293.34"></a-entity>
+  <a-entity arbol="alto: 8.6; semilla: 565" position="89.2 0 -273.7"></a-entity>
+  <a-entity arbol="alto: 8.2; semilla: 566" position="-72.72 0 -345.51"></a-entity>
+  <a-entity arbol="alto: 7.1; semilla: 567" position="86.64 0 -324.24"></a-entity>
+  <a-entity arbol="alto: 5.7; semilla: 568" position="120.71 0 -362.65"></a-entity>
+  <a-entity arbol="alto: 10.2; semilla: 569" position="106.66 0 -237.83"></a-entity>
+  <a-entity arbol="alto: 9.8; semilla: 570" position="14.41 0 -419.83"></a-entity>
+  <a-entity arbol="alto: 9.4; semilla: 571" position="-72.21 0 -401.59"></a-entity>
+  <a-entity arbol="alto: 7.7; semilla: 572" position="-96.4 0 -316.56"></a-entity>
+  <a-entity arbol="alto: 8.8; semilla: 573" position="34.84 0 -407.62"></a-entity>
+  <a-entity arbol="alto: 9.8; semilla: 574" position="131.4 0 -326.16"></a-entity>
+  <a-entity arbol="alto: 8.8; semilla: 575" position="133.41 0 -309.12"></a-entity>
+  <a-entity arbol="alto: 8.2; semilla: 576" position="-45.45 0 -429.37"></a-entity>
+  <a-entity arbol="alto: 6.7; semilla: 577" position="-69.34 0 -229.16"></a-entity>
+  <a-entity arbol="alto: 7.0; semilla: 578" position="139.31 0 -234.36"></a-entity>
+  <a-entity arbol="alto: 6.4; semilla: 579" position="73.36 0 -224.92"></a-entity>
+  <a-entity arbol="alto: 6.7; semilla: 580" position="83.99 0 -345.74"></a-entity>
+  <a-entity arbol="alto: 8.5; semilla: 581" position="-122.93 0 -247.44"></a-entity>
+  <a-entity arbol="alto: 10.0; semilla: 582" position="23.89 0 -403.41"></a-entity>
+  <a-entity arbol="alto: 8.4; semilla: 583" position="-106.58 0 -217.95"></a-entity>
+  <a-entity arbol="alto: 8.1; semilla: 584" position="100.69 0 -233.75"></a-entity>
+  <a-entity arbol="alto: 7.2; semilla: 585" position="15.12 0 -381.03"></a-entity>
+  <a-entity arbol="alto: 6.6; semilla: 586" position="90.4 0 -262.67"></a-entity>
+  <a-entity arbol="alto: 10.0; semilla: 587" position="-91.93 0 -255.28"></a-entity>
+  <a-entity arbol="alto: 7.7; semilla: 588" position="114.84 0 -406.27"></a-entity>
+  <a-entity arbol="alto: 6.8; semilla: 589" position="83.19 0 -256.19"></a-entity>
+  <a-entity arbol="alto: 8.0; semilla: 590" position="84.28 0 -245.09"></a-entity>
+  <a-entity arbol="alto: 9.5; semilla: 591" position="87.53 0 -421"></a-entity>
+  <a-entity arbol="alto: 8.2; semilla: 592" position="117.55 0 -305.62"></a-entity>
+  <a-entity arbol="alto: 9.2; semilla: 593" position="102.16 0 -363.79"></a-entity>
+  <a-entity arbol="alto: 7.3; semilla: 594" position="129.42 0 -358.39"></a-entity>
+  <a-entity arbol="alto: 6.6; semilla: 595" position="135.77 0 -348.11"></a-entity>
+  <a-entity arbol="alto: 6.5; semilla: 596" position="-106.81 0 -341.53"></a-entity>
+  <a-entity arbol="alto: 8.4; semilla: 597" position="117.93 0 -420.67"></a-entity>
+  <a-entity arbol="alto: 6.5; semilla: 598" position="126.62 0 -413.49"></a-entity>
+  <a-entity arbol="alto: 6.1; semilla: 599" position="91.45 0 -305.85"></a-entity>
+  <a-entity arbol="alto: 5.9; semilla: 600" position="-28.87 0 -431.85"></a-entity>
+  <a-entity arbol="alto: 7.3; semilla: 601" position="-119.8 0 -406.45"></a-entity>
+  <a-entity arbol="alto: 8.2; semilla: 602" position="60.43 0 -225.66"></a-entity>
+  <a-entity arbol="alto: 9.0; semilla: 603" position="-124.64 0 -334.83"></a-entity>
+  <a-entity arbol="alto: 7.4; semilla: 604" position="-26.22 0 -422.17"></a-entity>
+  <a-entity arbol="alto: 6.3; semilla: 605" position="-124.85 0 -355.7"></a-entity>
+  <a-entity arbol="alto: 5.7; semilla: 606" position="10.62 0 -413.27"></a-entity>
+  <a-entity arbol="alto: 10.4; semilla: 607" position="-83.63 0 -298.01"></a-entity>
+  <a-entity arbol="alto: 7.9; semilla: 608" position="-61.49 0 -241.84"></a-entity>
+  <a-entity arbol="alto: 6.1; semilla: 609" position="-124.9 0 -260.47"></a-entity>
+</a-entity>
+<a-entity>
+  <a-entity arbol="alto: 9.9; semilla: 610" position="32.99 0 -295.57"></a-entity>
+  <a-entity arbol="alto: 7.3; semilla: 611" position="39.55 0 -289.06"></a-entity>
+  <a-entity arbol="alto: 6.2; semilla: 612" position="48.21 0 -288"></a-entity>
+  <a-entity arbol="alto: 8.1; semilla: 613" position="47.1 0 -295.23"></a-entity>
+  <a-entity arbol="alto: 9.6; semilla: 614" position="49 0 -302.45"></a-entity>
+  <a-entity arbol="alto: 9.3; semilla: 615" position="33.11 0 -304"></a-entity>
+</a-entity>

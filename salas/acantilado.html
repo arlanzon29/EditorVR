@@ -1,0 +1,49 @@
+<!-- Acantilado: otra zona (ver js/mundo.js), al este del poblado. Un llano a 20 m cortado a pico sobre el
+     mar, con un faro de piedra y su fuego. Atardece sobre el mar. -->
+
+<a-entity terreno="x0: 200; x1: 410; z0: -240; z1: 0"></a-entity>
+<a-entity agua="ancho: 1400; fondo: 1400; color: #2f5f7c; opacidad: 1; metros: 20" position="900 -0.3 -120"></a-entity>
+<a-entity camino="puntos: 226 -120, 234 -120, 270 -118, 305 -121, 319 -120; y: 0.1"></a-entity>
+<a-entity barrera="x0: 231.7; x1: 327.3; z0: -190.3; z1: -49.7; huecos: x0 -121.4 -118.6"></a-entity>
+
+<!-- el faro, con el fuego arriba -->
+<a-cylinder position="322 25.53 -120" radius="2.2" height="12" segments-radial="14" color="#8f8a80"></a-cylinder>
+<a-cylinder position="322 31.63 -120" radius="2.7" height="0.3" segments-radial="14" color="#6f6a62"></a-cylinder>
+<a-entity hoguera="intensidad: 2.5" position="322 31.83 -120"></a-entity>
+<a-entity macizo="ancho: 4.6; fondo: 4.6; alto: 31.53" position="322 0 -120"></a-entity>
+<!-- un banco para mirar el mar -->
+<a-box position="321 21.13 -105" width="0.5" height="0.08" depth="2" color="#4e3421"></a-box>
+<a-box position="321 20.9 -105.8" width="0.42" height="0.44" depth="0.12" color="#3a281a"></a-box>
+<a-box position="321 20.9 -104.2" width="0.42" height="0.44" depth="0.12" color="#3a281a"></a-box>
+<a-entity macizo="ancho: 0.6; fondo: 2; alto: 21.28" position="321 0 -105"></a-entity>
+<!-- farallones en el mar -->
+<a-dodecahedron position="365 4.31 -95" radius="7" scale="1 2.2 1" color="#5f5a53" material="roughness: 1; flatShading: true"></a-dodecahedron>
+<a-dodecahedron position="380 6.55 -140" radius="9" scale="1 2.6 1" color="#5f5a53" material="roughness: 1; flatShading: true"></a-dodecahedron>
+<a-dodecahedron position="352 2.8 -165" radius="5" scale="1 2 1" color="#5f5a53" material="roughness: 1; flatShading: true"></a-dodecahedron>
+<a-dodecahedron position="395 6.78 -80" radius="11" scale="1 2.2 1" color="#5f5a53" material="roughness: 1; flatShading: true"></a-dodecahedron>
+
+<!-- árboles, doblados por el viento en el llano -->
+<a-entity>
+  <a-entity arbol="alto: 7.0; semilla: 716" position="254.3 0 -64.88"></a-entity>
+  <a-entity arbol="alto: 7.4; semilla: 717" position="232.59 0 -100.49"></a-entity>
+  <a-entity arbol="alto: 9.8; semilla: 718" position="313.62 0 -13.9"></a-entity>
+  <a-entity arbol="alto: 7.8; semilla: 719" position="277.72 0 -229.22"></a-entity>
+  <a-entity arbol="alto: 9.9; semilla: 720" position="228.52 0 -160.08"></a-entity>
+  <a-entity arbol="alto: 9.2; semilla: 721" position="269.89 0 -231.21"></a-entity>
+  <a-entity arbol="alto: 7.1; semilla: 722" position="314.91 0 -30.64"></a-entity>
+  <a-entity arbol="alto: 8.4; semilla: 723" position="271.69 0 -157.32"></a-entity>
+  <a-entity arbol="alto: 6.0; semilla: 724" position="308.86 0 -154.81"></a-entity>
+  <a-entity arbol="alto: 6.2; semilla: 725" position="228.16 0 -232.55"></a-entity>
+  <a-entity arbol="alto: 9.4; semilla: 726" position="231.93 0 -174.65"></a-entity>
+  <a-entity arbol="alto: 8.1; semilla: 727" position="245.98 0 -142.36"></a-entity>
+  <a-entity arbol="alto: 7.3; semilla: 728" position="301.49 0 -150.63"></a-entity>
+  <a-entity arbol="alto: 9.7; semilla: 729" position="294.5 0 -50.44"></a-entity>
+  <a-entity arbol="alto: 8.7; semilla: 730" position="310.84 0 -74.3"></a-entity>
+  <a-entity arbol="alto: 8.7; semilla: 731" position="291.75 0 -89.51"></a-entity>
+  <a-entity arbol="alto: 8.5; semilla: 732" position="305.98 0 -91.27"></a-entity>
+  <a-entity arbol="alto: 9.8; semilla: 733" position="230.19 0 -107.97"></a-entity>
+  <a-entity arbol="alto: 8.7; semilla: 734" position="236.43 0 -16.69"></a-entity>
+  <a-entity arbol="alto: 9.5; semilla: 735" position="298.79 0 -209.66"></a-entity>
+  <a-entity arbol="alto: 6.3; semilla: 736" position="302.56 0 -61.78"></a-entity>
+  <a-entity arbol="alto: 7.8; semilla: 737" position="255.16 0 -172.37"></a-entity>
+</a-entity>

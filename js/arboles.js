@@ -67,7 +67,7 @@ AFRAME.registerSystem('arbol', {
     for (const a of this.arboles) {
       const version = a.cerca ? 'Cerca' : 'Lejos', i = cuenta[a.modelo][version]++;
       if (i >= ARBOLES_MAX) continue;
-      m.compose(p.set(a.x, 0, a.z), g.setFromAxisAngle(arriba, a.giro), e.setScalar(a.escala));
+      m.compose(p.set(a.x, a.y, a.z), g.setFromAxisAngle(arriba, a.giro), e.setScalar(a.escala));
       for (const malla of this.piezas[a.modelo][version]) { malla.setMatrixAt(i, m); malla.setColorAt(i, a.color); }
     }
     this.piezas.forEach((pieza, k) => {
@@ -93,14 +93,14 @@ AFRAME.registerComponent('arbol', {
     const p = this.el.object3D.position, modelo = semilla % ALTO_MODELOS.length;
     const claro = 0.88 + azar() * 0.24;
     this.datos = {
-      x: p.x, z: p.z, modelo, cerca: null,
+      x: p.x, y: alturaTerreno(p.x, p.z), z: p.z, modelo, cerca: null,
       escala: alto / ALTO_MODELOS[modelo],
       giro: azar() * Math.PI * 2,
       color: new THREE.Color(claro, claro * (0.96 + azar() * 0.06), claro * 0.94),
     };
     this.system.agregar(this.datos);
     const rt = 0.35 * alto / 6;
-    SUPERFICIES.push({ x0: p.x - rt, x1: p.x + rt, z0: p.z - rt, z1: p.z + rt, y: alto * 0.45, macizo: true });
+    SUPERFICIES.push({ x0: p.x - rt, x1: p.x + rt, z0: p.z - rt, z1: p.z + rt, y: alturaTerreno(p.x, p.z) + alto * 0.45, macizo: true });
   },
   remove() { this.system.quitar(this.datos); }
 });

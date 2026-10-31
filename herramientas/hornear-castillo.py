@@ -1,15 +1,16 @@
 # Editor VR: hornea la luz de todo el castillo a partir de lo que saca exportarCastillo (js/rendimiento.js).
 # Se calcula todo junto, para que la luz pase de unas estancias a otras, y cada estancia queda con su modelo.
-# Uso: blender --background --python herramientas/hornear-castillo.py -- <castillo.json> <carpeta de salida> [muestras] [escala de tamaños]
+# Uso: blender --background --python herramientas/hornear-castillo.py -- <castillo.json o bosque.json> <carpeta de salida> [muestras]
 # Deja <sala>.glb (dos capas de coordenadas: textura y luz), <sala>-luz.jpg y castillo.blend.
 import base64, json, os, sys
 import bpy
 import numpy as np
+from mathutils import Vector
 
 args = sys.argv[sys.argv.index('--') + 1:]
 ENTRADA, SALIDA = args[0], args[1]
 MUESTRAS = int(args[2]) if len(args) > 2 else 256
-ESCALA_LADO = float(args[3]) if len(args) > 3 else 1
+ZONA = os.path.splitext(os.path.basename(ENTRADA))[0]
 ESCALA_LUZ = 2   # como en js/rendimiento.js: la imagen guarda la luz dividida por esto
 VATIOS = 130     # por cada unidad de fuerza de las luces de la escena (ajustado a ojo, mirando el resultado)
 
@@ -22,6 +23,8 @@ def b(x, y, z):
 bpy.ops.wm.read_factory_settings(use_empty=True)
 os.makedirs(SALIDA, exist_ok=True)
 datos = json.load(open(ENTRADA, encoding='utf-8'))
+# la hora, como en CIELOS (js/texturas.js); sin ella, el atardecer del castillo
+HORA = datos.get('horneado') or {'energia': 5, 'color': [1, 0.5, 0.22], 'abajo': [1, 0.42, 0.18], 'medio': [0.62, 0.3, 0.38], 'arriba': [0.1, 0.14, 0.38], 'fuerza': 0.8, 'sol': [-1, 0.2, 0.25]}
 escena = bpy.context.scene
 
 imagenes = {}
@@ -112,8 +115,8 @@ def lado_de(area):
     # unos 50 píxeles por metro, y no más de 2048 (cada imagen de 2048 son 16 MB en el Quest)
     for lado in (256, 512, 1024):
         if area * 50 * 50 < lado * lado:
-            return int(lado * ESCALA_LADO)
-    return int(2048 * ESCALA_LADO)
+            return lado
+    return 2048
 
 
 salas = {}
@@ -143,13 +146,32 @@ for sala, mallas in datos['salas'].items():
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.uv.smart_project(angle_limit=1.15, island_margin=0.004, area_weight=0, scale_to_bounds=False)
     bpy.ops.object.mode_set(mode='OBJECT')
+    # el suelo, desplegado desde arriba: caminos y claros sacan de ahí su sitio en la imagen (luzEnCaminos)
+    if sala.startswith('campo'):
+        for o in piezas:
+            cs = [v.co for v in o.data.vertices]
+            x0, x1, y0, y1 = min(c.x for c in cs), max(c.x for c in cs), min(c.y for c in cs), max(c.y for c in cs)
+            for bucle in o.data.loops:
+                c = cs[bucle.vertex_index]
+                o.data.uv_layers['Luz'].data[bucle.index].uv = (0.01 + 0.98 * (c.x - x0) / (x1 - x0), 0.01 + 0.98 * (c.y - y0) / (y1 - y0))
 
-# el suelo de fuera (la hierba no se hornea, pero la luz rebota en ella y tapa el cielo de abajo)
-bpy.ops.mesh.primitive_plane_add(size=400, location=b(5, -0.05, 0))
+# más allá del campo, para que la luz no venga de abajo
+bpy.ops.mesh.primitive_plane_add(size=1000, location=b(5, -0.3 if datos.get('zona', 'castillo') == 'castillo' else -40, 0))
 tierra = bpy.data.materials.new('Tierra')
 tierra.use_nodes = True
 next(n for n in tierra.node_tree.nodes if n.type == 'BSDF_PRINCIPLED').inputs['Base Color'].default_value = (0.13, 0.17, 0.07, 1)
 bpy.context.object.data.materials.append(tierra)
+
+# los árboles: solo para que den sombra
+puntos = datos['arboles']
+vertices = [b(*puntos[k:k + 3]) for k in range(0, len(puntos), 3)]
+arboles = bpy.data.meshes.new('Arboles')
+arboles.from_pydata(vertices, [], [(k, k + 1, k + 2) for k in range(0, len(vertices), 3)])
+hojas = bpy.data.materials.new('Hojas')
+hojas.use_nodes = True
+next(n for n in hojas.node_tree.nodes if n.type == 'BSDF_PRINCIPLED').inputs['Base Color'].default_value = (0.08, 0.11, 0.04, 1)
+arboles.materials.append(hojas)
+escena.collection.objects.link(bpy.data.objects.new('Arboles', arboles))
 
 for i, l in enumerate(datos['luces']):
     x, y, z = l['pos']
@@ -159,25 +181,40 @@ for i, l in enumerate(datos['luces']):
     luz = bpy.data.lights.new(f'Luz{i}', 'POINT')
     # según su alcance: en la escena la luz se corta allí; aquí sigue, y en un pasillo quemaría el techo
     luz.energy = l['fuerza'] * VATIOS * (l['alcance'] / 8) ** 2
+    # las antorchas, las anaranjadas: en la escena son flojas; aquí, las que mandan (y, en el castillo, la hoguera)
+    if l['color'][2] < 0.2 and (l['alcance'] <= 4 or datos.get('zona', 'castillo') == 'castillo'):
+        luz.energy *= 4
     luz.color = l['color']
     luz.shadow_soft_size = 0.3
     o = bpy.data.objects.new(f'Luz{i}', luz)
     o.location = b(x, y, z)
     escena.collection.objects.link(o)
 
-# el sol, bajo, entra por las ventanas del oeste; y el cielo
+# atardecer: el sol, muy bajo y anaranjado, entra por las ventanas del oeste (SOL en js/texturas.js)
 sol = bpy.data.lights.new('Sol', 'SUN')
-sol.energy = 3
-sol.color = (1, 0.93, 0.8)
+sol.energy = HORA['energia']
+sol.color = HORA['color']
 sol.angle = 0.03
 objeto_sol = bpy.data.objects.new('Sol', sol)
-objeto_sol.rotation_euler = (1.0, 0, 1.75)
+objeto_sol.rotation_mode = 'QUATERNION'
+objeto_sol.rotation_quaternion = Vector(b(*HORA['sol'])).normalized().to_track_quat('Z', 'Y')
 escena.collection.objects.link(objeto_sol)
 mundo = bpy.data.worlds.new('Cielo')
 mundo.use_nodes = True
 fondo = next(n for n in mundo.node_tree.nodes if n.type == 'BACKGROUND')
-fondo.inputs[0].default_value = (0.55, 0.75, 1, 1)
-fondo.inputs[1].default_value = 1.0
+# el cielo: anaranjado en el horizonte y azul oscuro arriba
+coords = mundo.node_tree.nodes.new('ShaderNodeTexCoord')
+separar = mundo.node_tree.nodes.new('ShaderNodeSeparateXYZ')
+rampa = mundo.node_tree.nodes.new('ShaderNodeValToRGB')
+rampa.color_ramp.elements[0].color = (*HORA['abajo'], 1)
+rampa.color_ramp.elements[1].position = 0.7
+rampa.color_ramp.elements[1].color = (*HORA['arriba'], 1)
+medio = rampa.color_ramp.elements.new(0.2)
+medio.color = (*HORA['medio'], 1)
+mundo.node_tree.links.new(coords.outputs['Generated'], separar.inputs[0])
+mundo.node_tree.links.new(separar.outputs['Z'], rampa.inputs['Fac'])
+mundo.node_tree.links.new(rampa.outputs[0], fondo.inputs[0])
+fondo.inputs[1].default_value = HORA['fuerza']
 escena.world = mundo
 
 # hornear solo la luz, sin el color de cada pieza (el color ya lo pone su textura en la escena)
@@ -221,7 +258,7 @@ for sala, s in salas.items():
     salida.file_format = 'JPEG'
     salida.save(quality=92)
 
-bpy.ops.wm.save_as_mainfile(filepath=os.path.join(SALIDA, 'castillo.blend'), compress=True)
+bpy.ops.wm.save_as_mainfile(filepath=os.path.join(SALIDA, ZONA + '.blend'), compress=True)
 
 # para exportar: solo textura en el color base (el color de vértice va aparte)
 for sala, s in salas.items():
@@ -242,5 +279,5 @@ for sala, s in salas.items():
         o.select_set(True)
     bpy.ops.export_scene.gltf(filepath=os.path.join(SALIDA, f'{sala}.glb'), export_format='GLB',
                               use_selection=True, export_normals=False, export_vertex_color='ACTIVE',
-                              export_image_format='JPEG', export_image_quality=85, export_materials='EXPORT')
+                              export_image_format='AUTO', export_materials='EXPORT')
 print('Horneado terminado')

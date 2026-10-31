@@ -23,7 +23,12 @@ Coordenadas en metros: **x** hacia la puerta de la sala 1 y el pasillo, **y** ha
 | **Sala 2** | 5 × 5 m (x = 9…14) | Como la sala 1: piedra, techo con vigas, ventana rústica, biblioteca, mesa separada de la pared y silla pegada a ella. |
 | **Patio** | 6 × 6 m, fuera (x = 3…9, z = -6,6…-0,6) | Patio de armas entre la sala 1 y la sala 2: se sale por la puerta de la pared izquierda del pasillo, enfrente de la de la sala 3. Suelo de losas, muralla almenada de 4 m, pozo con postes sobre el brocal, torno con manivela y cubo de duelas con aros y asa, antorchas junto a la puerta y cielo. |
 | **Exterior** | Campo alrededor de todo el castillo | Se sale por el portón en arco de la muralla del patio. Hierba, camino de tierra, árboles y colinas a lo lejos. Las salas 1 y 2 tienen piel por fuera y las galerías de arriba se ven como cadalsos de madera. |
-| **Bosque** | Otra zona, al final del camino del exterior (x = -24…36, z = -100…-46) | El camino sigue serpenteando entre los árboles hasta un claro con piedras. Ver [Zonas](#zonas). |
+| **Bosque** | Al final del camino del exterior (x = -78…88, z = -198…-46) | Colinas de hasta unos 10 m, a mediodía. El camino lleva a un claro con piedras y se abre hacia el lago, el poblado y la montaña. |
+| **Lago** | Al norte del bosque (x = -78…88, z = -392…-202) | Mediodía. Lago con embarcadero en la orilla sur, en la isla (con una torre vieja) y en la orilla norte; una barca lleva de uno a otro. |
+| **Poblado** | Al este del bosque (x = 92…228, z = -190…-50) | Mediodía. Calle con doce casas de entramado, plaza con pozo y mercado, iglesia con torre, dos guardias y una moza. |
+| **Montaña** | Al oeste del bosque (x = -282…-82, z = -228…-10) | Mediodía. Cumbre nevada de unos 50 m a la que se puede subir, con mojón y atalaya. |
+| **Acantilado** | Al este del poblado (x = 232…327, z = -190…-50) | Atardecer sobre el mar. Llano a 20 m cortado a pico, faro con fuego, banco y farallones. |
+| **Abadía en ruinas** | Al norte de la montaña (x = -282…-82, z = -430…-232) | De noche, con luna y estrellas. Nave sin techo, columnas rotas, camposanto y hogueras. |
 | **Pasillo 2** | 3,4 m (x = 5,4…6,6, z = 0,6…4) | Ramal que lleva a la sala 3. A mitad, una antorcha de pared en cada lado, con la llama y la luz temblando. |
 | **Sala 3** | 12 × 10 m, 7,5 m de alto (x = 0…12, z = 4…14) | La grande. Muros de piedra de 40 cm con arcos arriba, techo con 8 vigas y la escalera. |
 | **Comedor** | 12 × 10 m, 4,2 m de alto (x = -12,4…-0,4, z = 4…14) | A la derecha de la sala 3 entrando, por un gran arco con dovelas en su muro, guardado por dos guardias con lanza y escudo. Suelo de losas, techo de madera con 8 vigas, tres ventanas en arco con reja, chimenea con hoguera, mesa de 7 m con bancos y sillón, dos lámparas de rueda, estandartes y antorchas. Un criado con una jarra da vueltas a la mesa. |
@@ -43,21 +48,28 @@ doradas. Se puede subir andando; los tramos son macizos y no se pueden atravesar
 
 ## Zonas
 
-El mundo se reparte en zonas (`ZONAS` en [js/zonas.js](js/zonas.js): `castillo`, con todas las
-estancias de arriba, y `bosque`) y **solo hay una cargada a la vez**. Es la misma página, así que no
+El mundo se reparte en zonas (`MUNDO` en [js/mundo.js](js/mundo.js)) y **solo hay una cargada a la vez**. Es la misma página, así que no
 se sale de VR. Todas usan las coordenadas del mundo: el jugador no se teletransporta, el camino sigue.
 
-- **Niebla:** a menos de 10 m del final del camino (x = 6, z = -45) se espesa. Al cruzarlo se cierra
-  del todo, no se puede andar, se cambia de zona y se abre al terminar. Volver funciona igual.
+- **Pasos:** entre dos zonas solo se pasa por un hueco (`PASOS`), porque sus zonas de andar quedan separadas 2 m. A menos de 10 m la
+  niebla se espesa. Al cruzar se cierra del todo, no se puede andar, se cambia de zona y se abre al terminar.
+- **Hora:** cada zona tiene la suya (`cielo` en `MUNDO`, recetas en `CIELOS`, js/texturas.js): cielo, niebla y luz general
+  cambian con la niebla cerrada.
+- **Terreno:** `altura` de cada zona; `alturaTerreno` da la de la zona cargada, plana alrededor de los pasos. La usan el andar, los
+  árboles, el camino, la valla y la malla `terreno` (de hierba o, con `color`, pintada por vértices). Por debajo de `agua` no se pisa.
+- **Límites:** una valla luminosa invisible (`barrera`, objetos.js) se enciende a menos de 4 m del borde, y de lejos no se dibuja.
+  Si cambia un límite o un paso, hay que cambiarla también (`huecos`).
+- **Barca** (js/lago.js): apunta con el rayo a un cartel suyo y aprieta el gatillo. Te lleva sin dejarte andar y te deja en el embarcadero.
+  Modelo: `herramientas/modelar-barca.py` → `modelos/barca.glb`.
 - **Letrero:** al entrar en una zona (también al abrir la página) aparece delante de ti una tabla de
-  madera con su nombre (`titulo` en `ZONAS`), unos 5 s, y se desvanece.
+  madera con su nombre, unos 5 s, y se desvanece.
 - **Al salir de una zona:** se liberan geometrías, materiales y texturas (`liberarEstancia`), se
   quitan sus entidades y se vacía `SUPERFICIES`. Las puertas vuelven a estar cerradas al regresar.
 - **Comprobar que no se pierde memoria:** el medidor enseña las geometrías y texturas vivas
   (`geo`, `tex`), que deben volver a los mismos valores tras cada ida y vuelta.
 
-Para añadir una zona: sus archivos en `salas/`, su título y su lista en `ZONAS`, su rectángulo en `zonasPermitidas`
-(unido por un paso) y su límite en el `tick` de `zonas`.
+Para añadir una zona: su entrada en `MUNDO`, sus `PASOS`, su archivo en `salas/`, su `barrera` y su nombre en `SALAS_HORNEADAS` y
+`SUELOS_HORNEADOS` (rendimiento.js), y hornearla.
 
 ## Controles
 
@@ -69,7 +81,10 @@ Para añadir una zona: sus archivos en `salas/`, su título y su lista en `ZONAS
 | **Joystick derecho** a un lado | Girar 30°. |
 | **Gatillo** apuntando a una puerta | Abrirla o cerrarla (el rayo se pone verde, la aldaba brilla y sale el cartel). |
 | **Gatillo lateral** apuntando a la pantalla | Cogerla y colocarla; se queda donde la sueltes. |
-| **Botón B o Y** | Traer la pantalla del PC delante de ti. |
+| **Botón B** | Traer la pantalla del PC delante de ti. |
+| **Botón Y** | Enseñar u ocultar el mapa, con una flecha que dice dónde estás (en el ordenador, tecla **N**). |
+| **Botón A** | Poner o quitar la luz horneada (en el ordenador, tecla **H**). |
+| **Gatillo** apuntando a un cartel de la barca | Subirte y viajar a ese destino. |
 | **Botón X** o **apretar el joystick izquierdo** | Ocultar o enseñar el medidor de rendimiento, que sale encendido (en el ordenador, tecla **M**). |
 
 En VR cuenta tu altura real. Si estás sentado (las gafas, de media, por debajo de 1,30 m durante
@@ -164,7 +179,12 @@ Mientras se comparte la pantalla, cualquiera en la misma wifi que abra la págin
 |---|---|
 | [index.html](index.html) | La escena: el jugador (`rig`, cámara y mandos) y la luz general. |
 | [salas/](salas/) | Una estancia por archivo, en coordenadas del mundo: `sala1.html`, `pasillo.html`, `sala2.html`, `pasillo2.html`, `sala3.html`, `comedor.html` (lo fijo), `comedor-vivos.html` (lo que se mueve y los obstáculos), `patio.html`, `exterior.html`, `bosque.html`. Solo etiquetas de A-Frame. |
-| [js/zonas.js](js/zonas.js) | Qué estancias tiene cada zona, cambio de zona y niebla. |
+| [js/mundo.js](js/mundo.js) | Las zonas: dónde están, su terreno, su hora y sus pasos. |
+| [js/zonas.js](js/zonas.js) | Cambio de zona y niebla. |
+| [js/lago.js](js/lago.js) | Agua, embarcaderos y barca. |
+| [js/poblado.js](js/poblado.js) | Casas, puestos, tumbas y columnas. |
+| [js/mapa.js](js/mapa.js) | El mapa de pergamino. |
+| [herramientas/](herramientas/) | Horneado (`hornear-castillo.py`, `recibir-estancia.js`) y la barca (`modelar-barca.py`). |
 | [js/incluir.js](js/incluir.js) | Componente `incluir`: descarga una estancia y la mete en la escena. |
 | [js/movimiento.js](js/movimiento.js) | Andar, girar, zonas, `SUPERFICIES`, obstáculos `macizo` y la mira del monitor. |
 | [js/arboles.js](js/arboles.js) | Árboles dibujados en bloque, con versión de cerca y de lejos según la distancia. |
@@ -175,7 +195,7 @@ Mientras se comparte la pantalla, cualquiera en la misma wifi que abra la págin
 | [js/conexion.js](js/conexion.js) | Pantalla del PC, objetos que se cogen e informe de posición para Claude. |
 | [modelos/](modelos/) | Modelos de Blender (`.glb`) y el `.blend` para retocarlos. |
 
-Para añadir una estancia: un archivo nuevo en `salas/`, su nombre en `ZONAS` (js/zonas.js), y
+Para añadir una estancia: un archivo nuevo en `salas/`, su nombre en `MUNDO` (js/mundo.js), y
 sus zonas en `js/movimiento.js` (`zonasPermitidas`) si se puede andar por ella.
 
 ### Componentes
@@ -263,8 +283,13 @@ según uno se acerca.
 
 ### Horneado
 
-Todo el castillo lleva la luz calculada en Blender, salvo lo que se mueve, lo transparente, la hierba,
-el camino, las colinas y los árboles (el bosque, tampoco). El **botón A** (en el ordenador, la tecla
+En el castillo es un **atardecer**: sol bajo y anaranjado por el oeste (`CIELOS`, js/texturas.js), con una cúpula de cielo dibujada en canvas
+(`cielo`). Por dentro mandan las antorchas: las anaranjadas valen 4 veces más en Blender.
+
+Todo el castillo lleva la luz calculada en Blender, también la hierba, con la sombra del castillo y de
+los árboles (`campo`, en su propia imagen; el camino usa esa misma imagen, `luzEnCaminos`, para que la
+sombra siga por encima). Las demás zonas se hornean igual, cada una a su hora. No van horneados lo que se mueve, lo transparente, el agua,
+las colinas ni los árboles: usan la luz general. El **botón A** (en el ordenador, la tecla
 **H**) recarga el castillo con o sin ella, sin salir de VR; sin hornear, sale el letrero "Sin hornear".
 Con **`?sinhornear`** en la dirección se empieza sin ella.
 
@@ -276,12 +301,13 @@ Con **`?sinhornear`** en la dirección se empieza sin ella.
   (no retocar los modelos a mano):
   1. `node herramientas/recibir-estancia.js <carpeta>`.
   2. Abrir la página con `?sinhornear&sinfundir` y, en la consola, la línea `fetch(...)` que hay
-     encima de `exportarCastillo`, en rendimiento.js.
-  3. `blender --background --python herramientas/hornear-castillo.py -- <carpeta>/castillo.json <salida> 256`
-     (minuto y medio) y copiar a `modelos/horneado/` los `.glb`, los `.jpg` y `castillo.blend`. Los vatios
+     encima de `exportarZona`, en rendimiento.js (`/castillo`, `/lago`…), estando en esa zona.
+  3. `blender --background --python herramientas/hornear-castillo.py -- <carpeta>/<zona>.json <salida> 256`
+     (minuto y medio) y copiar a `modelos/horneado/` los `.glb`, los `.jpg` y el `.blend`. Los vatios
      por unidad de luz, el sol y el cielo se ajustan en ese script.
 - Las puertas y los personajes no están en Blender: no dan sombra, y la luz pasa por las puertas como si
-  estuvieran abiertas.
+  estuvieran abiertas. Las antorchas no tiemblan en lo horneado: solo su llama y lo que se mueve.
+- Sin hornear (botón A), el castillo se ve mucho más oscuro: la luz general es ya la del atardecer.
 
 Medido en la vista previa del PC (octubre de 2026), sin y con horneado; **falta medirlo en el Quest**:
 

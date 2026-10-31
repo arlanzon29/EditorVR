@@ -9,7 +9,7 @@
 //    como está. Las piezas fundidas se ocultan, pero siguen en su sitio (y su HTML, igual).
 //  - luces-cercanas: solo 6 luces puntuales, siempre las mismas, que copian a las más cercanas.
 
-const NO_FUNDIR = '[puerta], [agarrable], [antorcha], [criado], [guardia], [hoguera], [lampara-rueda], [gltf-model], [text], .clicable, .cartel';
+const NO_FUNDIR = '[barca], [agua], [puerta], [agarrable], [antorcha], [criado], [guardia], [hoguera], [lampara-rueda], [barrera], [gltf-model], [text], .clicable, .cartel';
 
 function fundirEstancia(el) {
   el.object3D.updateMatrixWorld(true);
@@ -94,19 +94,23 @@ function liberarEstancia(el) {
 // componentes y sus obstáculos; solo cambia lo que se dibuja: las piezas fijas se ocultan y en su lugar
 // va un modelo con todas ellas (modelos/horneado/<sala>.glb) y su imagen de luz (<sala>-luz.jpg).
 // Lo que se mueve (NO_FUNDIR), lo transparente y lo enorme de fuera (hierba, colinas) sigue como estaba.
-const SALAS_HORNEADAS = ['sala1', 'pasillo', 'sala2', 'pasillo2', 'sala3', 'comedor', 'patio', 'exterior'];
+const SALAS_HORNEADAS = ['sala1', 'pasillo', 'sala2', 'pasillo2', 'sala3', 'comedor', 'patio', 'exterior', 'bosque', 'lago', 'poblado', 'montana', 'acantilado', 'abadia'];
+// el suelo de cada zona de campo va aparte, en su propia imagen de luz: { estancia: su suelo }
+const SUELOS_HORNEADOS = { exterior: 'campo', bosque: 'campo-bosque', lago: 'campo-lago', poblado: 'campo-poblado', montana: 'campo-montana', acantilado: 'campo-acantilado', abadia: 'campo-abadia' };
 const ESCALA_LUZ = 2;   // la imagen guarda la luz dividida por esto: lo que pasa de 1 también cabe
 const texturasHorneadas = new Map();   // los modelos repiten piedra y madera: una sola copia de cada una
 
-function esHorneable(o, raiz) {
+function esHorneable(o, raiz, sala) {
   if (!o.isMesh || o.isInstancedMesh || Array.isArray(o.material) || o.material.visible === false || o.material.transparent) return false;
   if (!o.geometry.attributes.position) return false;
   for (let p = o; p && p !== raiz; p = p.parent) if (!p.visible) return false;
   let e = o; while (e && !e.el) e = e.parent;
   const ent = e && e.el;
   if (!ent) return false;
+  if (sala === 'campo') return ent.matches('[suelo-hierba]');
+  if (sala.startsWith('campo-')) return ent.matches('[terreno]');
   if (MODELOS_HORNEADOS.test(ent.getAttribute('gltf-model'))) return true;
-  return !ent.closest(NO_FUNDIR) && !ent.closest('[suelo-hierba], [camino], [claro], [arbol]') && !(parseFloat(ent.getAttribute('radius')) > 5);
+  return !ent.closest(NO_FUNDIR) && !ent.closest('[suelo-hierba], [terreno], [camino], [claro], [arbol]') && !(parseFloat(ent.getAttribute('radius')) > 5);
 }
 
 // Los modelos de Blender que no se mueven también van horneados: su original no se llega a ver.
@@ -126,7 +130,7 @@ function hornearEstancia(el, sala) {
     ent.addEventListener('model-error', () => { ent.remove(); luz.dispose(); console.error('Sin horneado: ' + sala); listo(); });
     ent.addEventListener('model-loaded', e => {
       el.object3D.traverse(o => {
-        if (e.detail.model === o || !esHorneable(o, el.object3D)) return;
+        if (e.detail.model === o || !esHorneable(o, el.object3D, sala)) return;
         for (let p = o; p; p = p.parent) if (p === e.detail.model) return;
         o.visible = false; o.geometry.dispose();
       });
@@ -142,6 +146,7 @@ function hornearEstancia(el, sala) {
         o.material = new THREE.MeshBasicMaterial({ map: mapa, vertexColors: true, lightMap: llama ? null : luz, lightMapIntensity: Math.PI * ESCALA_LUZ });
         v.dispose();
       });
+      if (Object.values(SUELOS_HORNEADOS).includes(sala)) luzEnCaminos(el, e.detail.model, luz);
       listo();
     });
     ent.setAttribute('gltf-model', `url(modelos/horneado/${sala}.glb)`);
@@ -149,20 +154,53 @@ function hornearEstancia(el, sala) {
   });
 }
 
-// Saca todo el castillo para hornearlo en Blender: por estancia, las piezas horneables juntas por
+// Caminos y claros son transparentes y van sobre la hierba: usan la misma imagen de luz que ella, para
+// que las sombras sigan por encima. La luz de la hierba se despliega desde arriba (hornear-castillo.py),
+// así que de x, z a la imagen hay una regla fija, que sale de tres de sus vértices.
+function luzEnCaminos(el, modelo, luz) {
+  let hierba = null;
+  modelo.traverse(o => { if (o.isMesh) hierba = o.geometry; });
+  const P = hierba.attributes.position, U = hierba.attributes.uv1, I = hierba.index;
+  const [a, b, c] = [0, 1, 2].map(k => I ? I.getX(k) : k);
+  const dx1 = P.getX(b) - P.getX(a), dz1 = P.getZ(b) - P.getZ(a), dx2 = P.getX(c) - P.getX(a), dz2 = P.getZ(c) - P.getZ(a);
+  const det = dx1 * dz2 - dx2 * dz1;
+  const aImagen = (x, z, A, B, C) => {
+    const s = ((x - P.getX(a)) * dz2 - dx2 * (z - P.getZ(a))) / det, t = (dx1 * (z - P.getZ(a)) - (x - P.getX(a)) * dz1) / det;
+    return A + s * (B - A) + t * (C - A);
+  };
+  const w = new THREE.Vector3();
+  el.object3D.updateMatrixWorld(true);
+  for (const ent of el.querySelectorAll('[camino], [claro]')) {
+    const malla = ent.getObject3D('mesh'), Q = malla.geometry.attributes.position, uv1 = new Float32Array(Q.count * 2);
+    for (let i = 0; i < Q.count; i++) {
+      w.fromBufferAttribute(Q, i).applyMatrix4(malla.matrixWorld);
+      uv1[i * 2] = aImagen(w.x, w.z, U.getX(a), U.getX(b), U.getX(c));
+      uv1[i * 2 + 1] = aImagen(w.x, w.z, U.getY(a), U.getY(b), U.getY(c));
+    }
+    malla.geometry.setAttribute('uv1', new THREE.BufferAttribute(uv1, 2));
+    const v = malla.material;
+    malla.material = new THREE.MeshBasicMaterial({ map: v.map, transparent: true, depthWrite: false, lightMap: luz, lightMapIntensity: Math.PI * ESCALA_LUZ });
+    v.dispose();
+  }
+}
+
+// Saca la zona cargada para hornearla en Blender: por estancia, las piezas horneables juntas por
 // material (geometría en coordenadas del mundo), y las texturas y las luces. La escena tiene que estar
 // cargada con ?sinhornear&sinfundir. En la consola, con herramientas/recibir-estancia.js en marcha:
-// fetch('http://localhost:8099/castillo', { method: 'POST', body: JSON.stringify(exportarCastillo()) })
-function exportarCastillo() {
+// fetch('http://localhost:8099/castillo', { method: 'POST', body: JSON.stringify(exportarZona()) })   (o /bosque)
+function exportarZona() {
   const escena = document.querySelector('a-scene').object3D;
   escena.updateMatrixWorld(true);
   const imagenes = {}, salas = {}, luces = [];
   const v = new THREE.Vector3(), t = new THREE.Vector3();
-  for (const sala of SALAS_HORNEADAS) {
-    const el = [...document.querySelectorAll('[incluir]')].find(e => e.getAttribute('incluir') === `salas/${sala}.html`);
+  const estancia = {};
+  for (const [e, s] of Object.entries(SUELOS_HORNEADOS)) estancia[s] = e;
+  for (const sala of [...SALAS_HORNEADAS, ...Object.values(SUELOS_HORNEADOS)]) {
+    const el = [...document.querySelectorAll('[incluir]')].find(e => e.getAttribute('incluir') === `salas/${estancia[sala] || sala}.html`);
+    if (!el) continue;
     const grupos = new Map();
     el.object3D.traverse(o => {
-      if (!esHorneable(o, el.object3D)) return;
+      if (!esHorneable(o, el.object3D, sala)) return;
       const m = o.material, clave = [m.map ? m.map.source.uuid : '-', m.emissive ? m.emissive.getHex() : 0].join('|');
       if (!grupos.has(clave)) grupos.set(clave, { pos: [], nor: [], uv: [], col: [], imagen: m.map ? m.map.source.uuid : null, emisivo: !!(m.emissive && m.emissive.getHex()) });
       const d = grupos.get(clave), g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry;
@@ -177,7 +215,8 @@ function exportarCastillo() {
         if (m.side === THREE.DoubleSide) v.addScaledVector(t, 0.001);
         d.pos.push(v.x, v.y, v.z); d.nor.push(t.x, t.y, t.z);
         t.set(UV ? UV.getX(j) : 0, UV ? UV.getY(j) : 0, 1); if (m.map) t.applyMatrix3(m.map.matrix); d.uv.push(t.x, t.y);
-        d.col.push(m.color.r, m.color.g, m.color.b);
+        const C = g.attributes.color;   // (el terreno pintado)
+        d.col.push(m.color.r * (C ? C.getX(j) : 1), m.color.g * (C ? C.getY(j) : 1), m.color.b * (C ? C.getZ(j) : 1));
       }
     });
     salas[sala] = [...grupos.values()];
@@ -187,7 +226,18 @@ function exportarCastillo() {
     o.getWorldPosition(v);
     luces.push({ pos: v.toArray(), fuerza: o.intensity, alcance: o.distance, color: o.color.toArray() });
   });
-  return { imagenes, salas, luces };
+  // los árboles no se hornean, pero dan sombra
+  const arboles = [], M = new THREE.Matrix4(), sistema = document.querySelector('a-scene').systems.arbol;
+  if (sistema.piezas) sistema.colocar();   // (los coloca su tick, que puede no haber pasado todavía)
+  escena.traverse(o => {
+    if (!o.isInstancedMesh || !o.visible) return;
+    const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry, P = g.attributes.position;
+    for (let k = 0; k < o.count; k++) {
+      o.getMatrixAt(k, M);
+      for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i).applyMatrix4(M); arboles.push(v.x, v.y, v.z); }
+    }
+  });
+  return { zona: zonaCargada.nombre, horneado: { ...CIELOS[zonaCargada.cielo].horneado, sol: CIELOS[zonaCargada.cielo].sol }, imagenes, salas, luces, arboles };
 }
 
 // Luces puntuales: un número fijo de luces (6) que nunca se encienden ni se apagan, y que copian

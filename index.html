@@ -6,12 +6,16 @@
 <title>Editor VR</title>
 <script src="https://cdn.jsdelivr.net/npm/aframe@1.7.0/dist/aframe-master.min.js"></script>
 <!-- Comportamiento: componentes de A-Frame en js/ (el orden importa poco: se usan al arrancar) -->
+<script src="js/mundo.js"></script>
 <script src="js/rendimiento.js"></script>
 <script src="js/incluir.js"></script>
 <script src="js/zonas.js"></script>
 <script src="js/movimiento.js"></script>
 <script src="js/texturas.js"></script>
 <script src="js/objetos.js"></script>
+<script src="js/lago.js"></script>
+<script src="js/poblado.js"></script>
+<script src="js/mapa.js"></script>
 <script src="js/arboles.js"></script>
 <script src="js/conexion.js"></script>
 <script src="js/medidor.js"></script>
@@ -19,7 +23,7 @@
 <body>
 <!-- La escena: aquí el jugador (rig) y la luz general. Las estancias están en salas/, con las
      coordenadas del mundo, y las carga el componente zonas (js/zonas.js) según dónde estés. -->
-<a-scene zonas informe-posicion foto-para-claude medidor luces-cercanas renderer="antialias: true; colorManagement: true" xr-mode-ui="enabled: true" background="color: #a9cfe8">
+<a-scene zonas cielo mapa informe-posicion foto-para-claude medidor luces-cercanas renderer="antialias: true; colorManagement: true" xr-mode-ui="enabled: true" background="color: #a9cfe8">
 
   <!-- Inicio: en la sala 3, mirando a la escalera -->
   <a-entity id="rig" position="6 0 7" rotation="0 180 0">
@@ -33,9 +37,9 @@
     <a-entity laser-controls="hand: right" raycaster="objects: .clicable; far: 4; lineColor: #ffe066" giro-por-pasos></a-entity>
   </a-entity>
 
-  <!-- Luz suave: todo blanco, pero con la sombra justa para distinguir suelo, paredes y techo -->
-  <a-entity light="type: ambient; intensity: 2.2; color: #fff"></a-entity>
-  <a-entity light="type: directional; intensity: 1.2; color: #fff" position="1 3 2"></a-entity>
+  <!-- Luz general, para lo que no está horneado: cada zona pone la suya (ATMOSFERA, en js/zonas.js) -->
+  <a-entity id="luz-ambiente" light="type: ambient; intensity: 1.3; color: #c9a8b0"></a-entity>
+  <a-entity id="luz-sol" light="type: directional; intensity: 2; color: #ffab66" position="-1 0.2 0.25"></a-entity>
 </a-scene>
 </body>
 </html>

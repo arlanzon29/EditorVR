@@ -76,9 +76,7 @@ const FUERA = [
   { x0: -30, x1: 40, z0: 14.65, z1: 45 },      // por detrás (norte)
   { x0: 14.6, x1: 40, z0: -45, z1: 45 },       // al este de la sala 2 y de la sala 3
 ];
-// Bosque, otra zona (js/zonas.js): se entra por el final del camino (x = 4,8…7,2, z = -45).
-const PASO_BOSQUE = { x0: 5.05, x1: 6.95, z0: -47, z1: -44 };
-const BOSQUE = { x0: -24, x1: 36, z0: -100, z1: -46 };
+// Las demás zonas y sus pasos están en js/mundo.js.
 let cambiandoDeZona = false;   // mientras se carga una zona no se anda
 const ALTO_GALERIA = 4.4;   // altura del rellano de arriba de la sala 3 y de sus pasillos
 const dentro = (p, z) => p.x >= z.x0 && p.x <= z.x1 && p.z >= z.z0 && p.z <= z.z1;
@@ -86,6 +84,7 @@ const dentro = (p, z) => p.x >= z.x0 && p.x <= z.x1 && p.z >= z.z0 && p.z <= z.z
 // Zonas por las que se puede ir desde donde está la cabeza: la suya y las que se alcanzan
 // cruzando puertas abiertas. Con una puerta cerrada, el pasillo se queda a 25 cm de ella.
 // Las zonas "arriba" (pasillos de la sala 3) solo valen si se pisa a la altura de la galería.
+const ZONAS_DE_ANDAR = Object.values(MUNDO).filter(z => z.andar);
 function zonasPermitidas(cabeza, altura) {
   const enAlto = altura > ALTO_GALERIA - 0.1;
   // (mientras no ha cargado la sala de una puerta, cuenta como cerrada)
@@ -96,12 +95,16 @@ function zonasPermitidas(cabeza, altura) {
   // el hueco de la puerta del patio solo existe con ella abierta: se solapa con el patio, y si no,
   // desde ese borde del patio se cruzaba la puerta cerrada
   const pasoPatio = p4 ? PASO_PATIO : { x0: 1, x1: 0, z0: 1, z1: 0 };
-  const zonas = [SALA, pasillo, SALA2, pasillo2, SALA3, ARCO_ARRIBA, ...PASILLOS_ARRIBA, PASO_COMEDOR, COMEDOR, pasoPatio, PATIO, PASO_PORTON, ...FUERA, PASO_BOSQUE, BOSQUE];
+  const zonas = [SALA, pasillo, SALA2, pasillo2, SALA3, ARCO_ARRIBA, ...PASILLOS_ARRIBA, PASO_COMEDOR, COMEDOR, pasoPatio, PATIO, PASO_PORTON, ...FUERA, ...PASOS.map(p => p.andar), ...ZONAS_DE_ANDAR.map(z => z.andar)];
   const uniones = [[0, 1, p1], [1, 2, p2], [1, 3, p3], [3, 4, true],
     [4, 5, enAlto], [5, 6, enAlto], [6, 7, true], [6, 8, true], [7, 9, true], [8, 9, true],
     [4, 10, true], [10, 11, true], [1, 12, p4], [12, 13, p4],
     [13, 14, true], ...FUERA.map((_, i) => [14, 15 + i, true]),
-    [15, 15 + FUERA.length, true], [15 + FUERA.length, 16 + FUERA.length, true]];
+    // cada paso une sus dos zonas (el castillo, por el campo de fuera)
+    ...PASOS.flatMap((p, k) => {
+      const i = 15 + FUERA.length + k, n = nombre => nombre === 'castillo' ? 15 : 15 + FUERA.length + PASOS.length + ZONAS_DE_ANDAR.indexOf(MUNDO[nombre]);
+      return [[n(p.a), i, true], [i, n(p.b), true]];
+    })];
   const i = zonas.findIndex(z => dentro(cabeza, z) && (enAlto || !z.arriba));
   if (i < 0) return zonas.filter(z => enAlto || !z.arriba);   // fuera de todo (no debería pasar): que pueda volver a cualquiera
   const alcanzables = new Set([i]);
@@ -119,12 +122,15 @@ function zonasPermitidas(cabeza, altura) {
 const SUPERFICIES = [];
 const ESCALON_MAX = 0.35;
 function sueloEn(p, actual) {
-  let suelo = 0;
+  const terreno = alturaTerreno(p.x, p.z);
+  let suelo = terreno, encima = false;
   for (const s of SUPERFICIES) {
     if (!dentro(p, s)) continue;
     if (s.y > actual + ESCALON_MAX) { if (s.macizo) return null; continue; }
     suelo = Math.max(suelo, s.y);
+    encima = true;
   }
+  if (!encima && terreno < (zonaCargada.agua ?? -Infinity)) return null;   // al agua no se entra
   return suelo < actual - ESCALON_MAX ? null : suelo;
 }
 
@@ -177,7 +183,7 @@ AFRAME.registerComponent('andar-joystick', {
     this.el.addEventListener('thumbstickmoved', e => { this.x = e.detail.x; this.y = e.detail.y; });
   },
   tick(t, dt) {
-    if (!dt) return;
+    if (!dt || enBarco) return;   // (en la barca, te mueve ella: js/lago.js)
     const r = this.rig.object3D.position;
     if (t - this.guardado > 500) {
       this.guardado = t;

@@ -17,7 +17,8 @@ AFRAME.registerComponent('incluir', {
       .then(() => {
         // con la luz horneada, lo fijo lo sustituye su modelo; lo que quede, se funde
         const sala = this.data.replace(/^salas\/|\.html$/g, '');
-        if (luzHorneada && SALAS_HORNEADAS.includes(sala)) return hornearEstancia(this.el, sala);
+        if (!luzHorneada || !SALAS_HORNEADAS.includes(sala)) return;
+        return hornearEstancia(this.el, sala).then(() => SUELOS_HORNEADOS[sala] && hornearEstancia(this.el, SUELOS_HORNEADOS[sala]));
       })
       .then(() => {
         // con ?sinfundir en la dirección no se funde (para buscar solapes y depurar)

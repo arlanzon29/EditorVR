@@ -575,6 +575,84 @@ AFRAME.registerComponent('estandarte', {
   remove() { this.el.removeObject3D('mesh'); }
 });
 
+// Valla luminosa en el borde de un rectángulo del mundo: marca hasta dónde se puede andar (el límite
+// lo ponen las zonas de movimiento.js y mundo.js). Es invisible: se enciende en el trozo que tienes
+// cerca, cada vez más al acercarte, y de lejos ni se dibuja. Sigue el terreno. "huecos" son los pasos
+// de los caminos: "lado desde hasta", separados por comas (lado x0 o x1: desde y hasta son z; lado z0
+// o z1: son x).
+const VALLA_ALCANCE = 4, VALLA_ALTO = 2.6;   // metros a los que empieza a verse, y su altura
+AFRAME.registerComponent('barrera', {
+  schema: { x0: { default: 0 }, x1: { default: 0 }, z0: { default: 0 }, z1: { default: 0 }, huecos: { default: '' } },
+  init() {
+    const { x0, x1, z0, z1, huecos } = this.data, PASO = 2;
+    const lista = huecos.split(',').map(h => h.trim().split(/\s+/)).filter(h => h.length === 3);
+    // de "ini" a "fin" a lo largo de un lado, saltándose sus huecos: lista de [desde, hasta]
+    const sinHuecos = (lado, ini, fin) => {
+      const trozos = []; let a = ini;
+      for (const [, d, h] of lista.filter(h => h[0] === lado).sort((p, q) => p[1] - q[1])) { trozos.push([a, +d]); a = +h; }
+      trozos.push([a, fin]);
+      return trozos;
+    };
+    const tramos = [
+      ...sinHuecos('z0', x0, x1).map(([a, b]) => [a, z0, b, z0]), ...sinHuecos('z1', x0, x1).map(([a, b]) => [a, z1, b, z1]),
+      ...sinHuecos('x0', z0, z1).map(([a, b]) => [x0, a, x0, b]), ...sinHuecos('x1', z0, z1).map(([a, b]) => [x1, a, x1, b]),
+    ];
+    const pos = [], uv = [], ind = [];
+    for (const [xa, za, xb, zb] of tramos) {
+      const largo = Math.hypot(xb - xa, zb - za), n = Math.max(1, Math.round(largo / PASO));
+      for (let i = 0; i <= n; i++) {
+        const x = xa + (xb - xa) * i / n, z = za + (zb - za) * i / n, y = alturaTerreno(x, z) - 0.05, k = pos.length / 3;
+        pos.push(x, y, z, x, y + VALLA_ALTO, z);
+        uv.push(largo * i / n, 0, largo * i / n, 1);
+        if (i < n) ind.push(k, k + 2, k + 1, k + 1, k + 2, k + 3);
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setIndex(ind);
+    this.ojo = new THREE.Vector3();
+    // barrotes y dos travesaños de luz dorada; se apaga con la distancia a los ojos y hacia arriba
+    this.malla = new THREE.Mesh(geo, new THREE.ShaderMaterial({
+      uniforms: { ojo: { value: this.ojo }, alcance: { value: VALLA_ALCANCE } },
+      transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+      vertexShader: `
+        varying vec2 vUv; varying vec3 vMundo;
+        void main() {
+          vUv = uv;
+          vMundo = position;
+          gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: `
+        uniform vec3 ojo; uniform float alcance;
+        varying vec2 vUv; varying vec3 vMundo;
+        float raya(float d, float ancho) { return smoothstep(ancho, 0.0, d); }
+        void main() {
+          float barrote = raya(abs(fract(vUv.x / 0.6) - 0.5) * 0.6, 0.035);
+          float altura = vUv.y * ${VALLA_ALTO.toFixed(1)};
+          float travesano = max(raya(abs(altura - 0.8), 0.035), raya(abs(altura - 1.8), 0.035));
+          float cerca = smoothstep(alcance, 0.8, distance(vMundo.xz, ojo.xz));
+          float luz = (0.1 + max(barrote, travesano) * 0.9) * cerca * cerca * (1.0 - vUv.y * vUv.y);
+          gl_FragColor = vec4(vec3(1.0, 0.72, 0.3), luz);
+          #include <colorspace_fragment>
+        }`
+    }));
+    this.malla.frustumCulled = false;
+    this.malla.visible = false;
+    this.el.setObject3D('mesh', this.malla);
+  },
+  tick() {
+    const c = this.el.sceneEl.camera;
+    if (!c) return;
+    c.getWorldPosition(this.ojo);
+    const { x0, x1, z0, z1 } = this.data;
+    // a qué distancia del borde más cercano
+    const d = Math.min(this.ojo.x - x0, x1 - this.ojo.x, this.ojo.z - z0, z1 - this.ojo.z);
+    this.malla.visible = d < VALLA_ALCANCE;
+  },
+  remove() { this.el.removeObject3D('mesh'); }
+});
+
 // Cartel de texto (saludos de los personajes): un plano con el texto dibujado en un canvas con la
 // letra del navegador (la de a-text no tiene ñ, ¿ ni tildes), hijo de "el", en "posicion" (x y z,
 // en coordenadas de "el") y oculto. Quien lo usa lo enseña y lo gira hacia quien lo lee.
