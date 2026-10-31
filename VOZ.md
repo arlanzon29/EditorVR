@@ -16,7 +16,7 @@ Cómo está montado el trabajo con Claude Code hablando, sin teclado.
 ## Modo Quest y modo ordenador
 
 La voz (el "Recibido" y Claude hablando) **solo se usa cuando se trabaja con las gafas puestas**.
-Delante del ordenador no se habla: se lee la pantalla.
+Delante del ordenador no se habla: se lee la pantalla. Por defecto, sin voz: hay que pedirla en cada sesión.
 
 - **Modo Quest:** existe el archivo `.claude/modo-quest` (vacío). Se dice "Recibido" al enviar
   y Claude habla.

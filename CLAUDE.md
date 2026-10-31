@@ -9,6 +9,9 @@ está hecho: [README.md](README.md). Léelo antes de cambiar la escena.
 El usuario trabaja a veces con las gafas Quest puestas, dictando con Acceso por voz de
 Windows, y a veces delante del ordenador. Cómo está montado: [VOZ.md](VOZ.md).
 
+**Por defecto, sin voz.** Solo se habla si lo dice en esta sesión ("estoy en el Quest"); si el
+archivo sigue ahí de otra sesión y no lo ha dicho, borrarlo y no hablar.
+
 - **Modo Quest** = existe el archivo `.claude/modo-quest`. Comprobarlo antes de hablar.
   - Al recibir una orden: decir en voz alta una o dos frases cortas con lo que vas a hacer.
   - Al terminar: un resumen corto en voz alta ("Listo" + qué ha quedado hecho).

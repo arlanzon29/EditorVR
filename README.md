@@ -333,3 +333,4 @@ Medido en la vista previa del PC (octubre de 2026), sin y con horneado; **falta 
 - Por voz desde las gafas, y el modo Quest / modo ordenador: [VOZ.md](VOZ.md).
 - Instrucciones para Claude en este proyecto: [CLAUDE.md](CLAUDE.md).
 - Lo que se ha hecho y por qué: [HISTORIAL.md](HISTORIAL.md).
+- Diseño del juego (puntos, misiones, cartas), aún sin programar: [JUEGO.md](JUEGO.md).
