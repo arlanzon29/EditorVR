@@ -1,0 +1,24 @@
+<!-- Comedor: lo que no se hornea y lo que no depende de cómo se dibuje lo demás. Se carga siempre,
+     con salas/comedor.html o con salas/comedor-horneado.html (ver ZONAS, en js/zonas.js). -->
+
+<!-- obstáculos: la chimenea, la mesa con los bancos y el sillón -->
+<a-entity macizo="ancho: 3.4; fondo: 0.9; alto: 1.6" position="-6.4 0 13.55"></a-entity>
+<a-entity macizo="ancho: 7; fondo: 2.22; alto: 0.78" position="-6.4 0 9"></a-entity>
+<a-entity macizo="ancho: 0.6; fondo: 0.7; alto: 1" position="-10.45 0 9"></a-entity>
+
+<!-- hoguera de la chimenea -->
+<a-entity hoguera position="-6.4 0.06 13.6"></a-entity>
+<!-- dos lámparas de rueda sobre la mesa, colgadas del techo -->
+<a-entity lampara-rueda="techo: 1.2; intensidad: 1" position="-8.2 3 9"></a-entity>
+<a-entity lampara-rueda="techo: 1.2; intensidad: 1" position="-4.6 3 9"></a-entity>
+
+<!-- criado con su jarra: da la vuelta a la mesa, parándose a servir en cada lado
+     (puntos: x z segundos de parada) -->
+<a-entity criado="puntos: -2.3 10.9 3, -9.6 10.9 0, -11.3 9 2, -9.6 7.2 0, -2.3 7.2 3, -1.6 9 0" position="-1.6 0 9"></a-entity>
+
+<!-- antorchas sin luz propia (alumbran las lámparas y la chimenea): junto al arco de entrada y
+     entre las ventanas -->
+<a-entity antorcha="luz: false" position="-0.4 1.75 5.3" rotation="0 -90 0"></a-entity>
+<a-entity antorcha="luz: false" position="-0.4 1.75 9.1" rotation="0 -90 0"></a-entity>
+<a-entity antorcha="luz: false" position="-12.4 1.75 7.5" rotation="0 90 0"></a-entity>
+<a-entity antorcha="luz: false" position="-12.4 1.75 10.5" rotation="0 90 0"></a-entity>

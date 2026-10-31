@@ -4,7 +4,7 @@
 // acercarse al límite, cierra del todo mientras se carga y se abre al terminar.
 
 const ZONAS = {
-  castillo: { titulo: 'El Castillo', salas: ['sala1', 'pasillo', 'sala2', 'pasillo2', 'sala3', 'comedor', 'patio', 'exterior'] },
+  castillo: { titulo: 'El Castillo', salas: ['sala1', 'pasillo', 'sala2', 'pasillo2', 'sala3', 'comedor', 'comedor-vivos', 'patio', 'exterior'] },
   bosque: { titulo: 'El Bosque', salas: ['bosque'] },
 };
 // Final del camino: se pasa al bosque más allá de BOSQUE_ENTRA y se vuelve más acá de BOSQUE_SALE
@@ -32,6 +32,20 @@ AFRAME.registerComponent('zonas', {
     this.actual = null;   // nombre de la zona cargada
     this.raiz = null;     // entidad con las estancias de la zona
     this.crearLetrero();
+    // Para comparar: el botón A, o la tecla H, recarga la zona con la otra luz, sin salir de VR
+    window.addEventListener('keydown', e => { if (e.code === 'KeyH') this.cambiarLuz(); });
+    const enganchar = () => {
+      const m = document.querySelector('[laser-controls="hand: right"]');
+      if (!m) return setTimeout(enganchar, 500);
+      m.addEventListener('abuttondown', () => this.cambiarLuz());
+    };
+    enganchar();
+  },
+  cambiarLuz() {
+    if (cambiandoDeZona || this.actual !== 'castillo') return;
+    luzHorneada = !luzHorneada;
+    const medidor = this.el.components.medidor;
+    this.ir('castillo').then(() => { if (medidor) { medidor.peor = Infinity; medidor.calentando = 1500; } });
   },
   // Tabla de madera oscura con el nombre en un canvas. Va pegada a la cámara, a 2 m (más cerca
   // cansa la vista en VR), sin niebla y por delante de todo. Oculta hasta que se entra en una zona.
@@ -119,7 +133,7 @@ AFRAME.registerComponent('zonas', {
     const r = this.el.renderer.info.memory;
     console.log(`Zona ${nombre}: ${r.geometries} geometrías, ${r.textures} texturas`);
     this.abriendo = true;
-    this.mostrarLetrero(ZONAS[nombre].titulo);
+    this.mostrarLetrero(nombre === 'castillo' && !luzHorneada ? 'Sin hornear' : ZONAS[nombre].titulo);
     while (this.cierre > 0.4) await new Promise(r => setTimeout(r, 30));
     cambiandoDeZona = false;   // ya se puede andar, aunque aún se esté abriendo
     while (this.abriendo && this.cierre > 0 && !cambiandoDeZona) await new Promise(r => setTimeout(r, 50));

@@ -4,6 +4,9 @@
 // esa entidad (que va en el origen: las coordenadas de las salas son las del mundo). Cuando todo
 // lo de la estancia ha cargado, se funde lo fijo en pocas mallas (fundirEstancia, en rendimiento.js).
 
+// Luz horneada en lo fijo; con ?sinhornear (o ?sinfundir, para depurar) se empieza sin ella.
+let luzHorneada = !/sinhornear|sinfundir/.test(location.search);
+
 AFRAME.registerComponent('incluir', {
   schema: { type: 'string' },
   init() {
@@ -11,6 +14,11 @@ AFRAME.registerComponent('incluir', {
       .then(r => { if (!r.ok) throw new Error(r.status + ' ' + r.statusText); return r.text(); })
       // el servidor añade a cada .html el script de recarga automática: aquí sobra
       .then(html => { this.el.insertAdjacentHTML('beforeend', html.replace(/<script[\s\S]*?<\/script>/g, '')); return this.esperarCarga(); })
+      .then(() => {
+        // con la luz horneada, lo fijo lo sustituye su modelo; lo que quede, se funde
+        const sala = this.data.replace(/^salas\/|\.html$/g, '');
+        if (luzHorneada && SALAS_HORNEADAS.includes(sala)) return hornearEstancia(this.el, sala);
+      })
       .then(() => {
         // con ?sinfundir en la dirección no se funde (para buscar solapes y depurar)
         if (location.search.includes('sinfundir')) return;

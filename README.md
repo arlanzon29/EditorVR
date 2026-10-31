@@ -163,7 +163,7 @@ Mientras se comparte la pantalla, cualquiera en la misma wifi que abra la págin
 | Archivo | Qué tiene |
 |---|---|
 | [index.html](index.html) | La escena: el jugador (`rig`, cámara y mandos) y la luz general. |
-| [salas/](salas/) | Una estancia por archivo, en coordenadas del mundo: `sala1.html`, `pasillo.html`, `sala2.html`, `pasillo2.html`, `sala3.html`, `comedor.html`, `patio.html`, `exterior.html`, `bosque.html`. Solo etiquetas de A-Frame. |
+| [salas/](salas/) | Una estancia por archivo, en coordenadas del mundo: `sala1.html`, `pasillo.html`, `sala2.html`, `pasillo2.html`, `sala3.html`, `comedor.html` (lo fijo), `comedor-vivos.html` (lo que se mueve y los obstáculos), `patio.html`, `exterior.html`, `bosque.html`. Solo etiquetas de A-Frame. |
 | [js/zonas.js](js/zonas.js) | Qué estancias tiene cada zona, cambio de zona y niebla. |
 | [js/incluir.js](js/incluir.js) | Componente `incluir`: descarga una estancia y la mete en la escena. |
 | [js/movimiento.js](js/movimiento.js) | Andar, girar, zonas, `SUPERFICIES`, obstáculos `macizo` y la mira del monitor. |
@@ -259,7 +259,37 @@ Medido en el Quest (octubre de 2026), antes y después de fundir y de las 6 luce
 | Comedor | 449 → 83 | 55 → 88–90 |
 
 Si algún día no llega: ocultar el interior de las salas cuando se está fuera, cargar las salas
-según uno se acerca, o luz horneada en texturas.
+según uno se acerca.
+
+### Horneado
+
+Todo el castillo lleva la luz calculada en Blender, salvo lo que se mueve, lo transparente, la hierba,
+el camino, las colinas y los árboles (el bosque, tampoco). El **botón A** (en el ordenador, la tecla
+**H**) recarga el castillo con o sin ella, sin salir de VR; sin hornear, sale el letrero "Sin hornear".
+Con **`?sinhornear`** en la dirección se empieza sin ella.
+
+- **Las estancias se cargan igual**, con sus componentes y obstáculos; solo cambia lo que se dibuja:
+  sus piezas fijas se ocultan y va en su lugar `modelos/horneado/<sala>.glb` con `<sala>-luz.jpg`
+  (`hornearEstancia`, en rendimiento.js), con materiales que no calculan luces. Personajes y puertas
+  siguen usando las 6 luces. Estatuas y marcos de piedra también van horneados (`MODELOS_HORNEADOS`).
+- **Lo horneado no se actualiza solo:** después de cambiar algo fijo de una estancia, hay que regenerarlo
+  (no retocar los modelos a mano):
+  1. `node herramientas/recibir-estancia.js <carpeta>`.
+  2. Abrir la página con `?sinhornear&sinfundir` y, en la consola, la línea `fetch(...)` que hay
+     encima de `exportarCastillo`, en rendimiento.js.
+  3. `blender --background --python herramientas/hornear-castillo.py -- <carpeta>/castillo.json <salida> 256`
+     (minuto y medio) y copiar a `modelos/horneado/` los `.glb`, los `.jpg` y `castillo.blend`. Los vatios
+     por unidad de luz, el sol y el cielo se ajustan en ese script.
+- Las puertas y los personajes no están en Blender: no dan sombra, y la luz pasa por las puertas como si
+  estuvieran abiertas.
+
+Medido en la vista previa del PC (octubre de 2026), sin y con horneado; **falta medirlo en el Quest**:
+
+| Dónde | Llamadas | Triángulos |
+|---|---|---|
+| Fuera, de frente al castillo | 200 → 159 | 158 mil → 158 mil |
+| Frente a la escalera de la sala 3 | 28 → 15 | 39 mil → 39 mil |
+| Comedor | 36 → 31 | 47 mil → 69 mil |
 
 ## Trabajar con Claude
 

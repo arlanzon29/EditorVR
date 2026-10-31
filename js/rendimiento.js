@@ -86,8 +86,108 @@ function liberarEstancia(el) {
   el.object3D.traverse(o => {
     if (!o.isMesh) return;
     o.geometry.dispose();
-    for (const m of [].concat(o.material)) { if (m.map) m.map.dispose(); m.dispose(); }
+    for (const m of [].concat(o.material)) { if (m.map) m.map.dispose(); if (m.lightMap) m.lightMap.dispose(); m.dispose(); }
   });
+}
+
+// Luz horneada en Blender (ver "Horneado" en README.md). Las estancias se cargan igual, con sus
+// componentes y sus obstáculos; solo cambia lo que se dibuja: las piezas fijas se ocultan y en su lugar
+// va un modelo con todas ellas (modelos/horneado/<sala>.glb) y su imagen de luz (<sala>-luz.jpg).
+// Lo que se mueve (NO_FUNDIR), lo transparente y lo enorme de fuera (hierba, colinas) sigue como estaba.
+const SALAS_HORNEADAS = ['sala1', 'pasillo', 'sala2', 'pasillo2', 'sala3', 'comedor', 'patio', 'exterior'];
+const ESCALA_LUZ = 2;   // la imagen guarda la luz dividida por esto: lo que pasa de 1 también cabe
+const texturasHorneadas = new Map();   // los modelos repiten piedra y madera: una sola copia de cada una
+
+function esHorneable(o, raiz) {
+  if (!o.isMesh || o.isInstancedMesh || Array.isArray(o.material) || o.material.visible === false || o.material.transparent) return false;
+  if (!o.geometry.attributes.position) return false;
+  for (let p = o; p && p !== raiz; p = p.parent) if (!p.visible) return false;
+  let e = o; while (e && !e.el) e = e.parent;
+  const ent = e && e.el;
+  if (!ent) return false;
+  if (MODELOS_HORNEADOS.test(ent.getAttribute('gltf-model'))) return true;
+  return !ent.closest(NO_FUNDIR) && !ent.closest('[suelo-hierba], [camino], [claro], [arbol]') && !(parseFloat(ent.getAttribute('radius')) > 5);
+}
+
+// Los modelos de Blender que no se mueven también van horneados: su original no se llega a ver.
+const MODELOS_HORNEADOS = /marco-|caballero/;
+document.addEventListener('model-loaded', e => {
+  if (luzHorneada && MODELOS_HORNEADOS.test(e.target.getAttribute('gltf-model'))) e.detail.model.visible = false;
+});
+
+// Pone el modelo horneado de una estancia y oculta lo que sustituye. Si no se puede cargar, se queda
+// como estaba (y luego se funde como siempre).
+function hornearEstancia(el, sala) {
+  return new Promise(listo => {
+    const ent = document.createElement('a-entity');
+    const luz = new THREE.TextureLoader().load(`modelos/horneado/${sala}-luz.jpg`, t => {
+      t.colorSpace = THREE.SRGBColorSpace; t.flipY = false; t.channel = 1; t.needsUpdate = true;
+    });
+    ent.addEventListener('model-error', () => { ent.remove(); luz.dispose(); console.error('Sin horneado: ' + sala); listo(); });
+    ent.addEventListener('model-loaded', e => {
+      el.object3D.traverse(o => {
+        if (e.detail.model === o || !esHorneable(o, el.object3D)) return;
+        for (let p = o; p; p = p.parent) if (p === e.detail.model) return;
+        o.visible = false; o.geometry.dispose();
+      });
+      e.detail.model.traverse(o => {
+        if (!o.isMesh) return;
+        const v = o.material, llama = /^Llama/.test(v.name);   // las llamas brillan por sí solas: sin luz
+        let mapa = v.map;
+        if (mapa) {
+          if (texturasHorneadas.has(mapa.name)) { mapa.dispose(); mapa = texturasHorneadas.get(mapa.name); }
+          else { mapa.anisotropy = 8; texturasHorneadas.set(mapa.name, mapa); }
+        }
+        // sin cálculo de luces, lo más barato que hay: las 6 luces solo afectan a lo que se mueve
+        o.material = new THREE.MeshBasicMaterial({ map: mapa, vertexColors: true, lightMap: llama ? null : luz, lightMapIntensity: Math.PI * ESCALA_LUZ });
+        v.dispose();
+      });
+      listo();
+    });
+    ent.setAttribute('gltf-model', `url(modelos/horneado/${sala}.glb)`);
+    el.appendChild(ent);
+  });
+}
+
+// Saca todo el castillo para hornearlo en Blender: por estancia, las piezas horneables juntas por
+// material (geometría en coordenadas del mundo), y las texturas y las luces. La escena tiene que estar
+// cargada con ?sinhornear&sinfundir. En la consola, con herramientas/recibir-estancia.js en marcha:
+// fetch('http://localhost:8099/castillo', { method: 'POST', body: JSON.stringify(exportarCastillo()) })
+function exportarCastillo() {
+  const escena = document.querySelector('a-scene').object3D;
+  escena.updateMatrixWorld(true);
+  const imagenes = {}, salas = {}, luces = [];
+  const v = new THREE.Vector3(), t = new THREE.Vector3();
+  for (const sala of SALAS_HORNEADAS) {
+    const el = [...document.querySelectorAll('[incluir]')].find(e => e.getAttribute('incluir') === `salas/${sala}.html`);
+    const grupos = new Map();
+    el.object3D.traverse(o => {
+      if (!esHorneable(o, el.object3D)) return;
+      const m = o.material, clave = [m.map ? m.map.source.uuid : '-', m.emissive ? m.emissive.getHex() : 0].join('|');
+      if (!grupos.has(clave)) grupos.set(clave, { pos: [], nor: [], uv: [], col: [], imagen: m.map ? m.map.source.uuid : null, emisivo: !!(m.emissive && m.emissive.getHex()) });
+      const d = grupos.get(clave), g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry;
+      const P = g.attributes.position, NN = g.attributes.normal, UV = g.attributes.uv, n = P.count;
+      const N = new THREE.Matrix3().getNormalMatrix(o.matrixWorld), espejo = o.matrixWorld.determinant() < 0;
+      if (m.map) { m.map.updateMatrix(); imagenes[m.map.source.uuid] = imagenes[m.map.source.uuid] || m.map.image.toDataURL('image/png'); }
+      // de doble cara: dos veces, una por cada lado (cada cara recibe su propia luz), separadas 1 mm
+      for (const lado of m.side === THREE.DoubleSide ? [1, -1] : [1]) for (let i = 0; i < n; i++) {
+        const j = (espejo !== (lado < 0)) ? (i % 3 === 1 ? i + 1 : i % 3 === 2 ? i - 1 : i) : i;
+        t.fromBufferAttribute(NN, j).applyMatrix3(N).normalize().multiplyScalar(lado);
+        v.fromBufferAttribute(P, j).applyMatrix4(o.matrixWorld);
+        if (m.side === THREE.DoubleSide) v.addScaledVector(t, 0.001);
+        d.pos.push(v.x, v.y, v.z); d.nor.push(t.x, t.y, t.z);
+        t.set(UV ? UV.getX(j) : 0, UV ? UV.getY(j) : 0, 1); if (m.map) t.applyMatrix3(m.map.matrix); d.uv.push(t.x, t.y);
+        d.col.push(m.color.r, m.color.g, m.color.b);
+      }
+    });
+    salas[sala] = [...grupos.values()];
+  }
+  escena.traverse(o => {
+    if (!o.isPointLight || o.userData.viva) return;
+    o.getWorldPosition(v);
+    luces.push({ pos: v.toArray(), fuerza: o.intensity, alcance: o.distance, color: o.color.toArray() });
+  });
+  return { imagenes, salas, luces };
 }
 
 // Luces puntuales: un número fijo de luces (6) que nunca se encienden ni se apagan, y que copian

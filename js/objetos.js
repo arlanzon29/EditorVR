@@ -483,7 +483,7 @@ AFRAME.registerComponent('lampara-rueda', {
 // Mesa larga de comedor, de caballetes, con un banco a cada lado, un sillón de respaldo alto en
 // la cabecera (lado -x, mirando a la mesa), platos y copas de peltre y tres candeleros con su
 // vela encendida. A lo largo del eje x; la entidad va en el centro, en el suelo, sin girar.
-// La mesa con sus bancos y el sillón son macizos (van en SUPERFICIES).
+// Sus obstáculos están en salas/comedor-vivos.html: también valen para el comedor horneado.
 AFRAME.registerComponent('mesa-comedor', {
   schema: { largo: { default: 7 } },
   init() {
@@ -538,11 +538,6 @@ AFRAME.registerComponent('mesa-comedor', {
       pieza('a-cone', x, ALTO + 0.52, 0, { 'radius-bottom': 0.018, 'radius-top': 0, height: 0.06,
         material: 'color: #e0a040; emissive: #f0a030; emissiveIntensity: 2' });
     }
-    // obstáculos: la mesa con los bancos, y el sillón
-    const p = this.el.object3D.position;
-    const macizo = (x0, x1, z0, z1, y) => SUPERFICIES.push({ x0: p.x + x0, x1: p.x + x1, z0: p.z + z0, z1: p.z + z1, y, macizo: true });
-    macizo(-L / 2, L / 2, -F / 2 - 0.56, F / 2 + 0.56, ALTO);
-    macizo(xs - 0.3, xs + 0.3, -0.35, 0.35, 1.0);
   }
 });
 

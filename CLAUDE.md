@@ -76,6 +76,8 @@ cambiar la escena (`index.html`, `salas/`, `js/`, `modelos/`) no, la página se 
 - Rendimiento (ver README): lo fijo se funde solo al cargar la sala; un componente que se mueva o
   cambie va en `NO_FUNDIR` (rendimiento.js). No contar con encender y apagar luces: hay 6 fijas
   que copian a las más cercanas. Medir con el medidor (botón X) antes y después de algo grande.
+- Luz horneada: lo fijo del castillo se dibuja desde `modelos/horneado/`. Un cambio en algo fijo no se ve con
+  ella hasta regenerarlo (pasos en "Horneado", en el README): para mirarlo antes, `?sinhornear`.
 - Parpadeos: `buscarSolapes()` en la consola, con la escena cargada con `?sinfundir`.
 - La vista previa del navegador integrado es la misma pestaña que puede estar usando el usuario:
   no mover la cámara si la está usando; y mientras está abierta manda su posición a `/__posicion`

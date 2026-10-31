@@ -1,6 +1,7 @@
 <!-- Comedor (x = -12,4…-0,4, z = 4…14, 4,2 m de alto): a la derecha de la sala 3 entrando, por un
      arco en su muro. Suelo de losas, techo de madera con vigas, tres ventanas en arco, chimenea,
-     mesa larga con bancos, dos lámparas de rueda, estandartes y antorchas. -->
+     mesa larga con bancos y estandartes. Solo lo fijo, lo que se puede hornear: lámparas, hoguera,
+     criado, antorchas y obstáculos están en comedor-vivos.html. -->
 
 <!-- suelo de losas (hasta x = 0: también el paso bajo el arco) y techo de tablas con 8 vigas -->
 <a-plane rotation="-90 0 0" position="-6.2 0 9" width="12.4" height="10" color="#ffffff" pared-piedra></a-plane>
@@ -45,28 +46,12 @@
 <a-box position="-6.4 3.625 13.8" width="1.8" height="1.15" depth="0.4" piedra-mundo="tono: #a89c88"></a-box>
 <a-box position="-6.4 0.8 13.95" width="2.2" height="1.6" depth="0.1" color="#1e1813"></a-box>
 <a-box position="-6.4 0.03 13.55" width="3.4" height="0.06" depth="0.9" color="#9a907f"></a-box>
-<a-entity hoguera position="-6.4 0.06 13.6"></a-entity>
-<a-entity macizo="ancho: 3.4; fondo: 0.9; alto: 1.6" position="-6.4 0 13.55"></a-entity>
 
 <!-- Mesa larga de 7 m en el centro, con bancos y sillón en la cabecera (hacia las ventanas) -->
 <a-entity mesa-comedor="largo: 7" position="-6.4 0 9"></a-entity>
-<!-- dos lámparas de rueda sobre la mesa, colgadas del techo -->
-<a-entity lampara-rueda="techo: 1.2; intensidad: 1" position="-8.2 3 9"></a-entity>
-<a-entity lampara-rueda="techo: 1.2; intensidad: 1" position="-4.6 3 9"></a-entity>
-
-<!-- criado con su jarra: da la vuelta a la mesa, parándose a servir en cada lado
-     (puntos: x z segundos de parada) -->
-<a-entity criado="puntos: -2.3 10.9 3, -9.6 10.9 0, -11.3 9 2, -9.6 7.2 0, -2.3 7.2 3, -1.6 9 0" position="-1.6 0 9"></a-entity>
 
 <!-- estandartes en la pared de la izquierda entrando (z = 4), granates y azules -->
 <a-entity estandarte="color: #6b2a26" position="-2.6 2.5 4.02"></a-entity>
 <a-entity estandarte="color: #2f3e57" position="-5.0 2.5 4.02"></a-entity>
 <a-entity estandarte="color: #6b2a26" position="-7.8 2.5 4.02"></a-entity>
 <a-entity estandarte="color: #2f3e57" position="-10.2 2.5 4.02"></a-entity>
-
-<!-- antorchas sin luz propia (alumbran las lámparas y la chimenea): junto al arco de entrada y
-     entre las ventanas -->
-<a-entity antorcha="luz: false" position="-0.4 1.75 5.3" rotation="0 -90 0"></a-entity>
-<a-entity antorcha="luz: false" position="-0.4 1.75 9.1" rotation="0 -90 0"></a-entity>
-<a-entity antorcha="luz: false" position="-12.4 1.75 7.5" rotation="0 90 0"></a-entity>
-<a-entity antorcha="luz: false" position="-12.4 1.75 10.5" rotation="0 90 0"></a-entity>
