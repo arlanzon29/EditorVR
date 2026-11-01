@@ -162,10 +162,6 @@ AFRAME.registerComponent('piso', {
   }
 });
 
-// dónde estaba (localStorage); la clave lleva el punto de inicio del rig, para que al cambiarlo
-// en el HTML se empiece allí y no en el sitio guardado de antes
-const CLAVE_SITIO = 'editorvr-sitio-2';   // (cambiar el número hace que todos vuelvan a empezar en el punto de inicio)
-
 AFRAME.registerComponent('andar-joystick', {
   init() {
     this.x = 0; this.y = 0;
@@ -183,21 +179,8 @@ AFRAME.registerComponent('andar-joystick', {
     window.addEventListener('blur', () => { teclas.clear(); actualizar(); });
     this.altura = 0;   // altura del suelo que se pisa
     this.rig = document.getElementById('rig');
-    // al recargar, volver al sitio donde se estaba (se guarda en el navegador cada medio segundo)
+    // el sitio donde se está va con la partida, cada medio segundo; al abrirla se vuelve a él (js/partida.js)
     this.guardado = 0;
-    const inicio = n => Element.prototype.getAttribute.call(this.rig, n) || '';
-    this.clave = CLAVE_SITIO + ' ' + inicio('position') + ' / ' + inicio('rotation');
-    // (cuando la escena ha cargado: si no, la posición inicial del rig lo pisaría)
-    const volver = () => {
-      try {
-        const p = JSON.parse(localStorage.getItem(this.clave));
-        if (!p) return;
-        this.rig.object3D.position.set(p.x, p.y, p.z);
-        this.rig.object3D.rotation.y = p.giro;
-        this.altura = p.y;
-      } catch (e) {}
-    };
-    if (this.el.sceneEl.hasLoaded) volver(); else this.el.sceneEl.addEventListener('loaded', volver, { once: true });
     this.el.addEventListener('thumbstickmoved', e => { this.x = e.detail.x; this.y = e.detail.y; });
     this.corriendo = false; this.mayusculas = false;
     this.el.addEventListener('gripdown', () => { this.corriendo = true; });
@@ -206,12 +189,16 @@ AFRAME.registerComponent('andar-joystick', {
     window.addEventListener('keyup', e => { if (e.key === 'Shift') this.mayusculas = false; });
     window.addEventListener('blur', () => { this.mayusculas = false; });
   },
+  guardarSitio() {
+    const o = this.rig.object3D;
+    partida.guardarSitio({ x: o.position.x, y: this.altura, z: o.position.z, giro: o.rotation.y });
+  },
   tick(t, dt) {
     if (!dt || enBarco || enLaMesa) return;   // (en la barca, te mueve ella: js/lago.js)
     const r = this.rig.object3D.position;
-    if (t - this.guardado > 500) {
+    if (t - this.guardado > 500 && partida.ranura && !cambiandoDeZona) {
       this.guardado = t;
-      try { localStorage.setItem(this.clave, JSON.stringify({ x: r.x, y: this.altura, z: r.z, giro: this.rig.object3D.rotation.y })); } catch (e) {}
+      this.guardarSitio();
     }
     // en VR, si estás sentado, el rig sube SUBIR_SENTADO. "Sentado" sale de la altura media de las
     // gafas en unos 3 s (agacharse un momento no cuenta), con margen entre bajo y alto para que no
@@ -226,7 +213,7 @@ AFRAME.registerComponent('andar-joystick', {
     } else { this.ajusteVR = undefined; this.mediaGafas = undefined; this.sentado = false; }
     r.y += (this.altura + (this.ajusteVR ?? 0) - r.y) * Math.min(1, dt / 80);   // subir y bajar escalones con suavidad
     this.mandoPC(dt);
-    if (cambiandoDeZona) return;
+    if (cambiandoDeZona || !partida.ranura) return;   // (sin partida se está en el menú, donde no se anda)
     const mx = THREE.MathUtils.clamp(this.x + this.tx + this.gx, -1, 1), my = THREE.MathUtils.clamp(this.y + this.ty + this.gy, -1, 1);
     if (Math.hypot(mx, my) < 0.15) return;   // zona muerta
     const mando = this.el.sceneEl.is('vr-mode') ? null : [...navigator.getGamepads()].find(g => g && g.mapping === 'standard');

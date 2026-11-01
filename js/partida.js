@@ -14,26 +14,93 @@ const PUNTOS_PESCAR = 3;   // lo que cuesta pescar con misión
 const PUNTOS_COMIDA = { crudo: 1, asado: 3 };   // propuesta de JUEGO.md
 // Cada día empieza en tu habitación de la posada, arriba, mirando a la puerta
 const INICIO_DIA = { zona: 'poblado', x: 174.8, y: 3.2, z: -101.8, giro: Math.PI };
-const CLAVE_PARTIDA = 'editorvr-partida';
+const CLAVE_PARTIDA = 'editorvr-partida';   // (más el número de la partida)
+const CLAVE_RANURA = 'editorvr-ranura';     // en sessionStorage: la que se está jugando, para seguir en ella al recargar
+const RANURAS = 3;                          // las partidas que se pueden guardar
+const MENU_SITIO = { x: 2050, y: 0, z: 0.7, giro: 0 };   // dónde te deja el menú (salas/menu.html)
 const AVISO_MS = 4500;
 const BIENVENIDA_MS = 8000;
 
 const partida = {
-  estado: null,
-  nuevo() { return { dia: 1, mision: null, puntos: 0, monedas: 0, pescado: null, pescadoHoy: false, cofre: [], tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null }; },
+  estado: null,   // sin partida abierta (en el menú), uno vacío que no se guarda
+  ranura: null,   // el número de la partida abierta
+  nuevo() { return { dia: 1, mision: null, puntos: 0, monedas: 0, pescado: null, pescadoHoy: false, cofre: [], tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, visitadas: [], sitio: null, fecha: null }; },
   cargar() {
     this.estado = this.nuevo();
-    let guardada = null;
-    try { guardada = JSON.parse(localStorage.getItem(CLAVE_PARTIDA)); } catch (e) {}
-    // una partida nueva empieza en la posada (lo mira zonas.js al cargar la primera zona)
-    this.empezando = !guardada || location.search.includes('partidanueva');
-    if (this.empezando) this.guardar();
-    else Object.assign(this.estado, guardada);
+    this.traerPartidaVieja();
+  },
+  // La partida de cuando solo había una, con su mapa y su sitio, pasa a ser la primera
+  traerPartidaVieja() {
+    try {
+      const vieja = JSON.parse(localStorage.getItem(CLAVE_PARTIDA));
+      if (!vieja) return;
+      if (!this.leer(1)) {
+        vieja.visitadas = JSON.parse(localStorage.getItem('editorvr-visitadas')) || [];
+        const sitio = Object.keys(localStorage).find(k => k.startsWith('editorvr-sitio-2 '));
+        if (sitio) vieja.sitio = JSON.parse(localStorage.getItem(sitio));
+        localStorage.setItem(`${CLAVE_PARTIDA}-1`, JSON.stringify(vieja));
+      }
+      for (const k of Object.keys(localStorage)) if (k === CLAVE_PARTIDA || k === 'editorvr-visitadas' || k.startsWith('editorvr-sitio-2 ')) localStorage.removeItem(k);
+    } catch (e) {}
+  },
+  leer(r) {
+    try { return JSON.parse(localStorage.getItem(`${CLAVE_PARTIDA}-${r}`)); } catch (e) { return null; }
+  },
+  // Lo que enseña el menú de una partida (sin nada, si está vacía)
+  resumen(r) {
+    const e = this.leer(r);
+    if (!e) return null;
+    const zona = e.sitio ? zonaEn(e.sitio.x, e.sitio.z) : MUNDO[INICIO_DIA.zona];
+    return { dia: e.dia, monedas: e.monedas, fecha: e.fecha, zona: zona ? zona.titulo : '', mision: MISIONES[e.mision]?.titulo };
+  },
+  borrar(r) { try { localStorage.removeItem(`${CLAVE_PARTIDA}-${r}`); } catch (e) {} },
+  // Al cargar la página: si se ha recargado jugando (o con ?partida=1 en la dirección), a esa partida; si no, al menú
+  arrancar() {
+    let r = parseInt(new URLSearchParams(location.search).get('partida'), 10);
+    try { r = r || parseInt(sessionStorage.getItem(CLAVE_RANURA), 10); } catch (e) {}
+    if (r >= 1 && r <= RANURAS) this.abrir(r); else this.irAlMenu();
+  },
+  // Abre la partida "r" (si está vacía, empieza una en la posada) y va a donde se dejó, sin salir de VR
+  abrir(r) {
+    if (cambiandoDeZona) return;
+    this.estado = Object.assign(this.nuevo(), this.leer(r));
     if (this.estado.hechas.includes('boda') && this.estado.bodaDia === null) this.estado.bodaDia = this.estado.dia;   // (partidas de antes de la boda)
+    this.ranura = r;
+    this.ultimoPaso = undefined;
+    try { sessionStorage.setItem(CLAVE_RANURA, r); } catch (e) {}
+    document.dispatchEvent(new CustomEvent('partida-abierta'));
+    this.guardar();
+    const s = this.estado.sitio, zona = s ? (zonaEn(s.x, s.z) || MUNDO.castillo).nombre : INICIO_DIA.zona;
+    document.querySelector('a-scene').components.zonas.ir(zona, s || INICIO_DIA);
+  },
+  // Salir al menú desde el juego: lo hecho ya está guardado, solo falta el sitio exacto. Devuelve si se ha podido.
+  salirAlMenu() {
+    if (!this.ranura || cambiandoDeZona || enBarco || enLaMesa) return false;
+    document.querySelector('[andar-joystick]').components['andar-joystick'].guardarSitio();
+    this.irAlMenu();
+    return true;
+  },
+  irAlMenu() {
+    this.ranura = null;
+    this.zonaLista = false;
+    this.estado = this.nuevo();
+    try { sessionStorage.removeItem(CLAVE_RANURA); } catch (e) {}
+    this.guardar();
+    document.querySelector('a-scene').components.zonas.ir('menu', MENU_SITIO);
+  },
+  escribir() {
+    if (!this.ranura) return;
+    this.estado.fecha = Date.now();
+    try { localStorage.setItem(`${CLAVE_PARTIDA}-${this.ranura}`, JSON.stringify(this.estado)); } catch (e) {}
+  },
+  // (lo llama andar-joystick cada medio segundo: sin avisar a nadie)
+  guardarSitio(sitio) {
+    this.estado.sitio = sitio;
+    this.escribir();
   },
   // (lo mira quien enseña el estado: indicador y diario)
   guardar() {
-    try { localStorage.setItem(CLAVE_PARTIDA, JSON.stringify(this.estado)); } catch (e) {}
+    this.escribir();
     document.dispatchEvent(new CustomEvent('partida-cambia'));
     setTimeout(() => this.comprobarPaso());   // (después del aviso de lo que acaba de pasar: el tutorial manda)
   },
@@ -77,7 +144,7 @@ const partida = {
     this.ultimoPaso = id;
   },
   marcarTutorial(que) { if (!this.estado.tutorial[que]) { this.estado.tutorial[que] = true; this.guardar(); } },
-  avisar(texto, tutorial = false) { document.dispatchEvent(new CustomEvent('partida-aviso', { detail: { texto, tutorial } })); },
+  avisar(texto, tutorial = false) { if (this.ranura) document.dispatchEvent(new CustomEvent('partida-aviso', { detail: { texto, tutorial } })); },
   aprender(texto) { if (!this.estado.aprendido.includes(texto)) this.estado.aprendido.push(texto); },
   misionActiva() { return MISIONES[this.estado.mision] || null; },
   precio(nombre) { return this.misionActiva() ? PRECIOS_ZONA[nombre] ?? 0 : 0; },
@@ -125,15 +192,6 @@ const partida = {
     e.pescado = null;
     e.cofre = [];   // lo pescado también se estropea en el cofre: si no, se guardaría para la misión
     e.pescadoHoy = false;
-  },
-  // Empezar de cero sin salir de VR: como una partida nueva, en tu habitación
-  reiniciar() {
-    if (cambiandoDeZona || enBarco) return;
-    this.estado = this.nuevo();
-    this.ultimoPaso = undefined;
-    this.guardar();
-    const { zona, x, y, z, giro } = INICIO_DIA;
-    document.querySelector('a-scene').components.zonas.ir(zona, { x, y, z, giro });
   },
   // Qué dice el cofre de tu habitación y sus botones (sin "hacer", se cierra). Solo hay pescado que guardar, por ahora.
   opcionesCofre() {

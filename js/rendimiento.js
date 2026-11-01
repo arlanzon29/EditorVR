@@ -9,7 +9,7 @@
 //    como está. Las piezas fundidas se ocultan, pero siguen en su sitio (y su HTML, igual).
 //  - luces-cercanas: solo 6 luces puntuales, siempre las mismas, que copian a las más cercanas.
 
-const NO_FUNDIR = '[barca], [agua], [camino], [claro], [ciervo], [peces], [portal], [puerta-portal], [salida], [pozo], [pinos], [cartel-madera], [puerta], [agarrable], [antorcha], [criado], [camarero], [cofre], [cama-dormir], [moza], [persona-animada], [muestra], [marca-paso], [posadero], [boda], [guardia], [cliente], [hoguera], [lampara-rueda], [barrera], [gltf-model], [text], .clicable, .cartel';
+const NO_FUNDIR = '[barca], [agua], [camino], [claro], [ciervo], [peces], [portal], [puerta-portal], [salida], [pozo], [pinos], [cartel-madera], [puerta], [agarrable], [antorcha], [criado], [camarero], [cofre], [cama-dormir], [moza], [persona-animada], [muestra], [marca-paso], [posadero], [boda], [guardia], [cliente], [hoguera], [lampara-rueda], [barrera], [gltf-model], [text], [menu-partidas], .clicable, .cartel';
 
 function fundirEstancia(el) {
   el.object3D.updateMatrixWorld(true);
@@ -95,13 +95,13 @@ function liberarEstancia(el) {
 // componentes y sus obstáculos; solo cambia lo que se dibuja: las piezas fijas se ocultan y en su lugar
 // va un modelo con todas ellas (modelos/horneado/<sala>.glb) y su imagen de luz (<sala>-luz.jpg).
 // Lo que se mueve (NO_FUNDIR), lo transparente y lo enorme de fuera (hierba, colinas) sigue como estaba.
-const SALAS_HORNEADAS = ['sala1', 'pasillo', 'sala2', 'pasillo2', 'sala3', 'comedor', 'patio', 'exterior', 'bosque', 'lago', 'poblado', 'taberna', 'posada', 'montana', 'acantilado', 'abadia', 'puerto', 'capilla', 'cueva', 'mazmorras'];
+const SALAS_HORNEADAS = ['sala1', 'pasillo', 'sala2', 'pasillo2', 'sala3', 'comedor', 'patio', 'exterior', 'bosque', 'lago', 'poblado', 'taberna', 'posada', 'montana', 'acantilado', 'abadia', 'puerto', 'capilla', 'cueva', 'mazmorras', 'menu'];
 // el suelo de cada zona de campo va aparte, en su propia imagen de luz: { estancia: su suelo }
 const SUELOS_HORNEADOS = { exterior: 'campo', bosque: 'campo-bosque', lago: 'campo-lago', poblado: 'campo-poblado', montana: 'campo-montana', acantilado: 'campo-acantilado', abadia: 'campo-abadia', puerto: 'campo-puerto', cueva: 'campo-cueva' };
 const ESCALA_LUZ = 2;   // la imagen guarda la luz dividida por esto: lo que pasa de 1 también cabe
 // Donde hay fuego, la luz horneada tiembla un poco, como las llamas: basta cambiar un número del material,
 // no cuesta nada. Va por estancia entera, así que tiene que ser muy suave.
-const SALAS_CON_FUEGO = ['sala1', 'sala2', 'pasillo2', 'sala3', 'comedor', 'capilla', 'mazmorras', 'cueva', 'campo-cueva', 'abadia', 'taberna', 'posada'];
+const SALAS_CON_FUEGO = ['sala1', 'sala2', 'pasillo2', 'sala3', 'comedor', 'capilla', 'mazmorras', 'cueva', 'campo-cueva', 'abadia', 'taberna', 'posada', 'menu'];
 const TEMBLOR_LUZ = 0.04;
 let luzTemblando = [];
 const texturasHorneadas = new Map();   // los modelos repiten piedra y madera: una sola copia de cada una
@@ -296,6 +296,42 @@ AFRAME.registerComponent('luces-cercanas', {
   }
 });
 
+// Lo suelto de dentro de un edificio (gente, antorchas, muebles que se usan): se oculta si no estás dentro ni
+// cerca de su puerta. El motor no descarta lo tapado por una pared: desde fuera se pagaría igual. Lo fijo ya es una
+// sola malla horneada y se queda; la luz no cambia, porque luces-cercanas no mira si se ven. Con ?coninteriores no
+// se oculta nada, para comparar. Lo que marca el tutorial (marca-paso), la puerta de la calle y la pantalla del PC, que
+// se puede traer, siguen a la vista. Solo mira las hijas directas de su sala: las puertas del castillo, dentro de su marco, se quedan.
+const INTERIOR_CERCA = 15, INTERIOR_HOLGURA = 2, INTERIOR_CADA_MS = 300;
+const INTERIOR_OCULTA = '[guardia], [criado], [moza], [antorcha], [hoguera], [lampara-rueda], [cofre], [cama-dormir], [agarrable], [puerta], [gltf-model]';
+AFRAME.registerComponent('interior', {
+  schema: { x0: { default: 0 }, x1: { default: 0 }, z0: { default: 0 }, z1: { default: 0 }, puertaX: { default: 0 }, puertaZ: { default: 0 } },
+  init() {
+    this.piezas = null; this.visible = true; this.cuando = 0; this.ojo = new THREE.Vector3();
+    if (location.search.includes('coninteriores')) this.tick = null;
+  },
+  tick(t) {
+    if (cambiandoDeZona || t - this.cuando < INTERIOR_CADA_MS) return;
+    this.cuando = t;
+    const { x0, x1, z0, z1, puertaX, puertaZ } = this.data;
+    // (la primera vez, con la zona ya cargada: entonces todas tienen su posición)
+    if (!this.piezas) this.piezas = [...this.el.parentEl.children].filter(e => {
+      if (!e.matches(INTERIOR_OCULTA) || e.matches('[marca-paso], [gltf-model*="puerta-ancha"], [agarrable*="clave"]')) return false;
+      const p = e.object3D.position;
+      return p.x > x0 && p.x < x1 && p.z > z0 && p.z < z1;
+    });
+    this.el.sceneEl.camera.getWorldPosition(this.ojo);
+    const dentro = this.ojo.x > x0 - 1 && this.ojo.x < x1 + 1 && this.ojo.z > z0 - 1 && this.ojo.z < z1 + 1;
+    // con holgura, para que no parpadee justo en el límite
+    const cerca = Math.hypot(this.ojo.x - puertaX, this.ojo.z - puertaZ) < INTERIOR_CERCA + (this.visible ? INTERIOR_HOLGURA : 0);
+    if (dentro || cerca) { if (!this.visible) this.poner(true); } else if (this.visible) this.poner(false);
+  },
+  poner(visible) {
+    this.visible = visible;
+    for (const e of this.piezas) e.object3D.visible = visible;
+  },
+  remove() { this.piezas = null; }
+});
+
 // Junta en una sola malla varias mallas hijas directas de "padre" que comparten material (las
 // piezas de un objeto hecho a mano en un componente, como la lámpara de rueda). Quita las
 // originales y devuelve la nueva.
@@ -366,8 +402,18 @@ function buscarSolapes() {
 
 
 // Lo que más se nota de nitidez en las gafas: dibujar a más resolución que la que da el navegador por defecto.
-// Cuesta rendimiento (1,1 son un 21 % más de píxeles). Con ?escala=1 en la dirección se prueba otro valor sin tocar esto.
-const ESCALA_VR = parseFloat(new URLSearchParams(location.search).get('escala')) || 1.1;
+// Cuesta rendimiento (1,1 son un 21 % más de píxeles). Para comparar: mantener apretado el joystick derecho pasa de una
+// a otra de ESCALAS_VR, se guarda y recarga la página, porque dentro de VR no se puede cambiar (o ?escala=1 en la dirección).
+const ESCALAS_VR = [1.1, 1], CLAVE_ESCALA = 'editorvr-escala';
+function escalaGuardada() {
+  try { return parseFloat(localStorage.getItem(CLAVE_ESCALA)); } catch (e) { return NaN; }
+}
+const ESCALA_VR = parseFloat(new URLSearchParams(location.search).get('escala')) || escalaGuardada() || ESCALAS_VR[0];
+function cambiarEscalaVR() {
+  const otra = ESCALAS_VR[(ESCALAS_VR.indexOf(ESCALA_VR) + 1) % ESCALAS_VR.length];
+  try { localStorage.setItem(CLAVE_ESCALA, otra); } catch (e) {}
+  location.reload();
+}
 AFRAME.registerComponent('calidad-vr', {
   init() {
     const poner = () => this.el.renderer.xr.setFramebufferScaleFactor(ESCALA_VR);

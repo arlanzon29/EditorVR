@@ -29,7 +29,10 @@ AFRAME.registerComponent('zonas', {
     const enganchar = () => {
       const m = document.querySelector('[laser-controls="hand: right"]');
       if (!m) return setTimeout(enganchar, 500);
-      m.addEventListener('thumbstickdown', () => this.cambiarLuz());
+      // pulsado, la luz horneada; mantenido, la resolución en las gafas (js/rendimiento.js)
+      let desde = 0;
+      m.addEventListener('thumbstickdown', () => { desde = performance.now(); });
+      m.addEventListener('thumbstickup', () => { if (performance.now() - desde >= 1000) cambiarEscalaVR(); else this.cambiarLuz(); });
     };
     enganchar();
   },
@@ -82,10 +85,9 @@ AFRAME.registerComponent('zonas', {
     const c = this.el.camera;
     if (!c) return;
     c.getWorldPosition(this.cabeza);
-    // la primera vez, cuando ya se ha vuelto al sitio guardado: cargar la zona donde se está
+    // la primera vez: el menú o, si se ha recargado la página jugando, la partida de antes
     if (!this.actual && !cambiandoDeZona) {
-      if (partida.empezando) this.ir(INICIO_DIA.zona, INICIO_DIA);
-      else this.ir((zonaEn(this.cabeza.x, this.cabeza.z) || MUNDO.castillo).nombre);
+      partida.arrancar();
     }
     if (!cambiandoDeZona && this.actual) {
       const justo = zonaEn(this.cabeza.x, this.cabeza.z);
@@ -168,10 +170,10 @@ AFRAME.registerComponent('zonas', {
     const r = this.el.renderer.info.memory;
     console.log(`Zona ${nombre}: ${r.geometries} geometrías, ${r.textures} texturas`);
     this.abriendo = true;
-    this.mostrarLetrero(!luzHorneada ? 'Sin hornear' : MUNDO[nombre].titulo);
+    if (nombre !== 'menu') this.mostrarLetrero(!luzHorneada ? 'Sin hornear' : MUNDO[nombre].titulo);
     while (this.cierre > 0.4) await new Promise(r => setTimeout(r, 30));
     cambiandoDeZona = false;   // ya se puede andar, aunque aún se esté abriendo
-    partida.zonaLista = true;
+    partida.zonaLista = !!partida.ranura;
     partida.comprobarPaso();
     while (this.abriendo && this.cierre > 0 && !cambiandoDeZona) await new Promise(r => setTimeout(r, 50));
     if (!cambiandoDeZona) this.abriendo = false;

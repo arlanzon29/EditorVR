@@ -70,6 +70,15 @@ Dos caras en el mismo plano se pelean. Salieron, y se arreglaron:
   esquinas ni los volúmenes. Ideas: sol de lado y menos luz ambiente, sillares claros en las
   esquinas, almenas y tejados o terrazas encima de las salas, zócalo.
 
+## Menú principal y tres partidas (noviembre de 2026)
+
+El menú es una zona más (`menu`), no una pantalla de HTML: así se puede salir a él y volver sin salir de VR, porque recargar la página sí sacaría. El sitio y las zonas visitadas pasaron a ir dentro de cada partida. Al recargar se sigue en la misma partida (`sessionStorage`), para no pasar por el menú cada vez que la página se recarga sola mientras se trabaja.
+
+La sala del menú va horneada como las demás, con la imagen de luz bajada a mano de 4096 a 2048: el script da 4096 por el área de los muros, contando sus caras ocultas, y es demasiado para una sala tan pequeña. Al regenerarla hay que volver a bajarla.
+
+- **Frames y esqueletos (sin resolver):** el usuario nota menos imágenes por segundo desde los cuerpos con esqueleto. Cada uno son 11 o 12 piezas por material (el doble de llamadas en VR, por los dos ojos), de 3.200 a 4.900 triángulos, y con `frustumCulled = false` se dibujaban aunque quedaran a tu espalda. Se ha cambiado por una esfera fija que les cabe en cualquier postura (`persona-animada`), y ya no se dibujan fuera de la vista; lo que tengas delante, aunque esté tras una pared, se sigue dibujando. Medido en el Quest con 1,1 de resolución: de 83 a 90 imágenes por segundo, sin tirones, con unas 300 llamadas mirando a la boda o a la moza con el poblado detrás. No hace falta reducir piezas por ahora; las llamadas dependen de lo que hay en la vista, así que solo sirve comparar desde el mismo sitio.
+- **Interiores:** mirando a la posada y la taberna bajaba a 83. Se oculta lo suelto de dentro al estar fuera y lejos de su puerta (`interior`), y el usuario nota mejora en las gafas (sin cifras todavía). Después, lo mismo en el castillo, tomando el portón como puerta: fuera iba a 70 y mejora bastante, según el usuario. Merece la pena repetirlo donde haya un interior con muchas cosas sueltas.
+
 ## Taberna, posada y tutorial (noviembre de 2026)
 
 Se fue haciendo con el usuario probando en las gafas y pidiendo cambios sobre la marcha.

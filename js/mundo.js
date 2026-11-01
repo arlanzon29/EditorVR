@@ -101,6 +101,12 @@ const MUNDO = {
       return d > -24 && y < 2 ? '#b7a577' : d > -30 && y < 2.5 ? '#8f8f58' : '#5a7036';
     },
   },
+  // El menú principal (js/menu.js): fuera del mapa, y no se anda por él
+  menu: {
+    titulo: 'Partidas', salas: ['menu'],
+    sitio: { x0: 2000, x1: 2100, z0: -50, z1: 50 },
+    cielo: 'noche', niebla: '#0e0d0c', fondo: '#07070a', ambiente: { intensity: 2.4, color: '#c9b8a0' }, sol: { intensity: 0.1, color: '#a9bce8' },
+  },
   // Bajo tierra: fuera del mapa, y se entra por un portal (js/animales.js), no andando
   cueva: {
     titulo: 'La Cueva', salas: ['cueva'],

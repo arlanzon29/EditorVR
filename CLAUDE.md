@@ -35,7 +35,8 @@ cambiar la escena (`index.html`, `salas/`, `js/`, `modelos/`) no, la página se 
 - `https://localhost:8443/__vista.jpg`: última foto de lo que ve (botón A o X del mando).
   Descargarla con `curl -sk` al scratchpad y mirarla.
 - **Vista previa propia:** `http://localhost:8080/` en el navegador integrado (no acepta el
-  certificado del 8443). Para mirar un sitio concreto, mover el rig con JavaScript
+  certificado del 8443). Sale el menú: con `?partida=1` se entra directo a esa partida (y juega en ella, así que
+  mover el rig cambia su sitio guardado: mejor `?partida=3` si no se quiere tocar la del usuario). Para mirar un sitio concreto, mover el rig con JavaScript
   (`document.getElementById('rig').object3D.position.set(...)`, `rotation.y`).
 
 ## Estilo de la escena

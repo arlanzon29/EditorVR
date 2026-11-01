@@ -8,8 +8,7 @@
 const MAPA = { x0: -300, x1: 370, z0: -445, z1: 60 };   // lo que abarca, en metros del mundo
 // Viaje rápido: en la pestaña del mapa, apuntar a un sello y apretar el gatillo derecho (en el ordenador,
 // mirarlo y hacer clic) te lleva allí. Solo salen los de las zonas ya visitadas; con MAPA_TODAS, todos.
-const MAPA_TODAS = false;   // para depurar: en true salen todos, sin haberlos visitado
-const CLAVE_VISITADAS = 'editorvr-visitadas';
+const MAPA_TODAS = true;    // para depurar: en true salen todos, sin haberlos visitado
 const NIEBLA_MAPA = 'rgb(185, 178, 163)';
 // Un sello por lugar. Zona; dónde está en el mapa (x, z); adónde lleva (a, b); hacia dónde mira
 const DESTINOS_MAPA = [
@@ -94,11 +93,10 @@ AFRAME.registerComponent('mapa', {
     this.panel.add(this.modeloInventario);
     this.mira = new THREE.Vector3(); this.yo = new THREE.Vector3();
     // los sellos de los destinos: se encienden al apuntarlos
-    let visitadas = [];
-    try { if (!partida.empezando) visitadas = JSON.parse(localStorage.getItem(CLAVE_VISITADAS)) || []; } catch (e) {}
-    this.visitadas = new Set(visitadas);
-    if (partida.empezando) try { localStorage.removeItem(CLAVE_VISITADAS); } catch (e) {}
+    this.visitadas = new Set();
     this.pintarMapa();
+    // cada partida tiene sus zonas visitadas
+    document.addEventListener('partida-abierta', () => { this.visitadas = new Set(partida.estado.visitadas); this.pintarMapa(); });
     // el aro dorado alrededor de la zona que pide el tutorial
     this.colocarMarcaMapa = () => {
       const paso = partida.pasoTutorial(), d = paso && paso.zona && DESTINOS_MAPA.find(s => s.zona === paso.zona);
@@ -128,10 +126,11 @@ AFRAME.registerComponent('mapa', {
     // en VR, A o Y abren y cierran; de hoja se cambia apuntando a su pestaña
     const abrirCerrar = () => ponerHoja(this.hoja < 0 ? HOJA_MAPA : -1);
     const ponerHoja = hoja => {
+      if (!partida.ranura) return;   // (en el menú no hay pergamino)
       this.hoja = hoja;
       this.panel.visible = this.hoja >= 0;
       this.brillo.visible = false; this.botonApuntado = null;
-      if (this.confirmando || this.confirmandoFin) { this.confirmando = this.confirmandoFin = false; this.pintarDiario(); }
+      if (this.confirmando) { this.confirmando = false; this.pintarDiario(); }
       if (this.hoja < 0) return;
       this.panel.material.map = this.hojas[this.hoja];
       this.panel.material.needsUpdate = true;
@@ -143,7 +142,7 @@ AFRAME.registerComponent('mapa', {
       if (e.code === 'KeyN') alternar();
       // en el ordenador la mira no puede apuntar al pergamino, que va con ella: con la hoja abierta, teclas
       if (this.hoja === HOJA_DIARIO && e.code === 'KeyT') this.pulsarTerminar();
-      if (this.hoja === HOJA_DIARIO && e.code === 'KeyR') this.pulsarReiniciar();
+      if (this.hoja === HOJA_DIARIO && e.code === 'KeyQ') this.pulsarSalir();
       if (this.hoja === HOJA_INVENTARIO && e.code === 'KeyC') partida.comer();
     });
     const mando = () => document.querySelector('[laser-controls="hand: left"]');
@@ -253,7 +252,7 @@ AFRAME.registerComponent('mapa', {
     this.botones[HOJA_DIARIO] = [];
     const aviso = e.pescado ? 'Se pierde el pescado' : 'Vuelves a la posada';
     this.boton(g, H, HOJA_DIARIO, 50, 500, this.confirmando ? `¿Seguro? ${aviso}. (T)` : 'Terminar el día (T)', () => this.pulsarTerminar());
-    this.boton(g, H, HOJA_DIARIO, 570, W - 620, this.confirmandoFin ? '¿Seguro? Se pierde todo. (R)' : 'Reiniciar partida (R)', () => this.pulsarReiniciar());
+    this.boton(g, H, HOJA_DIARIO, 570, W - 620, 'Salir al menú (Q)', () => this.pulsarSalir());
     this.hojas[HOJA_DIARIO].needsUpdate = true;
     this.botonApuntado = null;
     if (this.brillo) this.brillo.visible = false;   // (la primera vez aún no existe)
@@ -265,15 +264,10 @@ AFRAME.registerComponent('mapa', {
     this.panel.visible = false; this.hoja = -1;
     partida.terminarDia();
   },
-  // Lo mismo para empezar de cero: también olvida las zonas visitadas
-  pulsarReiniciar() {
-    if (!this.confirmandoFin) { this.confirmandoFin = true; return this.pintarDiario(); }
-    this.confirmandoFin = false;
+  // Sin confirmar: no se pierde nada
+  pulsarSalir() {
+    if (!partida.salirAlMenu()) return;
     this.panel.visible = false; this.hoja = -1;
-    this.visitadas = new Set();
-    try { localStorage.removeItem(CLAVE_VISITADAS); } catch (e) {}
-    this.pintarMapa();
-    partida.reiniciar();
   },
   // qué botón de la hoja abierta tiene delante el rayo
   mirarBotones() {
@@ -323,6 +317,7 @@ AFRAME.registerComponent('mapa', {
       ['Gatillo dcho. en el mapa', 'ir al sello que apuntas'],
       ['Gatillo dcho. en un botón', 'terminar el día, comer'],
       ['B', 'ver tus cartas; mantenido, traer la pantalla del PC'],
+      ['Joystick derecho, mantenido', 'cambiar la resolución (recarga)'],
       ['X o apretar joystick izq.', 'medidor de rendimiento'],
       ['Apretar joystick dcho.', 'luz horneada, sí o no'],
     ]);
@@ -330,7 +325,7 @@ AFRAME.registerComponent('mapa', {
       ['WASD o flechas', 'andar; Mayúsculas, correr'],
       ['Clic', 'capturar el ratón y abrir puertas'],
       ['N', 'mapa, diario, inventario, ayuda, cerrar'],
-      ['T, en el diario', 'terminar el día'],
+      ['T / Q, en el diario', 'terminar el día / salir al menú'],
       ['C, en el inventario', 'comer'],
       ['M / H', 'medidor / luz horneada'],
     ]);
@@ -499,9 +494,10 @@ AFRAME.registerComponent('mapa', {
   tick() {
     this.rayoEncima(this.panel.visible);
     const aqui = zonaCargada.nombre;
-    if (this.el.components.zonas.actual === aqui && !this.visitadas.has(aqui)) {
+    if (partida.ranura && !cambiandoDeZona && this.el.components.zonas.actual === aqui && !this.visitadas.has(aqui)) {
       this.visitadas.add(aqui);
-      try { localStorage.setItem(CLAVE_VISITADAS, JSON.stringify([...this.visitadas])); } catch (e) {}
+      partida.estado.visitadas = [...this.visitadas];
+      partida.guardar();
       this.pintarMapa();
     }
     if (!this.panel.visible || !this.el.camera) return;

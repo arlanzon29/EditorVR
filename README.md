@@ -83,8 +83,9 @@ Para añadir una zona: su entrada en `MUNDO`, sus `PASOS`, su archivo en `salas/
 
 ## El juego
 
-Diseño y lo que falta: [JUEGO.md](JUEGO.md). Estado y reglas: [js/partida.js](js/partida.js), guardados en el navegador (`editorvr-partida`).
-Una partida nueva empieza en tu habitación de la posada, y después se vuelve al sitio donde se estaba al recargar. Con **`?partidanueva`** en la dirección se empieza de cero (cada vez que se carga con ella); en la consola se ve en `partida.estado`.
+Diseño y lo que falta: [JUEGO.md](JUEGO.md). Estado y reglas: [js/partida.js](js/partida.js), guardados en el navegador (`editorvr-partida-1` a `-3`, cada una con sus zonas visitadas y su sitio); en la consola se ve en `partida.estado`.
+
+**Menú principal** ([js/menu.js](js/menu.js), [salas/menu.html](salas/menu.html), la zona `menu`): al abrir la página se llega a una sala con una tabla de tres partidas, cada una con **Continuar** y **Borrar** (pregunta antes), o **Nueva partida** si está vacía. Una partida nueva empieza en tu habitación de la posada; al continuarla se vuelve al sitio donde se dejó. Desde el juego se vuelve con **Salir al menú**, en el diario, sin salir de VR. Al recargar la página jugando se sigue en la misma partida (`sessionStorage`), y con **`?partida=1`** en la dirección se entra directo a esa partida sin pasar por el menú. La partida de cuando solo había una pasa sola a la primera.
 
 - **Tutorial** (`partida.pasoTutorial`): guía la primera partida hasta la boda: bienvenida, abrir tu puerta, hablar con el posadero, aceptar el encargo del tabernero, puntos e ir al lago, cómo abrir el mapa y cómo correr, pescar, volver por el mapa, dormir en la cama e ir a la boda. Cada paso sale en un aviso largo, con el icono de un libro abierto, y en el diario; un rombo dorado (`marca-paso`) señala lo que toca, y un aro en el mapa, la zona. Se calcula del estado: si se pierde el pescado, vuelve a pedirlo.
 - **Sin misión** se pasea gratis. **Con misión** hay presupuesto de puntos: entrar en una zona cuesta su precio (`PRECIOS_ZONA`) y andar dentro es gratis.
@@ -93,7 +94,7 @@ Una partida nueva empieza en tu habitación de la posada, y después se vuelve a
 - **Carta:** solo se puede tener una de cada tipo. Lo que llevas se ve como un naipe dibujado en canvas, solo en el inventario, desde donde se come, con el modelo 3D del objeto girando delante (`modeloInventario`). Por ahora solo el pescado, crudo o asado (`dibujarCartaPescado`, y el pez de los bancos, `formaDePez`).
 - **Indicador:** una tablilla abajo a la izquierda de la vista, solo con misión. Los avisos salen en una tabla delante, unos segundos.
 - **Rayo en el pergamino:** mientras está abierto, el rayo del mando derecho se dibuja por encima (`rayoEncima`) y un punto rojo marca adónde apunta.
-- **Diario:** segunda pestaña del pergamino: día, misión, lo aprendido, precios y los botones de terminar el día y **reiniciar la partida** (los dos con confirmación; en el ordenador, teclas **T** y **R**). Reiniciar no saca de VR.
+- **Diario:** segunda pestaña del pergamino: día, misión, lo aprendido, precios y los botones de terminar el día (con confirmación) y **salir al menú** (en el ordenador, teclas **T** y **Q**).
 - **Inventario:** tercera pestaña: las cartas que llevas, las monedas y el botón de comer. Los botones se apuntan en VR con el mando derecho; en el ordenador, con la hoja abierta, teclas **T** (diario) y **C** (inventario), porque la mira se mueve con el pergamino.
 - **Posada** ([salas/posada.html](salas/posada.html), [js/posada.js](js/posada.js)): cada día empieza en tu habitación, arriba (`INICIO_DIA`). Al apuntar a la cama y apretar el gatillo se puede dormir, que pasa al día siguiente (`cama-dormir`). El posadero te indica la taberna (`posadero`).
 - **Peinados:** `cliente` con `pelo` (color) y `peinado` (1 corto, 2 melena, 3 fraile, 4 rizado), de `herramientas/modelar-pelos.py` → `modelos/pelos.glb`.
@@ -123,7 +124,7 @@ Al día siguiente de entregar el pescado por primera vez ([js/boda.js](js/boda.j
 | **Gatillo** apuntando a una puerta | Abrirla o cerrarla (el rayo se pone verde, la aldaba brilla y sale el cartel). |
 | **Gatillo lateral** apuntando a la pantalla, o con la mano junto a una copa | Cogerla y colocarla; la pantalla se queda donde la sueltes y la copa cae. |
 | **Botón B** | Ver tus cartas (el inventario). Mantenido, traer la pantalla del PC delante de ti. |
-| **Apretar el joystick derecho** | Poner o quitar la luz horneada (en el ordenador, tecla **H**). |
+| **Apretar el joystick derecho** | Poner o quitar la luz horneada (en el ordenador, tecla **H**). Mantenido un segundo, cambiar la resolución entre 1,1 y 1: se guarda y recarga la página, y hay que volver a pulsar **VR**; el valor sale en el medidor. |
 | **Botón A o Y** | Abrir o cerrar el pergamino. De hoja se cambia apuntando a su pestaña y apretando el gatillo: mapa (con una flecha que dice dónde estás), diario de la partida, inventario y ayuda con todos los botones (en el ordenador, la tecla **N** va pasando de hoja). |
 | **Gatillo** apuntando a un cartel de la barca | Subirte y viajar a ese destino. |
 | **Gatillo** apuntando al camarero, al agua de los peces o a una hoguera | Hablar, pescar o asar. |
@@ -226,7 +227,8 @@ Mientras se comparte la pantalla, cualquiera en la misma wifi que abra la págin
 | [js/lago.js](js/lago.js) | Agua, embarcaderos y barca. |
 | [js/poblado.js](js/poblado.js) | Casas, puestos, tumbas y columnas. |
 | [js/mapa.js](js/mapa.js) | El pergamino: mapa, diario, inventario y ayuda. |
-| [js/partida.js](js/partida.js) | El juego: estado, precios, puntos, día, misión, indicador y avisos. |
+| [js/partida.js](js/partida.js) | El juego: estado, las tres partidas, precios, puntos, día, misión, indicador y avisos. |
+| [js/menu.js](js/menu.js) | El menú principal: la tabla de las partidas. |
 | [js/taberna.js](js/taberna.js) | Tejado, clientes y camarero con su charla. |
 | [js/boda.js](js/boda.js) | El banquete de la plaza y sentarse a la mesa. |
 | [herramientas/](herramientas/) | Horneado (`hornear-castillo.py`, `recibir-estancia.js`) y la barca (`modelar-barca.py`). |
@@ -345,7 +347,7 @@ Con **`?sinhornear`** en la dirección se empieza sin ella.
 - **Lo horneado no se actualiza solo:** después de cambiar algo fijo de una estancia, hay que regenerarlo
   (no retocar los modelos a mano):
   1. `node herramientas/recibir-estancia.js <carpeta>`.
-  2. Abrir la página con `?sinhornear&sinfundir` y, en la consola, la línea `fetch(...)` que hay
+  2. Abrir la página con `?sinhornear&sinfundir&partida=1` (sin `partida` se queda en el menú) y, en la consola, la línea `fetch(...)` que hay
      encima de `exportarZona`, en rendimiento.js (`/castillo`, `/lago`…), estando en esa zona.
   3. `blender --background --python herramientas/hornear-castillo.py -- <carpeta>/<zona>.json <salida> 256`
      (unos minutos; 100 píxeles por metro, imágenes de hasta 4096) y copiar a `modelos/horneado/` los `.glb`, los `.jpg` y el `.blend`. Los vatios
@@ -355,7 +357,9 @@ Con **`?sinhornear`** en la dirección se empieza sin ella.
   estuvieran abiertas. Las antorchas no tiemblan en lo horneado: solo su llama y lo que se mueve.
 - Sin hornear (tecla H), el castillo se ve mucho más oscuro: la luz general es ya la del atardecer.
 
-En las gafas se dibuja a 1,1 veces la resolución normal (`calidad-vr`; a 1,2 el juego bajó a 75-85 imágenes por segundo, sin saber aún cuánto era por esto) y con poco foveado (`foveationLevel`). Con `?escala=1` en la dirección se compara con otro valor. El horneado solo pone la luz; el detalle sale de las texturas de canvas, y la de madera es ahora de 2048.
+**Interiores** (`interior`, en rendimiento.js): en la posada, la taberna y el castillo (donde la puerta es el portón), lo suelto de dentro se oculta si no estás dentro ni a menos de 15 m de su puerta, porque el motor no descarta lo tapado por una pared. Con **`?coninteriores`** no se oculta, para comparar.
+
+En las gafas se dibuja a 1,1 veces la resolución normal (`calidad-vr`; a 1,2 el juego bajó a 75-85 imágenes por segundo, sin saber aún cuánto era por esto; probadas 1 y 1,1 en el Quest en noviembre de 2026, el usuario no vio diferencia de calidad ni de velocidad, ni tirones en 1,1) y con poco foveado (`foveationLevel`). Con `?escala=1` en la dirección se compara con otro valor. El horneado solo pone la luz; el detalle sale de las texturas de canvas, y la de madera es ahora de 2048.
 
 Medido en la vista previa del PC (octubre de 2026), sin y con horneado; **falta medirlo en el Quest**:
 

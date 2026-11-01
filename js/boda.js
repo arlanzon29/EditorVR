@@ -88,7 +88,8 @@ AFRAME.registerComponent('persona-animada', {
     this.mezcla = null; this.nombre = null; this.accion = null; this.mira = 0; this.ojo = new THREE.Vector3();
     this.el.addEventListener('model-loaded', e => {
       const modelo = e.detail.model;
-      modelo.traverse(o => { if (o.isSkinnedMesh) o.frustumCulled = false; });   // (el tamaño de reposo no sirve al moverse)
+      // fuera de la vista no se dibuja: el tamaño de reposo no sirve al moverse, así que una esfera que le cabe con los brazos extendidos
+      modelo.traverse(o => { if (o.isSkinnedMesh) o.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0.9, 0), 1.6); });
       this.cabeza = modelo.getObjectByName('cabeza');
       this.clips = modelo.animations;
       this.mezcla = new THREE.AnimationMixer(modelo);

@@ -8,11 +8,11 @@
 AFRAME.registerComponent('medidor', {
   init() {
     this.lienzo = document.createElement('canvas');
-    this.lienzo.width = 512; this.lienzo.height = 224;
+    this.lienzo.width = 512; this.lienzo.height = 264;
     this.tex = new THREE.CanvasTexture(this.lienzo);
     this.tex.colorSpace = THREE.SRGBColorSpace;
     // siempre por delante de todo (sin prueba de profundidad), para que no lo tape nada
-    this.panel = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.0875),
+    this.panel = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.103125),
       new THREE.MeshBasicMaterial({ map: this.tex, transparent: true, depthTest: false }));
     this.panel.renderOrder = 999;
     this.panel.visible = true;
@@ -68,6 +68,10 @@ AFRAME.registerComponent('medidor', {
     // geometrías y texturas vivas en la gráfica: si suben con cada cambio de zona, algo no se libera
     const mem = this.el.renderer.info.memory;
     g.fillText(`${luces} luces ${mem.geometries} geo ${mem.textures} tex`, 20, 168);
+    // los píxeles que dibuja de verdad en VR (dos ojos): dicen si la escala llega a las gafas
+    const capa = this.el.is('vr-mode') && this.el.renderer.xr.getBaseLayer();
+    const ancho = capa && (capa.framebufferWidth || capa.textureWidth), alto = capa && (capa.framebufferHeight || capa.textureHeight);
+    g.fillText(`resolución ${ESCALA_VR}${ancho ? ` ${ancho}x${alto}` : ''}`, 20, 212);
     this.tex.needsUpdate = true;
   }
 });
