@@ -69,3 +69,15 @@ Dos caras en el mismo plano se pelean. Salieron, y se arreglaron:
 - **Aspecto del castillo por fuera:** con la piedra igual en todas las caras no se leen bien las
   esquinas ni los volúmenes. Ideas: sol de lado y menos luz ambiente, sillares claros en las
   esquinas, almenas y tejados o terrazas encima de las salas, zócalo.
+
+## Taberna, posada y tutorial (noviembre de 2026)
+
+Se fue haciendo con el usuario probando en las gafas y pidiendo cambios sobre la marcha.
+
+- **Taberna y posada, separadas:** el edificio de antes pasó a ser la taberna (Las Chatungas) y se hizo una posada nueva (La Parada), de dos plantas, para que las habitaciones estuvieran arriba, con la tuya mirando a la plaza. Hizo falta `piso` y `macizo` con `desde`, porque un obstáculo valía para todas las alturas.
+- **Puerta y luz:** primero las puertas eran fijas y las estancias salieron oscuras; el usuario pidió poder abrir la suya, y se aclararon paredes y antorchas.
+- **Tutorial:** se calcula de cómo va la partida, no se guarda en qué paso vas, para que aguante perder el pescado o acabar el día.
+- **Calidad:** subir la imagen de luz no mejoró las texturas, porque el horneado solo pone la luz. Por eso se probó con más resolución en las gafas y una textura de madera mejor. Falta ver si basta y cuánto cuesta en el Quest.
+- **Mapa:** un acceso por lugar, y niebla sobre lo no visitado. Los primeros bordes de niebla eran duros y salían círculos; se suavizaron con degradados.
+
+- **Personajes con esqueleto (prueba):** todos eran piezas rígidas en su postura final. Los novios se rehicieron en T-pose, con una malla, esqueleto y animaciones. Los pesos se calculan por distancia a los huesos, sin depender del automático de Blender, y las poses de los brazos se dan diciendo adónde apunta cada tramo, que es mucho más fácil de acertar que con ángulos.

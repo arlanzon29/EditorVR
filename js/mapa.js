@@ -1,8 +1,8 @@
 // Editor VR: el mapa, el diario, el inventario y la ayuda. Un pergamino con cuatro pestañas: el mapa, con todas
 // las zonas, los caminos y una flecha que dice dónde estás y hacia dónde miras; el diario de la partida, con lo
 // aprendido y el botón de terminar el día; el inventario, con las cartas, las monedas y el botón de comer; y
-// la ayuda, con todos los botones. Cada pulsación
-// de A o Y (en el ordenador, la tecla N) pasa a la siguiente, y después de la última se guarda. En VR va
+// la ayuda, con todos los botones. A o Y lo abren y cierran, y de hoja se cambia apuntando a su pestaña (en el
+// ordenador, la tecla N pasa a la siguiente, y después de la última se guarda). En VR va
 // en el mando izquierdo; fuera, delante de la cámara. Empieza oculto.
 
 const MAPA = { x0: -300, x1: 370, z0: -445, z1: 60 };   // lo que abarca, en metros del mundo
@@ -10,20 +10,16 @@ const MAPA = { x0: -300, x1: 370, z0: -445, z1: 60 };   // lo que abarca, en met
 // mirarlo y hacer clic) te lleva allí. Solo salen los de las zonas ya visitadas; con MAPA_TODAS, todos.
 const MAPA_TODAS = false;   // para depurar: en true salen todos, sin haberlos visitado
 const CLAVE_VISITADAS = 'editorvr-visitadas';
-// zona; dónde está el sello en el mapa (x, z); adónde lleva (a, b); hacia dónde mira
+const NIEBLA_MAPA = 'rgb(185, 178, 163)';
+// Un sello por lugar. Zona; dónde está en el mapa (x, z); adónde lleva (a, b); hacia dónde mira
 const DESTINOS_MAPA = [
-  { zona: 'castillo', x: 5, z: 8, a: 6, b: 7, giro: 180 },
   { zona: 'castillo', x: 6, z: -25, a: 6, b: -25, giro: 180 },
   { zona: 'mazmorras', x: 27, z: 8, a: 1350, y: 3, b: -52.9, giro: 0 },
   { zona: 'bosque', x: 6, z: -60, a: 6, b: -60, giro: 0 },
   { zona: 'cueva', x: 24, z: -150, a: 1010, b: -100, giro: -90 },
   { zona: 'lago', x: 5, z: -226, a: 5, b: -226, giro: 0 },
-  { zona: 'lago', x: 43, z: -300, a: 35, b: -300, giro: 90 },
-  { zona: 'lago', x: 5, z: -372, a: 5, b: -372, giro: 180 },
   { zona: 'puerto', x: 285, z: -349, a: 285, b: -349, giro: -90 },
-  { zona: 'puerto', x: 272, z: -262, a: 272, b: -262, giro: -90 },
   { zona: 'poblado', x: 160, z: -108, a: 160, b: -108, giro: 0 },
-  { zona: 'poblado', x: 163, z: -92, a: INICIO_DIA.x, b: INICIO_DIA.z, giro: 180 },   // la posada
   { zona: 'acantilado', x: 300, z: -120, a: 300, b: -120, giro: -90 },
   { zona: 'montana', x: -115, z: -123, a: -115, b: -123, giro: 90 },
   { zona: 'abadia', x: -180, z: -300, a: -180, b: -300, giro: 0 },
@@ -36,14 +32,17 @@ const CAMINOS_MAPA = [
   [[285, -349], [282, -300], [272, -260], [270, -232]],
   [[3, -58], [-40, -95], [-80, -120], [-125, -125], [-150, -160], [-180, -200], [-180, -230], [-180, -290], [-180, -315]],
 ];
+const B_MANTENIDO_MS = 600;   // botón B: pulsado, las cartas; mantenido, la pantalla del PC (js/conexion.js)
 const HOJA_MAPA = 0, HOJA_DIARIO = 1, HOJA_INVENTARIO = 2, HOJA_AYUDA = 3;
 AFRAME.registerComponent('mapa', {
   init() {
     const W = 1024, H = Math.round(W * (MAPA.z1 - MAPA.z0) / (MAPA.x1 - MAPA.x0));
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
-    this.dibujar(c.getContext('2d'), W, H);
-    this.pestanas(c.getContext('2d'), W, 0);
+    this.lienzoMapa = c;
+    this.mapaBase = document.createElement('canvas');
+    this.mapaBase.width = W; this.mapaBase.height = H;
+    this.dibujar(this.mapaBase.getContext('2d'), W, H);
     const lienzo = l => { const t = new THREE.CanvasTexture(l); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
     const tex = lienzo(c);
     const c2 = document.createElement('canvas');
@@ -79,12 +78,37 @@ AFRAME.registerComponent('mapa', {
     this.brillo.visible = false;
     this.panel.add(this.brillo);
     this.botonApuntado = null;
+    // el objeto en 3D, girando delante de su carta: el pez de los bancos. Transparente solo para dibujarse
+    // después de la hoja, que no mira la profundidad y lo taparía
+    // el punto del pergamino al que apunta el rayo
+    this.puntero = new THREE.Mesh(new THREE.CircleGeometry(0.004, 14), new THREE.MeshBasicMaterial({ color: '#c8201a', fog: false, depthTest: false, transparent: true }));
+    this.puntero.renderOrder = 999;
+    this.puntero.visible = false;
+    this.panel.add(this.puntero);
+    this.modeloInventario = new THREE.Mesh(formaDePez(), new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: false, transparent: true }));
+    this.modeloInventario.scale.setScalar(0.13);
+    // (en el hueco del dibujo de la carta, que se pinta en 50, 245 a 0,72)
+    this.modeloInventario.position.set((180 / W - 0.5) * ancho, (0.5 - 417 / H) * alto, 0.03);
+    this.modeloInventario.renderOrder = 998;
+    this.modeloInventario.visible = false;
+    this.panel.add(this.modeloInventario);
     this.mira = new THREE.Vector3(); this.yo = new THREE.Vector3();
     // los sellos de los destinos: se encienden al apuntarlos
     let visitadas = [];
     try { if (!partida.empezando) visitadas = JSON.parse(localStorage.getItem(CLAVE_VISITADAS)) || []; } catch (e) {}
     this.visitadas = new Set(visitadas);
     if (partida.empezando) try { localStorage.removeItem(CLAVE_VISITADAS); } catch (e) {}
+    this.pintarMapa();
+    // el aro dorado alrededor de la zona que pide el tutorial
+    this.colocarMarcaMapa = () => {
+      const paso = partida.pasoTutorial(), d = paso && paso.zona && DESTINOS_MAPA.find(s => s.zona === paso.zona);
+      this.marcaMapa.visible = this.hoja === HOJA_MAPA && !!d;
+      if (d) this.marcaMapa.position.set(((d.x - MAPA.x0) / (MAPA.x1 - MAPA.x0) - 0.5) * ancho, -((d.z - MAPA.z0) / (MAPA.z1 - MAPA.z0) - 0.5) * alto, 0.0006);
+    };
+    this.marcaMapa = new THREE.Mesh(new THREE.RingGeometry(0.014, 0.02, 24), new THREE.MeshBasicMaterial({ color: '#d9a020', fog: false, depthTest: false, transparent: true }));
+    this.marcaMapa.renderOrder = 997.6;
+    this.marcaMapa.visible = false;
+    this.panel.add(this.marcaMapa);
     this.sellos = DESTINOS_MAPA.map(d => {
       const s = new THREE.Mesh(new THREE.CircleGeometry(0.0085, 14), new THREE.MeshBasicMaterial({ color: '#7a1f18', fog: false, depthTest: false, transparent: true }));
       s.position.set(((d.x - MAPA.x0) / (MAPA.x1 - MAPA.x0) - 0.5) * ancho, -((d.z - MAPA.z0) / (MAPA.z1 - MAPA.z0) - 0.5) * alto, 0.0005);
@@ -99,32 +123,45 @@ AFRAME.registerComponent('mapa', {
     window.addEventListener('mousedown', () => { if (!this.el.is('vr-mode')) viajar(); });
     // cerrado → mapa → diario → inventario → ayuda → cerrado
     this.hoja = -1;
-    const alternar = () => {
-      this.hoja = this.hoja + 1 < this.hojas.length ? this.hoja + 1 : -1;
+    // en el ordenador, la tecla N va pasando de hoja: la mira se mueve con el pergamino y no llega a las pestañas
+    const alternar = () => ponerHoja(this.hoja + 1 < this.hojas.length ? this.hoja + 1 : -1);
+    // en VR, A o Y abren y cierran; de hoja se cambia apuntando a su pestaña
+    const abrirCerrar = () => ponerHoja(this.hoja < 0 ? HOJA_MAPA : -1);
+    const ponerHoja = hoja => {
+      this.hoja = hoja;
       this.panel.visible = this.hoja >= 0;
       this.brillo.visible = false; this.botonApuntado = null;
-      if (this.confirmando) { this.confirmando = false; this.pintarDiario(); }
+      if (this.confirmando || this.confirmandoFin) { this.confirmando = this.confirmandoFin = false; this.pintarDiario(); }
       if (this.hoja < 0) return;
       this.panel.material.map = this.hojas[this.hoja];
       this.panel.material.needsUpdate = true;
       this.flecha.visible = this.hoja === HOJA_MAPA;
       for (const s of this.sellos) s.visible = this.hoja === HOJA_MAPA;
+      this.colocarMarcaMapa();
     };
     window.addEventListener('keydown', e => {
       if (e.code === 'KeyN') alternar();
       // en el ordenador la mira no puede apuntar al pergamino, que va con ella: con la hoja abierta, teclas
       if (this.hoja === HOJA_DIARIO && e.code === 'KeyT') this.pulsarTerminar();
+      if (this.hoja === HOJA_DIARIO && e.code === 'KeyR') this.pulsarReiniciar();
       if (this.hoja === HOJA_INVENTARIO && e.code === 'KeyC') partida.comer();
     });
     const mando = () => document.querySelector('[laser-controls="hand: left"]');
     const enganchar = () => {
       const m = mando();
       if (!m) return setTimeout(enganchar, 500);
-      m.addEventListener('ybuttondown', alternar);
+      m.addEventListener('ybuttondown', abrirCerrar);
       const derecho = document.querySelector('[laser-controls="hand: right"]');
-      if (derecho) { derecho.addEventListener('abuttondown', alternar); derecho.addEventListener('triggerdown', viajar); }
+      if (derecho) {
+        derecho.addEventListener('abuttondown', abrirCerrar); derecho.addEventListener('triggerdown', viajar);
+        let desde = 0;
+        derecho.addEventListener('bbuttondown', () => { desde = performance.now(); });
+        derecho.addEventListener('bbuttonup', () => { if (performance.now() - desde < B_MANTENIDO_MS) ponerHoja(this.hoja === HOJA_INVENTARIO ? -1 : HOJA_INVENTARIO); });
+      }
     };
     enganchar();
+    // las pestañas, de arriba de cada hoja, son botones de todas ellas (ver pestanas)
+    this.botonesPestanas = this.hojas.map((_, i) => ({ x: 30 + i * 145, y: 24, w: 140, h: 42, hacer: () => ponerHoja(i) }));
     this.colocar = () => {
       const m = mando();
       if (this.el.is('vr-mode') && m) {
@@ -183,7 +220,7 @@ AFRAME.registerComponent('mapa', {
     g.font = '600 30px Georgia, serif'; g.fillText('Cartas', 50, 215);
     if (e.pescado) {
       g.save(); g.translate(50, 245); g.scale(0.72, 0.72);
-      dibujarCartaPescado(g, 360, 520, e.pescado);
+      dibujarCartaPescado(g, 360, 520, e.pescado, false);   // (el pez va aparte, en 3D: modeloInventario)
       g.restore();
       this.boton(g, H, HOJA_INVENTARIO, 50, 400, `Comer el pescado ${e.pescado} (C)`, () => partida.comer());
     } else { g.font = 'italic 25px Georgia, serif'; g.fillText('No llevas ninguna.', 50, 255); }
@@ -204,7 +241,9 @@ AFRAME.registerComponent('mapa', {
     };
     fila(`Día ${e.dia}`, '600 38px');
     y += 4;
-    fila(m ? `Misión: ${m.titulo}. Te ${e.puntos === 1 ? 'queda 1 punto' : `quedan ${e.puntos} puntos`}.` : 'Sin misión: se pasea libre y gratis. Las misiones se reciben en la posada.');
+    const paso = partida.pasoTutorial();
+    if (paso) fila('Ahora: ' + paso.texto, '600 27px');
+    fila(m ? `Misión: ${m.titulo}. Te ${e.puntos === 1 ? 'queda 1 punto' : `quedan ${e.puntos} puntos`}.` : 'Sin misión: se pasea libre y gratis. Las misiones se reciben en la taberna.');
     if (m) fila('Entrar cuesta: ' + Object.entries(PRECIOS_ZONA).map(([z, p]) => `${MUNDO[z].titulo.replace(/^(El|La|Las) /, '')} ${p}`).join(', ') + '.', '22px');
     y += 12;
     fila('Lo aprendido', '600 30px');
@@ -214,6 +253,7 @@ AFRAME.registerComponent('mapa', {
     this.botones[HOJA_DIARIO] = [];
     const aviso = e.pescado ? 'Se pierde el pescado' : 'Vuelves a la posada';
     this.boton(g, H, HOJA_DIARIO, 50, 500, this.confirmando ? `¿Seguro? ${aviso}. (T)` : 'Terminar el día (T)', () => this.pulsarTerminar());
+    this.boton(g, H, HOJA_DIARIO, 570, W - 620, this.confirmandoFin ? '¿Seguro? Se pierde todo. (R)' : 'Reiniciar partida (R)', () => this.pulsarReiniciar());
     this.hojas[HOJA_DIARIO].needsUpdate = true;
     this.botonApuntado = null;
     if (this.brillo) this.brillo.visible = false;   // (la primera vez aún no existe)
@@ -225,13 +265,23 @@ AFRAME.registerComponent('mapa', {
     this.panel.visible = false; this.hoja = -1;
     partida.terminarDia();
   },
+  // Lo mismo para empezar de cero: también olvida las zonas visitadas
+  pulsarReiniciar() {
+    if (!this.confirmandoFin) { this.confirmandoFin = true; return this.pintarDiario(); }
+    this.confirmandoFin = false;
+    this.panel.visible = false; this.hoja = -1;
+    this.visitadas = new Set();
+    try { localStorage.removeItem(CLAVE_VISITADAS); } catch (e) {}
+    this.pintarMapa();
+    partida.reiniciar();
+  },
   // qué botón de la hoja abierta tiene delante el rayo
   mirarBotones() {
     const p = this.puntoEnPanel();
     let mejor = null;
     if (p) {
       const W = this.lienzoDiario.width, H = this.lienzoDiario.height, x = (p.x / this.ancho + 0.5) * W, y = (0.5 - p.y / this.alto) * H;
-      mejor = this.botones[this.hoja].find(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) || null;
+      mejor = [...this.botonesPestanas, ...(this.botones[this.hoja] || [])].find(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) || null;
     }
     if (mejor === this.botonApuntado) return;
     this.botonApuntado = mejor;
@@ -268,10 +318,11 @@ AFRAME.registerComponent('mapa', {
       ['Joystick derecho', 'girar 30°'],
       ['Gatillo', 'puertas, carteles, hablar, pescar, asar'],
       ['Lateral en la pantalla', 'coger y colocarla'],
-      ['A o Y', 'mapa, diario, inventario, ayuda, cerrar'],
+      ['A o Y', 'abrir y cerrar el pergamino'],
+      ['Gatillo en una pestaña', 'cambiar de hoja'],
       ['Gatillo dcho. en el mapa', 'ir al sello que apuntas'],
       ['Gatillo dcho. en un botón', 'terminar el día, comer'],
-      ['B', 'traer la pantalla del PC'],
+      ['B', 'ver tus cartas; mantenido, traer la pantalla del PC'],
       ['X o apretar joystick izq.', 'medidor de rendimiento'],
       ['Apretar joystick dcho.', 'luz horneada, sí o no'],
     ]);
@@ -347,16 +398,18 @@ AFRAME.registerComponent('mapa', {
     g.fillStyle = '#a89274'; torre(322, -120, 12, 42);
     g.fillStyle = '#8f8f92'; torre(-180, -335, 60, 24); torre(-206, -335, 16, 46);
     // nombres
-    // la posada, junto a la plaza
-    g.fillStyle = '#a89274'; g.fillRect(X(162.5) - 10, Y(-92) - 9, 20, 11); g.strokeRect(X(162.5) - 10, Y(-92) - 9, 20, 11);
-    g.fillStyle = '#7a5a33'; g.beginPath(); g.moveTo(X(162.5) - 13, Y(-92) - 9); g.lineTo(X(162.5), Y(-92) - 20); g.lineTo(X(162.5) + 13, Y(-92) - 9); g.closePath(); g.fill(); g.stroke();
     g.font = '600 26px Georgia, serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     const nombre = (texto, x, z, t) => { g.font = `600 ${t || 30}px Georgia, serif`; g.fillStyle = TINTA; g.fillText(texto, X(x), Y(z)); };
-    nombre('El Castillo', 5, 25); nombre('El Bosque', 6, -135); nombre('El Lago', 5, -258); nombre('La Isla', 43, -327, 22);
-    nombre('El Poblado', 160, -172); nombre('Posada', 163, -80, 18); nombre('La Montaña', -200, -30); nombre('El Acantilado', 285, -175);
+    nombre('El Castillo', 5, 25); nombre('El Bosque', 6, -135); nombre('El Lago', 5, -258);
+    nombre('El Poblado', 160, -172); nombre('La Montaña', -200, -30); nombre('El Acantilado', 285, -175);
     nombre('La Abadía en Ruinas', -180, -405);
     g.fillStyle = '#1e1813'; g.beginPath(); g.arc(X(24), Y(-150), 6, 0, Math.PI * 2); g.fill(); nombre('Cueva', 44, -146, 18); nombre('Mar', 356, -70, 22); nombre('Mar', 345, -300, 22);
     nombre('El Puerto', 235, -385); nombre('La Playa', 240, -250, 24);
+  },
+  // Título, rosa de los vientos y marco: van por encima de la niebla
+  rotulos(g, W, H) {
+    const TINTA = '#3a2616';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
     g.font = '600 44px Georgia, serif'; g.fillStyle = TINTA; g.fillText('Tierras del Reino', W * 0.8, 44);
     // rosa de los vientos, arriba a la izquierda (el norte del juego, hacia el lago)
     const rx = W * 0.72, ry = H * 0.8, R = 46;
@@ -367,8 +420,38 @@ AFRAME.registerComponent('mapa', {
     g.strokeStyle = 'rgba(58, 38, 22, 0.8)'; g.lineWidth = 6; g.strokeRect(10, 10, W - 20, H - 20);
     g.lineWidth = 1.5; g.strokeRect(22, 22, W - 44, H - 44);
   },
+  // La hoja del mapa: el dibujo, con niebla sobre las zonas que aún no has visitado
+  pintarMapa() {
+    const c = this.lienzoMapa, g = c.getContext('2d'), W = c.width, H = c.height;
+    g.drawImage(this.mapaBase, 0, 0);
+    const X = x => (x - MAPA.x0) / (MAPA.x1 - MAPA.x0) * W, Y = z => (z - MAPA.z0) / (MAPA.z1 - MAPA.z0) * H;
+    g.save();
+    g.beginPath(); g.rect(10, 10, W - 20, H - 20); g.clip();
+    for (const nombre of Object.keys(MUNDO)) {
+      const s = MUNDO[nombre].sitio;
+      if (MAPA_TODAS || this.visitadas.has(nombre) || s.x0 > MAPA.x1) continue;   // (cueva y mazmorras están fuera del mapa)
+      const x0 = X(s.x0), x1 = X(Math.min(s.x1, MAPA.x1 + 20)), y0 = Y(Math.max(s.z0, MAPA.z0 - 20)), y1 = Y(Math.min(s.z1, MAPA.z1 + 20));
+      // la base, y encima bocanadas claras y oscuras, siempre las mismas para cada zona
+      g.fillStyle = NIEBLA_MAPA; g.fillRect(x0, y0, x1 - x0, y1 - y0);
+      let semilla = 7 + nombre.length * 131 + Math.round(x0);
+      const azar = () => (semilla = (semilla * 16807) % 2147483647) / 2147483647;
+      const bocanada = (x, y, r, rgb, fuerza) => {
+        const d = g.createRadialGradient(x, y, 0, x, y, r);
+        d.addColorStop(0, `rgba(${rgb}, ${fuerza})`); d.addColorStop(1, `rgba(${rgb}, 0)`);
+        g.fillStyle = d; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+      };
+      for (let k = (x1 - x0) * (y1 - y0) / 1500; k > 0; k--) bocanada(x0 + azar() * (x1 - x0), y0 + azar() * (y1 - y0), 26 + azar() * 46, azar() < 0.5 ? '226, 222, 210' : '150, 145, 134', 0.2);
+      // el borde, deshilachado: bocanadas del mismo color que se salen de la zona
+      for (const [ax, ay, bx, by] of [[x0, y0, x1, y0], [x0, y1, x1, y1], [x0, y0, x0, y1], [x1, y0, x1, y1]])
+        for (let k = Math.hypot(bx - ax, by - ay) / 14; k > 0; k--) { const u = azar(); bocanada(ax + (bx - ax) * u, ay + (by - ay) * u, 22 + azar() * 22, '185, 178, 163', 1); }
+    }
+    g.restore();
+    this.rotulos(g, W, H);
+    this.pestanas(g, W, 0);
+    this.hojas[HOJA_MAPA].needsUpdate = true;
+  },
   viajar() {
-    if (this.panel.visible && this.botones[this.hoja] && this.botonApuntado && !cambiandoDeZona && !enBarco && !enLaMesa) return this.botonApuntado.hacer();
+    if (this.panel.visible && this.botonApuntado && !cambiandoDeZona && !enBarco && !enLaMesa) return this.botonApuntado.hacer();
     if (!this.panel.visible || this.hoja !== HOJA_MAPA || !this.apuntado || cambiandoDeZona || enBarco || enLaMesa) return;
     const d = this.apuntado.destino;
     // (con misión, se pagan todas las zonas del camino)
@@ -403,17 +486,41 @@ AFRAME.registerComponent('mapa', {
     if (mejor) { mejor.material.color.set('#ffcc33'); mejor.scale.setScalar(1.7); }
   },
   // la flecha en su sitio, según dónde estás y hacia dónde miras
+  // El pergamino no mira la profundidad y se dibuja encima de todo: mientras está abierto, el rayo del mando
+  // derecho se dibuja después de él, o no se vería al apuntarle
+  rayoEncima(encima) {
+    const m = document.querySelector('[laser-controls="hand: right"]'), linea = m && m.getObject3D('line');
+    if (!linea || linea.renderOrder === (encima ? 999 : 0)) return;
+    linea.renderOrder = encima ? 999 : 0;
+    linea.material.transparent = encima;
+    linea.material.depthTest = !encima;
+    linea.material.needsUpdate = true;
+  },
   tick() {
+    this.rayoEncima(this.panel.visible);
     const aqui = zonaCargada.nombre;
     if (this.el.components.zonas.actual === aqui && !this.visitadas.has(aqui)) {
       this.visitadas.add(aqui);
       try { localStorage.setItem(CLAVE_VISITADAS, JSON.stringify([...this.visitadas])); } catch (e) {}
+      this.pintarMapa();
     }
     if (!this.panel.visible || !this.el.camera) return;
+    const punto = this.el.is('vr-mode') ? this.puntoEnPanel() : null;
+    this.puntero.visible = !!punto;
+    if (punto) this.puntero.position.set(punto.x, punto.y, 0.002);
+    const pescado = partida.estado.pescado;
+    this.modeloInventario.visible = this.hoja === HOJA_INVENTARIO && !!pescado;
+    if (this.modeloInventario.visible) {
+      this.modeloInventario.rotation.y = performance.now() / 1200;
+      this.modeloInventario.material.color.set(pescado === 'asado' ? '#a8703a' : '#ffffff');   // asado, tostado
+    }
     if (this.hoja === HOJA_MAPA) {
       for (const s of this.sellos) s.visible = MAPA_TODAS || this.visitadas.has(s.destino.zona);
+      this.colocarMarcaMapa();
+      this.marcaMapa.scale.setScalar(1 + 0.2 * Math.sin(performance.now() / 300));
       this.mirarSellos();
-    } else if (this.botones[this.hoja]) this.mirarBotones();
+    }
+    this.mirarBotones();
     this.el.camera.getWorldPosition(this.yo);
     this.el.camera.getWorldDirection(this.mira);
     const u = (this.yo.x - MAPA.x0) / (MAPA.x1 - MAPA.x0) - 0.5, v = (this.yo.z - MAPA.z0) / (MAPA.z1 - MAPA.z0) - 0.5;

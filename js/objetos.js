@@ -48,13 +48,29 @@ AFRAME.registerComponent('arco-ciego', {
 // Puerta que se abre y se cierra al hacer clic en ella: gatillo apuntando con el mando,
 // o clic del ratón con la mira en el centro de la pantalla. Gira sobre las bisagras hacia dentro.
 // Al apuntarla, la aldaba brilla y crece, sale un cartel "Abrir"/"Cerrar" y el rayo se pone verde.
-const RAYO = '#ffe066', RAYO_PUERTA = '#5cff8a';
+const RAYO = '#ffe066', RAYO_ACCION = '#5cff8a';
+
+// El rayo del mando se pone verde sobre lo que se puede usar: todo lo que recibe el rayo (.clicable) es una
+// puerta, un personaje con quien hablar, un cofre, un cartel...
+AFRAME.registerComponent('rayo-verde', {
+  tick() {
+    const r = this.el.components.raycaster;
+    if (!r) return;
+    const color = r.intersectedEls.length ? RAYO_ACCION : RAYO;
+    if (r.data.lineColor !== color) this.el.setAttribute('raycaster', 'lineColor', color);
+  }
+});
 
 AFRAME.registerComponent('puerta', {
-  schema: { abierta: { default: -100 } },   // grados al abrirse
+  // abierta: grados al abrirse. bloquea: cerrada no deja pasar (la de tu habitación de la posada; va sin girar,
+  // con la hoja a lo largo de x). Las del castillo cierran el paso con zonasPermitidas.
+  schema: { abierta: { default: -100 }, bloquea: { default: false } },
   init() {
     this.abierta = false;
     this.apuntada = false;
+    const p = this.el.object3D.position;
+    this.cierre = this.data.bloquea ? { x0: p.x - 0.1, x1: p.x + 1, z0: p.z - 0.2, z1: p.z + 0.2, y: p.y + 4, macizo: true, desde: p.y - 0.7 } : null;
+    if (this.cierre) SUPERFICIES.push(this.cierre);
     // la aldaba del modelo de Blender (nodo "Aldaba"), con su propio material para que al
     // brillar no se encienda también el resto del hierro de la hoja
     this.aldaba = null;
@@ -73,6 +89,10 @@ AFRAME.registerComponent('puerta', {
       if (performance.now() - this.ultimo < 500) return;
       this.ultimo = performance.now();
       this.abierta = !this.abierta;
+      if (this.cierre) {
+        this.cierre.y = this.abierta ? 0 : this.el.object3D.position.y + 4;
+        if (this.abierta) partida.marcarTutorial('puerta');
+      }
       for (const c of this.carteles) c.querySelector('a-text').setAttribute('value', this.abierta ? 'Cerrar' : 'Abrir');
       this.el.setAttribute('animation', {
         property: 'rotation', to: `0 ${this.abierta ? this.data.abierta : 0} 0`,
@@ -87,10 +107,6 @@ AFRAME.registerComponent('puerta', {
       const r = el.components.raycaster;
       if (!r || !r.data.enabled) continue;
       const toca = r.intersectedEls.some(e => this.el.contains(e));
-      if (el.hasAttribute('laser-controls')) {
-        const color = r.intersectedEls.some(e => e.closest('[puerta], [pozo], [puerta-portal]')) ? RAYO_PUERTA : RAYO;
-        if (r.data.lineColor !== color) el.setAttribute('raycaster', 'lineColor', color);
-      }
       apuntada = apuntada || toca;
     }
     if (apuntada === this.apuntada) return;

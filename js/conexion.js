@@ -51,22 +51,31 @@ AFRAME.registerComponent('pantalla-pc', {
   }
 });
 
-// Objetos que se cogen con el gatillo lateral (grip): apuntar con el rayo y apretarlo.
+// Objetos que se cogen con el gatillo lateral (grip): apuntar con el rayo y apretarlo; con 'cercania', sin rayo:
+// hay que acercar la mano a esa distancia.
 // Mientras está apretado, el objeto sigue al mando como si estuviera en la mano;
 // al soltarlo se queda donde esté. Al apuntarlo, el marco se ilumina.
-// Con 'clave', además: el botón B o Y lo trae delante de la cabeza, mirándote, y el sitio
+// Con 'clave', además: el botón B mantenido lo trae delante de la cabeza, mirándote, y el sitio
 // donde se deja se guarda en el navegador para que siga ahí al recargar.
 AFRAME.registerComponent('agarrable', {
-  schema: { clave: { default: '' } },
+  schema: { clave: { default: '' }, cercania: { default: 0 } },
   init() {
     this.mano = null;                      // mando que lo tiene cogido
     this.offset = new THREE.Matrix4();     // posición del objeto respecto al mando
     this.marco = this.el.querySelector('.marco');
     this.iluminado = false;
+    this.escuchas = [];
     for (const m of this.el.sceneEl.querySelectorAll('[laser-controls]')) {
-      m.addEventListener('gripdown', () => this.coger(m));
-      m.addEventListener('gripup', () => { if (this.mano === m) { this.mano = null; this.guardar(); } });
-      if (this.data.clave) m.addEventListener('bbuttondown', () => this.traer());   // (la Y es del mapa)
+      const baja = () => this.coger(m), sube = () => { if (this.mano === m) { this.mano = null; this.guardar(); this.el.emit('soltado'); } };
+      m.addEventListener('gripdown', baja);
+      m.addEventListener('gripup', sube);
+      this.escuchas.push([m, baja, sube]);
+      // (mantenido: pulsar y soltar enseña las cartas, js/mapa.js; la Y es del mapa)
+      if (this.data.clave) {
+        let desde = 0;
+        m.addEventListener('bbuttondown', () => { desde = performance.now(); });
+        m.addEventListener('bbuttonup', () => { if (performance.now() - desde >= B_MANTENIDO_MS) this.traer(); });
+      }
     }
     if (this.data.clave) {
       const volver = () => {
@@ -77,6 +86,9 @@ AFRAME.registerComponent('agarrable', {
       };
       if (this.el.sceneEl.hasLoaded) volver(); else this.el.sceneEl.addEventListener('loaded', volver, { once: true });
     }
+  },
+  remove() {
+    for (const [m, baja, sube] of this.escuchas) { m.removeEventListener('gripdown', baja); m.removeEventListener('gripup', sube); }
   },
   traer() {
     const cam = this.el.sceneEl.camera.el.object3D;
@@ -97,12 +109,17 @@ AFRAME.registerComponent('agarrable', {
     const r = m.components.raycaster;
     return !!r && r.intersectedEls.some(e => this.el.contains(e));
   },
+  alAlcance(m) {
+    const a = m.object3D.getWorldPosition(new THREE.Vector3()), b = this.el.object3D.getWorldPosition(new THREE.Vector3());
+    return a.distanceTo(b) <= this.data.cercania;
+  },
   coger(m) {
-    if (this.mano || !this.apunta(m)) return;
+    if (this.mano || !(this.data.cercania ? this.alAlcance(m) : this.apunta(m))) return;
     this.mano = m;
     m.object3D.updateMatrixWorld();
     this.el.object3D.updateMatrixWorld();
     this.offset.copy(m.object3D.matrixWorld).invert().multiply(this.el.object3D.matrixWorld);
+    this.el.emit('cogido');
   },
   tick() {
     const o = this.el.object3D;
@@ -111,10 +128,11 @@ AFRAME.registerComponent('agarrable', {
       const m = this.mano.object3D.matrixWorld.clone().multiply(this.offset);
       m.decompose(o.position, o.quaternion, o.scale);
     }
-    const ilumina = !!this.mano || [...this.el.sceneEl.querySelectorAll('[laser-controls]')].some(m => this.apunta(m));
+    const ilumina = !!this.mano || [...this.el.sceneEl.querySelectorAll('[laser-controls]')].some(m => this.data.cercania ? this.alAlcance(m) : this.apunta(m));
     if (ilumina !== this.iluminado) {
       this.iluminado = ilumina;
-      this.marco.setAttribute('material', 'emissive', ilumina ? '#3a6fd8' : '#000');
+      if (this.marco) this.marco.setAttribute('material', 'emissive', ilumina ? '#3a6fd8' : '#000');
+      this.el.emit('al-alcance', ilumina);
     }
   }
 });

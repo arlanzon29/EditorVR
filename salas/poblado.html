@@ -1,5 +1,5 @@
 <!-- Poblado: otra zona (ver js/mundo.js), al este del bosque; al otro lado, el acantilado. Una calle
-     con casas de entramado, una plaza con pozo y mercado, y una iglesia. -->
+     con casas de madera, una plaza con pozo y mercado, y una iglesia. -->
 
 <a-entity terreno="x0: 60; x1: 260; z0: -230; z1: -10"></a-entity>
 <a-entity camino="puntos: 84 -120, 96 -120, 130 -120, 190 -120, 224 -120, 236 -120; ancho: 3.4; y: 0.08"></a-entity>
@@ -9,18 +9,17 @@
 <a-entity barrera="x0: 91.7; x1: 228.3; z0: -190.3; z1: -49.7; huecos: x0 -121.4 -118.6, x1 -121.4 -118.6"></a-entity>
 
 <!-- casas, mirando a la calle -->
-<a-entity casa="ancho: 6; fondo: 5; cal: #c9b998; techo: #6e5c33" position="135 0 -100" rotation="0 180 0"></a-entity>
-<a-entity casa="ancho: 7; fondo: 5; cal: #c2b090; techo: #675531" position="150 0 -95" rotation="0 180 0"></a-entity>
-<a-entity casa="ancho: 6; fondo: 5; cal: #ccbea0; techo: #6e5c33" position="175 0 -95" rotation="0 180 0"></a-entity>
-<a-entity casa="ancho: 6; fondo: 6; cal: #c4b596; techo: #73613a" position="190 0 -103" rotation="0 180 0"></a-entity>
-<a-entity casa="ancho: 6; fondo: 5; cal: #c5b392; techo: #6e5c33" position="135 0 -140" rotation="0 0 0"></a-entity>
-<a-entity casa="ancho: 7; fondo: 5; cal: #ccbea0; techo: #675531" position="150 0 -146" rotation="0 0 0"></a-entity>
-<a-entity casa="ancho: 6; fondo: 5; cal: #c2b090; techo: #73613a" position="172 0 -146" rotation="0 0 0"></a-entity>
-<a-entity casa="ancho: 7; fondo: 6; cal: #c9b998; techo: #6e5c33" position="190 0 -137" rotation="0 0 0"></a-entity>
-<a-entity casa="ancho: 5; fondo: 5; cal: #c4b596; techo: #6e5c33" position="116 0 -103" rotation="0 180 0"></a-entity>
-<a-entity casa="ancho: 5; fondo: 5; cal: #c9b998; techo: #73613a" position="116 0 -137" rotation="0 0 0"></a-entity>
-<a-entity casa="ancho: 5; fondo: 5; cal: #c2b090; techo: #675531" position="206 0 -103" rotation="0 180 0"></a-entity>
-<a-entity casa="ancho: 5; fondo: 5; cal: #ccbea0; techo: #6e5c33" position="206 0 -137" rotation="0 0 0"></a-entity>
+<a-entity casa="ancho: 6; fondo: 5; madera: #bba88f; techo: #6e5c33" position="135 0 -100" rotation="0 180 0"></a-entity>
+<a-entity casa="ancho: 7; fondo: 5; madera: #b09d84; techo: #675531" position="150 0 -95" rotation="0 180 0"></a-entity>
+<a-entity casa="ancho: 6; fondo: 6; madera: #c2b097; techo: #73613a" position="190 0 -103" rotation="0 180 0"></a-entity>
+<a-entity casa="ancho: 6; fondo: 5; madera: #a6937a; techo: #6e5c33" position="135 0 -140" rotation="0 0 0"></a-entity>
+<a-entity casa="ancho: 7; fondo: 5; madera: #b5a288; techo: #675531" position="150 0 -146" rotation="0 0 0"></a-entity>
+<a-entity casa="ancho: 6; fondo: 5; madera: #bba88f; techo: #73613a" position="172 0 -146" rotation="0 0 0"></a-entity>
+<a-entity casa="ancho: 7; fondo: 6; madera: #b09d84; techo: #6e5c33" position="190 0 -137" rotation="0 0 0"></a-entity>
+<a-entity casa="ancho: 5; fondo: 5; madera: #c2b097; techo: #6e5c33" position="116 0 -103" rotation="0 180 0"></a-entity>
+<a-entity casa="ancho: 5; fondo: 5; madera: #a6937a; techo: #73613a" position="116 0 -137" rotation="0 0 0"></a-entity>
+<a-entity casa="ancho: 5; fondo: 5; madera: #b5a288; techo: #675531" position="206 0 -103" rotation="0 180 0"></a-entity>
+<a-entity casa="ancho: 5; fondo: 5; madera: #bba88f; techo: #6e5c33" position="206 0 -137" rotation="0 0 0"></a-entity>
 
 <!-- iglesia al fondo de la plaza, con su torre -->
 <a-entity casa="ancho: 10; fondo: 16; alto: 6; cal: #a79d8a; techo: #4a4136" position="160 0 -172"></a-entity>
@@ -42,10 +41,11 @@
 <!-- gente: dos guardias en la entrada y una moza con su jarra por la plaza -->
 <a-entity guardia position="99 0 -122.8"></a-entity>
 <a-entity guardia position="99 0 -117.2" rotation="0 180 0" scale="-1 1 1"></a-entity>
-<a-entity criado="puntos: 171 -113 2, 171 -127 0, 149 -127 3, 149 -113 0" position="171 0 -113"></a-entity>
+<a-entity moza="puntos: 171 -113 2, 171 -127 0, 149 -127 3, 149 -113 0" position="171 0 -113"></a-entity>
 
 <!-- la boda: solo sale el día que toca (js/boda.js) -->
 <a-entity boda></a-entity>
+<a-entity marca-paso="quien: boda; y: 3" position="160.4 0 -136"></a-entity>
 
 <!-- árboles -->
 <a-entity>
@@ -94,4 +94,74 @@
   <a-entity arbol="alto: 6.4; semilla: 658" position="118.16 0 -75.51"></a-entity>
   <a-entity arbol="alto: 8.3; semilla: 659" position="132.42 0 -64.19"></a-entity>
   <a-entity arbol="alto: 5.6; semilla: 660" position="253.88 0 -99.26"></a-entity>
+  <a-entity arbol="alto: 6.4; semilla: 661" position="108.37 0 -75.91"></a-entity>
+  <a-entity arbol="alto: 8.3; semilla: 662" position="97.48 0 -179.25"></a-entity>
+  <a-entity arbol="alto: 6.7; semilla: 663" position="213.01 0 -82.54"></a-entity>
+  <a-entity arbol="alto: 9.8; semilla: 664" position="138.64 0 -160.25"></a-entity>
+  <a-entity arbol="alto: 6.6; semilla: 665" position="130.2 0 -81.36"></a-entity>
+  <a-entity arbol="alto: 7.2; semilla: 666" position="221.94 0 -166.35"></a-entity>
+  <a-entity arbol="alto: 7.0; semilla: 667" position="139.41 0 -181.5"></a-entity>
+  <a-entity arbol="alto: 8.2; semilla: 668" position="130.07 0 -163.9"></a-entity>
+  <a-entity arbol="alto: 5.6; semilla: 669" position="206.64 0 -158.39"></a-entity>
+  <a-entity arbol="alto: 8.0; semilla: 670" position="213.33 0 -154.51"></a-entity>
+  <a-entity arbol="alto: 9.0; semilla: 671" position="215.07 0 -62.48"></a-entity>
+  <a-entity arbol="alto: 6.3; semilla: 672" position="212.56 0 -141.81"></a-entity>
+  <a-entity arbol="alto: 8.6; semilla: 673" position="221.72 0 -60.68"></a-entity>
+  <a-entity arbol="alto: 6.5; semilla: 674" position="141.64 0 -172.02"></a-entity>
+  <a-entity arbol="alto: 9.7; semilla: 675" position="184.97 0 -109.01"></a-entity>
+  <a-entity arbol="alto: 5.7; semilla: 676" position="223.59 0 -145.45"></a-entity>
+  <a-entity arbol="alto: 7.3; semilla: 677" position="137.65 0 -90.31"></a-entity>
+  <a-entity arbol="alto: 7.2; semilla: 678" position="103.31 0 -111.17"></a-entity>
+  <a-entity arbol="alto: 6.6; semilla: 679" position="115.16 0 -128.93"></a-entity>
+  <a-entity arbol="alto: 6.6; semilla: 680" position="125.32 0 -155"></a-entity>
+  <a-entity arbol="alto: 7.1; semilla: 681" position="169.58 0 -175.93"></a-entity>
+  <a-entity arbol="alto: 7.4; semilla: 682" position="209.51 0 -56.55"></a-entity>
+  <a-entity arbol="alto: 9.9; semilla: 683" position="184.53 0 -158.13"></a-entity>
+  <a-entity arbol="alto: 8.1; semilla: 684" position="135.36 0 -130.03"></a-entity>
+  <a-entity arbol="alto: 9.4; semilla: 685" position="188.38 0 -179.86"></a-entity>
+  <a-entity arbol="alto: 8.8; semilla: 686" position="98.25 0 -127.93"></a-entity>
+  <a-entity arbol="alto: 8.6; semilla: 687" position="182.16 0 -175.62"></a-entity>
+  <a-entity arbol="alto: 7.7; semilla: 688" position="196.26 0 -88.71"></a-entity>
+  <a-entity arbol="alto: 8.5; semilla: 689" position="214.86 0 -97.19"></a-entity>
+  <a-entity arbol="alto: 6.7; semilla: 690" position="193.86 0 -56.77"></a-entity>
+  <a-entity arbol="alto: 9.6; semilla: 691" position="108.1 0 -169.56"></a-entity>
+  <a-entity arbol="alto: 8.2; semilla: 692" position="116.48 0 -182.62"></a-entity>
+  <a-entity arbol="alto: 9.8; semilla: 693" position="134.79 0 -147.07"></a-entity>
+  <a-entity arbol="alto: 9.1; semilla: 694" position="175.88 0 -63.1"></a-entity>
+  <a-entity arbol="alto: 8.4; semilla: 695" position="204.84 0 -185.65"></a-entity>
+  <a-entity arbol="alto: 8.4; semilla: 696" position="113.56 0 -142.74"></a-entity>
+  <a-entity arbol="alto: 9.9; semilla: 697" position="129.48 0 -89.98"></a-entity>
+  <a-entity arbol="alto: 7.1; semilla: 698" position="110.15 0 -153.05"></a-entity>
+  <a-entity arbol="alto: 7.9; semilla: 699" position="188.71 0 -144.5"></a-entity>
+  <a-entity arbol="alto: 5.8; semilla: 700" position="131.8 0 -171.44"></a-entity>
+  <a-entity arbol="alto: 9.3; semilla: 701" position="99.31 0 -84.57"></a-entity>
+  <a-entity arbol="alto: 7.6; semilla: 702" position="169.03 0 -154.15"></a-entity>
+  <a-entity arbol="alto: 8.6; semilla: 703" position="198.46 0 -144.46"></a-entity>
+  <a-entity arbol="alto: 7.3; semilla: 704" position="206.17 0 -80.86"></a-entity>
+  <a-entity arbol="alto: 9.4; semilla: 705" position="209.72 0 -131.32"></a-entity>
+  <a-entity arbol="alto: 8.9; semilla: 706" position="176.79 0 -164.98"></a-entity>
+  <a-entity arbol="alto: 9.3; semilla: 707" position="164.2 0 -68.62"></a-entity>
+  <a-entity arbol="alto: 7.5; semilla: 708" position="214.28 0 -105.67"></a-entity>
+  <a-entity arbol="alto: 7.1; semilla: 709" position="188.05 0 -77.98"></a-entity>
+  <a-entity arbol="alto: 6.5; semilla: 710" position="160.43 0 -74.4"></a-entity>
+  <a-entity arbol="alto: 7.0; semilla: 711" position="191.02 0 -164.99"></a-entity>
+  <a-entity arbol="alto: 7.1; semilla: 712" position="144.34 0 -74.43"></a-entity>
+  <a-entity arbol="alto: 5.8; semilla: 713" position="96.66 0 -154.95"></a-entity>
+  <a-entity arbol="alto: 6.7; semilla: 714" position="104.35 0 -179.94"></a-entity>
+  <a-entity arbol="alto: 5.6; semilla: 715" position="100.99 0 -160.73"></a-entity>
+  <a-entity arbol="alto: 7.2; semilla: 716" position="106.53 0 -87.39"></a-entity>
+  <a-entity arbol="alto: 9.8; semilla: 717" position="122.9 0 -128.8"></a-entity>
+  <a-entity arbol="alto: 8.4; semilla: 718" position="154.39 0 -85.82"></a-entity>
+  <a-entity arbol="alto: 5.9; semilla: 719" position="182.55 0 -63.46"></a-entity>
+  <a-entity arbol="alto: 7.7; semilla: 720" position="198.7 0 -112.07"></a-entity>
+  <a-entity arbol="alto: 6.6; semilla: 721" position="207.7 0 -164.97"></a-entity>
+  <a-entity arbol="alto: 7.1; semilla: 722" position="118.45 0 -166.89"></a-entity>
+  <a-entity arbol="alto: 6.2; semilla: 723" position="148.74 0 -177.92"></a-entity>
+  <a-entity arbol="alto: 7.9; semilla: 724" position="217.84 0 -111.45"></a-entity>
+  <a-entity arbol="alto: 6.0; semilla: 725" position="111.25 0 -110.19"></a-entity>
+  <a-entity arbol="alto: 7.4; semilla: 726" position="213.85 0 -70.38"></a-entity>
+  <a-entity arbol="alto: 5.8; semilla: 727" position="188.44 0 -152.54"></a-entity>
+  <a-entity arbol="alto: 8.9; semilla: 728" position="222.55 0 -72.34"></a-entity>
+  <a-entity arbol="alto: 7.4; semilla: 729" position="135.21 0 -110.24"></a-entity>
+  <a-entity arbol="alto: 9.2; semilla: 730" position="182.4 0 -147.96"></a-entity>
 </a-entity>

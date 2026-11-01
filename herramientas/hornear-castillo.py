@@ -112,11 +112,12 @@ def area_de(m):
 
 
 def lado_de(area):
-    # unos 50 píxeles por metro, y no más de 2048 (cada imagen de 2048 son 16 MB en el Quest)
-    for lado in (256, 512, 1024):
-        if area * 50 * 50 < lado * lado:
+    # unos 100 píxeles por metro hasta 4096 (64 MB en el Quest; 2048, 16 MB). Lo que ni así cabe, como el
+    # terreno entero, se queda en 2048: el detalle no se notaría y gastaría mucho
+    for lado in (256, 512, 1024, 2048, 4096):
+        if area * 100 * 100 < lado * lado:
             return lado
-    return 2048
+    return 4096 if area * 70 * 70 < 4096 * 4096 else 2048   # (las estancias con muchos muros, como la posada)
 
 
 salas = {}
@@ -144,7 +145,7 @@ for sala, mallas in datos['salas'].items():
     bpy.context.view_layer.objects.active = piezas[0]
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.uv.smart_project(angle_limit=1.15, island_margin=0.004, area_weight=0, scale_to_bounds=False)
+    bpy.ops.uv.smart_project(angle_limit=1.15, island_margin=0.002, area_weight=0, scale_to_bounds=False)
     bpy.ops.object.mode_set(mode='OBJECT')
     # el suelo, desplegado desde arriba: caminos y claros sacan de ahí su sitio en la imagen (luzEnCaminos)
     if sala.startswith('campo'):
@@ -232,7 +233,7 @@ escena.render.bake.use_pass_indirect = True
 escena.render.bake.use_pass_color = False
 escena.render.bake.margin = 6
 escena.render.image_settings.file_format = 'JPEG'
-escena.render.image_settings.quality = 92
+escena.render.image_settings.quality = 95
 
 for sala, s in salas.items():
     bpy.ops.object.select_all(action='DESELECT')
@@ -256,7 +257,7 @@ for sala, s in salas.items():
     salida.pixels.foreach_set(rgb.ravel())
     salida.filepath_raw = os.path.join(SALIDA, f'{sala}-luz.jpg')
     salida.file_format = 'JPEG'
-    salida.save(quality=92)
+    salida.save(quality=95)
 
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(SALIDA, ZONA + '.blend'), compress=True)
 

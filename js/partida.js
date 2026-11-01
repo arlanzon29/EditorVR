@@ -8,17 +8,19 @@ const PRECIOS_ZONA = { castillo: 1, bosque: 1, lago: 1, poblado: 1, montana: 3, 
 // Zonas a las que se llega por una puerta o una boca, no por los PASOS: para el camino del viaje rápido
 const ENTRADAS_ZONA = [['bosque', 'cueva'], ['castillo', 'mazmorras']];
 const MISIONES = {
-  boda: { titulo: 'El pescado de la boda', presupuesto: 6, pago: 5 },   // (el pago es provisional)
+  boda: { titulo: 'El pescado de la boda', presupuesto: 9, pago: 5 },   // (el pago es provisional)
 };
+const PUNTOS_PESCAR = 3;   // lo que cuesta pescar con misión
 const PUNTOS_COMIDA = { crudo: 1, asado: 3 };   // propuesta de JUEGO.md
-// Cada día empieza dentro de la posada, mirando al mostrador (propuesta de JUEGO.md)
-const INICIO_DIA = { zona: 'poblado', x: 163, z: -92.8, giro: Math.PI };
+// Cada día empieza en tu habitación de la posada, arriba, mirando a la puerta
+const INICIO_DIA = { zona: 'poblado', x: 174.8, y: 3.2, z: -101.8, giro: Math.PI };
 const CLAVE_PARTIDA = 'editorvr-partida';
 const AVISO_MS = 4500;
+const BIENVENIDA_MS = 8000;
 
 const partida = {
   estado: null,
-  nuevo() { return { dia: 1, mision: null, puntos: 0, monedas: 0, pescado: null, pescadoHoy: false, aprendido: [], hechas: [], bodaDia: null, bodaVista: null }; },
+  nuevo() { return { dia: 1, mision: null, puntos: 0, monedas: 0, pescado: null, pescadoHoy: false, cofre: [], tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null }; },
   cargar() {
     this.estado = this.nuevo();
     let guardada = null;
@@ -33,8 +35,49 @@ const partida = {
   guardar() {
     try { localStorage.setItem(CLAVE_PARTIDA, JSON.stringify(this.estado)); } catch (e) {}
     document.dispatchEvent(new CustomEvent('partida-cambia'));
+    setTimeout(() => this.comprobarPaso());   // (después del aviso de lo que acaba de pasar: el tutorial manda)
   },
-  avisar(texto) { document.dispatchEvent(new CustomEvent('partida-aviso', { detail: texto })); },
+
+  // --- El tutorial: qué toca ahora, según cómo va la partida; así aguanta perder el pescado o acabar el día.
+  // Lo marca el rombo de lo que diga "quien" (marca-paso), el aro del mapa en "zona", el aviso y el diario.
+  pasoTutorial() {
+    const e = this.estado, t = e.tutorial;
+    if (e.bodaVista !== null) return null;
+    if (!t.puerta) return { id: 'puerta', quien: 'puerta', texto: 'Apunta a la puerta con el mando derecho y aprieta el gatillo para abrirla.' };
+    if (!t.posadero) return { id: 'posadero', quien: 'posadero', texto: 'Anda con el joystick izquierdo. Baja por la escalera del pasillo y habla con el posadero: apúntale y aprieta el gatillo.' };
+    if (e.hechas.includes('boda')) {
+      if (e.dia === e.bodaDia && !t.alliEstare) return { id: 'responder', callado: true, quien: 'tabernero', texto: 'Contesta al tabernero.' };
+      if (e.dia === e.bodaDia) return { id: 'dormir', quien: 'cama', zona: 'poblado', texto: 'Encargo cumplido. Vuelve a tu habitación de la posada y duerme: apunta a la cama y aprieta el gatillo.' };
+      return { id: 'boda', quien: 'boda', zona: 'poblado', texto: 'Hoy es la boda, en la plaza, delante de la iglesia. Apunta a la silla libre y aprieta el gatillo para sentarte.' };
+    }
+    if (e.mision !== 'boda') return { id: 'tabernero', quien: 'tabernero', texto: 'La taberna está aquí al lado. Apunta al tabernero, aprieta el gatillo y acepta su encargo.' };
+    if (e.pescado) return { id: 'volver', quien: 'tabernero', zona: 'poblado', texto: 'Abre el mapa con A o Y, apunta al sello del poblado y aprieta el gatillo: el viaje también cuesta puntos. Lleva el pescado al tabernero.' };
+    if (zonaCargada.nombre === 'lago') return { id: 'pescar', zona: 'lago', texto: `Ve al embarcadero del sur, apunta a los peces y aprieta el gatillo para pescar. Pescar cuesta ${PUNTOS_PESCAR} puntos.` };
+    return { id: 'lago', zona: 'lago', luego: ['Para ver el mapa, pulsa el botón A o Y: el aro dorado marca adónde ir. Apunta a las pestañas de arriba para ver el diario, el inventario o la ayuda, y vuelve a pulsar para cerrarlo.', 'Para ir más deprisa, corre: mantén apretado el gatillo lateral izquierdo mientras andas.'], texto: 'Tienes puntos para el encargo: entrar en cada zona cuesta puntos, y sin ellos se acaba el día. Ve por el camino al bosque y de allí, al norte, al lago.' };
+  },
+  // Si el paso ha cambiado, lo avisa. Lo llama quien cambia algo y zonas.js, al terminar de cargar una zona.
+  comprobarPaso() {
+    if (!this.zonaLista) return;
+    const paso = this.pasoTutorial(), id = paso ? paso.id : null;
+    if (id === this.ultimoPaso) return;
+    if (paso && paso.callado) { this.ultimoPaso = id; return; }
+    if (paso && paso.id === 'puerta') {
+      // lo primero de todo, la bienvenida; y al rato, el primer paso, si no lo has dado ya
+      this.avisar('Te damos la bienvenida. Has pasado la noche en la posada del poblado, y hoy empieza tu aventura.', true);
+      setTimeout(() => { if (this.pasoTutorial()?.id === 'puerta') this.avisar(paso.texto, true); }, BIENVENIDA_MS);
+    } else if (paso) {
+      // "luego": consejos, uno tras otro, cuando ya ha dado tiempo a leer el aviso de antes
+      const decir = (texto, siguen) => {
+        this.avisar(texto, true);
+        if (siguen.length) setTimeout(() => { if (this.pasoTutorial()?.id === paso.id) decir(siguen[0], siguen.slice(1)); }, texto.length * 90 + 500);
+      };
+      decir(paso.texto, paso.luego || []);
+    }
+    else if (this.ultimoPaso) this.avisar('Se acabó el tutorial. Ya sabes moverte por estas tierras.', true);
+    this.ultimoPaso = id;
+  },
+  marcarTutorial(que) { if (!this.estado.tutorial[que]) { this.estado.tutorial[que] = true; this.guardar(); } },
+  avisar(texto, tutorial = false) { document.dispatchEvent(new CustomEvent('partida-aviso', { detail: { texto, tutorial } })); },
   aprender(texto) { if (!this.estado.aprendido.includes(texto)) this.estado.aprendido.push(texto); },
   misionActiva() { return MISIONES[this.estado.mision] || null; },
   precio(nombre) { return this.misionActiva() ? PRECIOS_ZONA[nombre] ?? 0 : 0; },
@@ -72,11 +115,34 @@ const partida = {
   // Otro día, otro intento: presupuesto entero, se puede volver a pescar y lo pescado se ha estropeado.
   // Lo aprendido y las monedas se quedan.
   empezarDia() {
+    this.estado.dia++;
+    this.prepararDia();
+  },
+  // Presupuesto entero y sin nada de lo pescado
+  prepararDia() {
     const e = this.estado, m = this.misionActiva();
-    e.dia++;
     e.puntos = m ? m.presupuesto : 0;
     e.pescado = null;
+    e.cofre = [];   // lo pescado también se estropea en el cofre: si no, se guardaría para la misión
     e.pescadoHoy = false;
+  },
+  // Empezar de cero sin salir de VR: como una partida nueva, en tu habitación
+  reiniciar() {
+    if (cambiandoDeZona || enBarco) return;
+    this.estado = this.nuevo();
+    this.ultimoPaso = undefined;
+    this.guardar();
+    const { zona, x, y, z, giro } = INICIO_DIA;
+    document.querySelector('a-scene').components.zonas.ir(zona, { x, y, z, giro });
+  },
+  // Qué dice el cofre de tu habitación y sus botones (sin "hacer", se cierra). Solo hay pescado que guardar, por ahora.
+  opcionesCofre() {
+    const e = this.estado, dentro = e.cofre.map(p => `un pescado ${p}`);
+    const opciones = [];
+    if (e.pescado) opciones.push({ texto: `Guardar el pescado ${e.pescado}`, hacer: () => { e.cofre.push(e.pescado); e.pescado = null; this.guardar(); } });
+    if (e.cofre.length && !e.pescado) opciones.push({ texto: `Sacar el pescado ${e.cofre[0]}`, hacer: () => { e.pescado = e.cofre.shift(); this.guardar(); } });
+    opciones.push({ texto: 'Cerrar' });
+    return { texto: dentro.length ? `Dentro hay ${dentro.join(', ')}.` : 'El cofre está vacío.', opciones };
   },
   terminarDia(motivo) {
     if (cambiandoDeZona || enBarco) return;
@@ -85,8 +151,8 @@ const partida = {
     const m = this.misionActiva();
     const boda = this.bodaHoy() ? ' Hoy es la boda, en la plaza.' : '';
     this.avisar(`${motivo ? motivo + ' ' : ''}Día ${this.estado.dia}.${m ? ` Tienes ${m.presupuesto} puntos.` : ''}${boda}`);
-    const { zona, x, z, giro } = INICIO_DIA;
-    document.querySelector('a-scene').components.zonas.ir(zona, { x, z, giro });
+    const { zona, x, y, z, giro } = INICIO_DIA;
+    document.querySelector('a-scene').components.zonas.ir(zona, { x, y, z, giro });
   },
 
   // --- Pescar, asar y comer ---
@@ -94,11 +160,12 @@ const partida = {
   // pescado encima, crudo o asado, no se coge otro
   puedePescar() { return !this.estado.pescado && (!this.misionActiva() || !this.estado.pescadoHoy); },
   pescar() {
+    if (this.misionActiva()) this.estado.puntos -= PUNTOS_PESCAR;
     this.estado.pescado = 'crudo';
     this.estado.pescadoHoy = true;
     this.aprender('Los peces del lago se pescan junto al embarcadero del sur.');
     this.guardar();
-    this.avisar(this.estado.mision === 'boda' ? 'Has pescado uno. Llévaselo al camarero.' : 'Has pescado uno. Se come desde el inventario.');
+    this.avisar(this.estado.mision === 'boda' ? `Has pescado uno por ${PUNTOS_PESCAR} puntos. Te ${this.estado.puntos === 1 ? 'queda 1' : `quedan ${this.estado.puntos}`}. Llévaselo al tabernero.` : 'Has pescado uno. Se come desde el inventario.');
   },
   asar() {
     if (this.estado.pescado === 'crudo') {
@@ -124,8 +191,8 @@ const partida = {
   // --- La misión del tutorial ---
   aceptarBoda() {
     this.estado.mision = 'boda';
-    this.empezarDia();   // día nuevo: nada de llevar el pescado preparado (idea de JUEGO.md)
-    this.aprender('El camarero de la posada se casa y quiere pescado para el banquete.');
+    this.prepararDia();   // sin cambiar de día, pero nada de llevar el pescado preparado (idea de JUEGO.md)
+    this.aprender('El tabernero se casa y quiere pescado para el banquete.');
     this.guardar();
     this.avisar(`Misión: ${MISIONES.boda.titulo}. Tienes ${MISIONES.boda.presupuesto} puntos.`);
   },
@@ -148,15 +215,15 @@ const partida = {
   bodaPendiente() { const e = this.estado; return e.bodaDia !== null && e.bodaVista === null; },
   asistirBoda() {
     this.estado.bodaVista = this.estado.dia;
-    this.aprender('El camarero se ha casado, y en su banquete se sirvió tu pescado.');
+    this.aprender('El tabernero se ha casado, y en su banquete se sirvió tu pescado.');
     this.guardar();
   },
   // Qué dice el camarero ahora: su frase y las respuestas (texto y qué hacen; sin "hacer", se acaba la charla)
   charlaCamarero() {
     const e = this.estado, b = MISIONES.boda;
     if (e.mision !== 'boda' && this.bodaPendiente()) return {
-      texto: 'La boda es mañana, en la plaza, y hay una silla para ti en la mesa. Termina el día desde el diario y ven.',
-      opciones: [{ texto: 'Allí estaré' }],
+      texto: 'La boda es mañana, en la plaza, y hay una silla para ti en la mesa. Duerme en tu cama de la posada y ven.',
+      opciones: [{ texto: 'Allí estaré', cierra: true, hacer: () => this.marcarTutorial('alliEstare') }],
     };
     if (e.mision !== 'boda' && e.hechas.includes('boda')) return {
       texto: 'Gracias por el pescado. La boda va a ser sonada. Si quieres traerme otro, tendrás otra vez los puntos, pero ya te pagué.',
@@ -243,36 +310,27 @@ function pieDeCartaPescado(g, W, H, estado) {
   g.font = '28px Georgia, serif'; g.fillText(`Comerlo: ${puntos} ${puntos === 1 ? 'punto' : 'puntos'}`, W / 2, H * 0.84);
 }
 
-// El indicador (abajo a la izquierda, solo con misión), los avisos (delante, unos segundos) y la carta de lo
-// que llevas (en VR, en el mando izquierdo; fuera, abajo a la derecha)
+// Icono del tutorial: un libro abierto en un sello dorado
+function iconoTutorial(g, x, y, r) {
+  g.save();
+  g.fillStyle = '#b8892f'; g.strokeStyle = '#17100a'; g.lineWidth = r * 0.08;
+  g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke();
+  g.fillStyle = '#efe3c2'; g.lineWidth = r * 0.06;
+  for (const s of [-1, 1]) {
+    g.beginPath(); g.moveTo(x, y - r * 0.32); g.lineTo(x + s * r * 0.62, y - r * 0.46); g.lineTo(x + s * r * 0.62, y + r * 0.34); g.lineTo(x, y + r * 0.48); g.closePath(); g.fill(); g.stroke();
+    for (const k of [-0.16, 0.04, 0.24]) { g.beginPath(); g.moveTo(x + s * r * 0.14, y + r * k - r * 0.03); g.lineTo(x + s * r * 0.5, y + r * k - r * 0.09); g.stroke(); }
+  }
+  g.restore();
+}
+
+// El indicador (abajo a la izquierda, solo con misión) y los avisos (delante, unos segundos)
 AFRAME.registerComponent('partida', {
   init() {
     this.indicador = tablaEnCamara(0.42, 0.11, -0.5, -0.42, -1.3);
     this.aviso = tablaEnCamara(1.5, 0.34, 0, -0.1, -2);
     this.avisoMs = 0;
-    this.carta = tablaEnCamara(0.09, 0.13, 0, 0, 0);
-    this.carta.lienzo.width = 360; this.carta.lienzo.height = 520;
-    // el pez en 3D, delante de la carta: el mismo de los bancos (js/animales.js). Transparente solo para
-    // dibujarse después de ella, que no mira la profundidad y lo taparía
-    this.pez = new THREE.Mesh(formaDePez(), new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: false, transparent: true }));
-    this.pez.scale.setScalar(0.1);
-    this.pez.position.set(0, 0.012, 0.025);
-    this.pez.renderOrder = 996.5;
-    this.carta.malla.add(this.pez);
-    this.colocarCarta = () => {
-      const c = this.carta.malla, mando = document.querySelector('[laser-controls="hand: left"]');
-      if (this.el.is('vr-mode') && mando) {
-        mando.object3D.add(c);
-        c.position.set(0, 0.07, -0.08); c.rotation.set(-0.7, 0, 0); c.scale.setScalar(1);
-      } else if (this.el.camera) {
-        this.el.camera.el.object3D.add(c);
-        c.position.set(0.52, -0.36, -1.3); c.rotation.set(0, 0, 0); c.scale.setScalar(2.4);
-      }
-    };
-    this.el.addEventListener('enter-vr', () => { for (const ms of [300, 1000, 2500]) setTimeout(this.colocarCarta, ms); });
-    this.el.addEventListener('exit-vr', this.colocarCarta);
     this.pintarIndicador = this.pintarIndicador.bind(this);
-    this.alAviso = e => this.mostrarAviso(e.detail);
+    this.alAviso = e => this.mostrarAviso(e.detail.texto, e.detail.tutorial);
     document.addEventListener('partida-cambia', this.pintarIndicador);
     document.addEventListener('partida-aviso', this.alAviso);
     this.pintarIndicador();
@@ -283,7 +341,6 @@ AFRAME.registerComponent('partida', {
   },
   pintarIndicador() {
     const e = partida.estado, { lienzo, tex, malla } = this.indicador;
-    this.pintarCarta();
     malla.visible = !!partida.misionActiva();
     if (!malla.visible) return;
     const g = lienzo.getContext('2d'), W = lienzo.width, H = lienzo.height;
@@ -293,37 +350,30 @@ AFRAME.registerComponent('partida', {
     if (e.pescado) { g.font = '20px Georgia, serif'; g.fillText(`Llevas pescado ${e.pescado}`, W / 2, H * 0.7); }
     tex.needsUpdate = true;
   },
-  pintarCarta() {
-    const { lienzo, tex, malla } = this.carta, e = partida.estado.pescado;
-    malla.visible = !!e;
-    if (!e || e === this.cartaPintada) return;
-    this.cartaPintada = e;
-    dibujarCartaPescado(lienzo.getContext('2d'), lienzo.width, lienzo.height, e, false);
-    tex.needsUpdate = true;
-    this.pez.material.color.set(e === 'asado' ? '#a8703a' : '#ffffff');   // asado, tostado
-  },
-  mostrarAviso(texto) {
+  mostrarAviso(texto, tutorial) {
     if (texto === this.ultimoAviso && this.avisoMs > AVISO_MS - 1500) return;   // (al empujar contra un paso cerrado)
     this.ultimoAviso = texto;
     const { lienzo, tex, malla } = this.aviso, g = lienzo.getContext('2d'), W = lienzo.width, H = lienzo.height;
     fondoDeTabla(g, W, H);
+    // los del tutorial llevan su icono a la izquierda, y el texto se aparta
+    const margen = tutorial ? H * 0.95 : 0, centro = (W + margen) / 2;
+    if (tutorial) iconoTutorial(g, H * 0.52, H / 2, H * 0.3);
     let letra = 46, lineas;
     do {
       g.font = `600 ${letra}px Georgia, serif`;
-      lineas = partirTexto(g, texto, W - 50);
+      lineas = partirTexto(g, texto, W - 50 - margen);
       letra -= 4;
     } while (lineas.length * (letra + 12) > H - 16 && letra > 16);
     const alto = letra + 12;
-    lineas.forEach((l, i) => g.fillText(l, W / 2, H / 2 + (i - (lineas.length - 1) / 2) * alto + 2));
+    lineas.forEach((l, i) => g.fillText(l, centro, H / 2 + (i - (lineas.length - 1) / 2) * alto + 2));
     tex.needsUpdate = true;
     malla.visible = true;
-    this.avisoMs = AVISO_MS;
+    this.avisoMs = Math.max(AVISO_MS, texto.length * 90);   // (lo largo, el tutorial, da tiempo a leerlo)
   },
   tick(t, dt) {
     const camara = this.el.camera && this.el.camera.el.object3D;
     if (!camara) return;
-    if (this.indicador.malla.parent !== camara) { camara.add(this.indicador.malla, this.aviso.malla); this.colocarCarta(); }
-    if (this.carta.malla.visible) this.pez.rotation.y = Math.PI / 2 + 0.4 * Math.sin(t / 900);   // de costado, y se mece
+    if (this.indicador.malla.parent !== camara) { camara.add(this.indicador.malla, this.aviso.malla); }
     if (!this.aviso.malla.visible) return;
     this.avisoMs -= Math.min(dt || 0, 100);
     if (this.avisoMs <= 0) this.aviso.malla.visible = false;

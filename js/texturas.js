@@ -1,12 +1,12 @@
 // Editor VR: texturas de madera, piedra y hierba dibujadas en canvas (sin imágenes externas)
-// y los componentes que las ponen: suelo-madera, pared-piedra (planos), piedra-mundo (cajas) y
+// y los componentes que las ponen: suelo-madera, pared-piedra (planos), piedra-mundo y madera-mundo (cajas) y
 // suelo-hierba (el campo de fuera).
 
 // Suelo de tablas de madera dibujado en un canvas (sin imágenes externas).
 // La textura cubre 2 × 2 m y se repite según el tamaño del plano.
 let texturaMadera = null;
 function crearTexturaMadera() {
-  const N = 1024, M = 2;                     // píxeles y metros que cubre la textura
+  const N = 2048, M = 2;                     // píxeles y metros que cubre la textura
   const px = N / M, ancho = 0.15 * px;      // tablas de 15 cm
   const c = document.createElement('canvas');
   c.width = c.height = N;
@@ -17,13 +17,13 @@ function crearTexturaMadera() {
     let x = -azar() * 1.2 * px;              // juntas escalonadas entre filas
     while (x < N) {
       const largo = (0.8 + azar() * 0.8) * px;
-      const h = 26 + azar() * 8, s = 42 + azar() * 14, l = 36 + azar() * 14;
+      const h = 27 + azar() * 5, s = 38 + azar() * 9, l = 36 + azar() * 8;   // tablas parecidas: mucha diferencia parece un mosaico
       g.fillStyle = `hsl(${h}, ${s}%, ${l}%)`;
       g.fillRect(x, y, largo, ancho);
       // vetas: líneas finas un poco onduladas
       g.strokeStyle = `hsla(${h - 4}, ${s}%, ${l - 12}%, 0.35)`;
-      g.lineWidth = 1;
-      for (let v = 0; v < 6; v++) {
+      for (let v = 0; v < 22; v++) {
+        g.lineWidth = 0.7 + azar() * 1.6;
         const vy = y + 4 + azar() * (ancho - 8), fase = azar() * 6, amp = 1 + azar() * 2;
         g.beginPath();
         for (let vx = x; vx <= x + largo; vx += 8) g.lineTo(vx, vy + Math.sin(vx / 40 + fase) * amp);
@@ -31,11 +31,11 @@ function crearTexturaMadera() {
       }
       // junta entre tablas
       g.fillStyle = 'rgba(40, 25, 12, 0.55)';
-      g.fillRect(x, y, 2, ancho);
+      g.fillRect(x, y, 4, ancho);
       x += largo;
     }
     g.fillStyle = 'rgba(40, 25, 12, 0.6)';
-    g.fillRect(0, y, N, 2);
+    g.fillRect(0, y, N, 4);
   }
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
@@ -150,13 +150,26 @@ AFRAME.registerComponent('pared-piedra', {
 AFRAME.registerComponent('piedra-mundo', {
   schema: { tono: { default: '#ffffff' } },
   init() {
+    texturaEnElMundo(this, () => (texturaPiedra = texturaPiedra || crearTexturaPiedra()));
+  }
+});
+
+// Lo mismo con tablas, para las paredes de madera: horizontales, y casan entre cajas vecinas.
+AFRAME.registerComponent('madera-mundo', {
+  schema: { tono: { default: '#ffffff' } },
+  init() {
+    texturaEnElMundo(this, () => (texturaMadera = texturaMadera || crearTexturaMadera()));
+  }
+});
+
+function texturaEnElMundo(comp, crear) {
     const aplicar = () => {
-      const malla = this.el.getObject3D('mesh');
+      const malla = comp.el.getObject3D('mesh');
       if (!malla) return;
-      texturaPiedra = texturaPiedra || crearTexturaPiedra();
-      this.el.object3D.updateWorldMatrix(true, true);
+      const textura = crear();
+      comp.el.object3D.updateWorldMatrix(true, true);
       const geo = malla.geometry.clone(), pos = geo.attributes.position, nor = geo.attributes.normal, uv = geo.attributes.uv;
-      const v = new THREE.Vector3(), n = new THREE.Vector3(), M = texturaPiedra.metros;
+      const v = new THREE.Vector3(), n = new THREE.Vector3(), M = textura.metros;
       for (let i = 0; i < pos.count; i++) {
         v.fromBufferAttribute(pos, i).applyMatrix4(malla.matrixWorld);
         n.fromBufferAttribute(nor, i).transformDirection(malla.matrixWorld);
@@ -167,17 +180,16 @@ AFRAME.registerComponent('piedra-mundo', {
       }
       uv.needsUpdate = true;
       malla.geometry = geo;
-      const tex = texturaPiedra.tex.clone();
+      const tex = textura.tex.clone();
       tex.needsUpdate = true;
       malla.material.map = tex;
-      malla.material.color.set(this.data.tono);
+      malla.material.color.set(comp.data.tono);
       malla.material.roughness = 0.95;
       malla.material.needsUpdate = true;
     };
     // cuando la caja ya tiene su posición y su malla
-    if (this.el.hasLoaded) aplicar(); else this.el.addEventListener('loaded', aplicar, { once: true });
-  }
-});
+    if (comp.el.hasLoaded) aplicar(); else comp.el.addEventListener('loaded', aplicar, { once: true });
+}
 
 // Hierba para el campo de fuera: verde apagado con manchas y briznas más claras y más oscuras,
 // y alguna calva de tierra, dibujada en un canvas. Cubre 4 × 4 m y se repite según el plano.

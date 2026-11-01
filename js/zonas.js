@@ -171,6 +171,8 @@ AFRAME.registerComponent('zonas', {
     this.mostrarLetrero(!luzHorneada ? 'Sin hornear' : MUNDO[nombre].titulo);
     while (this.cierre > 0.4) await new Promise(r => setTimeout(r, 30));
     cambiandoDeZona = false;   // ya se puede andar, aunque aún se esté abriendo
+    partida.zonaLista = true;
+    partida.comprobarPaso();
     while (this.abriendo && this.cierre > 0 && !cambiandoDeZona) await new Promise(r => setTimeout(r, 50));
     if (!cambiandoDeZona) this.abriendo = false;
   }

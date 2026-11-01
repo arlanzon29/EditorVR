@@ -88,3 +88,7 @@ cambiar la escena (`index.html`, `salas/`, `js/`, `modelos/`) no, la página se 
 - Para comprobar escaleras y choques sin gafas, simular el recorrido con `sueloEn` y
   `zonasPermitidas` en Node, y mirar la escena en la vista previa.
 - Tras cambiar algo, documentarlo en README.md (y aquí si cambia cómo trabajar).
+- Ir anotando cómo se hacen las cosas: lo decidido del juego en JUEGO.md, lo hecho y por qué en HISTORIAL.md, cómo funciona en README.md y cómo trabajar aquí.
+- Mientras el usuario prueba en las gafas va pidiendo cambios seguidos: atenderlos todos, y no abrir la vista previa sin preguntar (hornear la necesita, así que se deja para cuando se las quite).
+- Lo horneado se tapa solo si la pieza es fija: lo que se quiera cambiar sin hornear otra vez, como un cartel, una copa o un cofre, va en un componente y en NO_FUNDIR.
+- Los pisos altos: `piso` para el suelo y `macizo` con `desde` para los tabiques de arriba. El tutorial se calcula del estado (`partida.pasoTutorial`), no se guarda el paso.

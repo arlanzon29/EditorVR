@@ -18,16 +18,19 @@ function tablaDeTexto(texto, ancho = 640, alto = 128) {
   return tex;
 }
 
-// Cartel que solo se lee: una tabla sobre un poste, en el suelo
+// Cartel que solo se lee: una tabla sobre un poste, en el suelo. Dos caras, para que por detrás no salga al revés.
 AFRAME.registerComponent('cartel-madera', {
   schema: { texto: { default: '' } },
   init() {
     const g = new THREE.Group();
-    const tabla = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.32), new THREE.MeshBasicMaterial({ map: tablaDeTexto(this.data.texto), side: THREE.DoubleSide }));
+    const tabla = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.32), new THREE.MeshBasicMaterial({ map: tablaDeTexto(this.data.texto) }));
     tabla.position.y = 1.5;
+    const detras = new THREE.Mesh(tabla.geometry, tabla.material);
+    detras.position.y = 1.5;
+    detras.rotation.y = Math.PI;
     const poste = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.5, 0.1), new THREE.MeshStandardMaterial({ color: '#3a2a1b', roughness: 1 }));
     poste.position.set(0, 0.7, -0.03);
-    g.add(tabla, poste);
+    g.add(tabla, detras, poste);
     this.el.setObject3D('mesh', g);
   },
   remove() { this.el.removeObject3D('mesh'); }
@@ -392,6 +395,7 @@ AFRAME.registerComponent('peces', {
   },
   pescar(punto) {
     if (this.espera !== null) return;
+    if (partida.misionActiva() && !partida.estado.pescado && !partida.estado.pescadoHoy && partida.estado.puntos < PUNTOS_PESCAR) return partida.avisar(`Pescar cuesta ${PUNTOS_PESCAR} puntos y no te llegan.`);
     if (!partida.puedePescar()) return partida.avisar(partida.estado.pescado ? 'Ya llevas un pescado: solo una carta de cada tipo.' : 'Hoy ya has pescado: con misión, se puede una vez al día.');
     const p = punto ? this.el.object3D.worldToLocal(punto.clone()) : new THREE.Vector3();
     this.corcho.position.set(p.x, 0, p.z);

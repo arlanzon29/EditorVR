@@ -5,7 +5,7 @@ avance es sobre todo lo que aprendes.
 
 ## Qué está ya programado
 
-Núcleo (`js/partida.js`), posada (`salas/posada.html`, `js/posada.js`), pesca y comida, la misión de la boda y el banquete (`js/boda.js`).
+Núcleo (`js/partida.js`), taberna (`salas/taberna.html`, `js/taberna.js`), posada con habitaciones (`salas/posada.html`), pesca y comida, la misión de la boda y el banquete (`js/boda.js`).
 Cómo funciona: "El juego", en [README.md](README.md). **Todavía no:** cartas, mercado, personajes, enemigos,
 las demás misiones y la caza.
 
@@ -13,13 +13,28 @@ Valores provisionales, en tablas al principio de `js/partida.js`, a la espera de
 
 - Precios: castillo 1, acantilado 2, puerto 2, cueva 2, mazmorras 2, abadía 3. El castillo cuenta como una sola zona.
 - Comida: crudo 1, asado 3. Comerse el pescado deja sin encargo.
-- La boda: presupuesto 6, paga 5 monedas de plata. Aceptarla empieza un día nuevo. Lo pescado se estropea al acabar el día.
+- Decidido por el usuario: con misión, pescar cuesta 3 puntos. Por eso la boda da 3 más.
+- La boda: presupuesto 9, paga 5 monedas de plata. Aceptarla no cambia de día (lo corrigió el usuario), pero deja el presupuesto entero y sin pescado. Lo pescado se estropea al acabar el día.
 - Se asa en cualquier hoguera. Se puede comer en cualquier sitio, desde el inventario.
 - Sin misión, comer no da puntos. 
 
-Decidido por el usuario: en la boda estás sentado a la mesa. Provisional: es en la plaza, al día siguiente de la entrega, espera hasta que vayas y no se puede repetir la misión hasta entonces.
+Decidido por el usuario: en la boda estás sentado a la mesa. Un círculo en el suelo marca la zona de la boda. Provisional: es en la plaza, al día siguiente de la entrega, espera hasta que vayas y no se puede repetir la misión hasta entonces.
 
-Decidido por el usuario: el inventario es una pestaña del pergamino. El pescado se lleva como una carta, visible en la mano, con el modelo 3D del pez delante. Solo se puede tener una carta de cada tipo: con un pescado encima, crudo o asado, no se coge otro. Solo es la carta a la vista: mazo, compra y venta siguen sin programar.
+Decidido por el usuario: el inventario es una pestaña del pergamino. El pescado se lleva como una carta, que se ve solo ahí, con el modelo 3D del objeto: no en la mano (lo cambió el usuario). Solo se puede tener una carta de cada tipo: con un pescado encima, crudo o asado, no se coge otro. Solo es la carta a la vista: mazo, compra y venta siguen sin programar.
+
+Decidido por el usuario: la taberna y la posada son dos sitios distintos. La posada tiene habitaciones, una es la del personaje y la partida empieza allí. Provisional: el camarero y las misiones están en la taberna; cada día también empieza en tu habitación; la posada no tiene aún nada que hacer aparte de dormir.
+
+Decidido por el usuario: en el pergamino se cambia de hoja apuntando a la pestaña, no con el botón A.
+
+Decidido por el usuario: la moza de la jarra se cambia, con mejor forma de andar. Probar personajes con esqueleto, empezando por los novios; si convence, extenderlo a los demás.
+
+Decidido por el usuario: al coger una copa en la boda, todos la cogen con la mano, brindan y gritan, y los novios se acercan y se besan.
+
+Decidido por el usuario: la posada se llama La Parada y la taberna, Las Chatungas, cada una con un cartel cuidado. El botón B enseña las cartas. Lo de ir a la cama sale después de contestar "Allí estaré". En la taberna hay gente con pelo, no solo los soldados sentados. En la habitación y en la boda se pueden coger las copas, acercando la mano, no con el rayo. El usuario ha probado el tutorial y le ha gustado.
+
+Decidido por el usuario: la partida empieza con un tutorial: abrir la puerta apuntando y con el gatillo, bajar la escalera, hablar con el posadero (que indica que la taberna está al lado), hablar con el tabernero y aceptar la misión, moverse, los puntos, pescar apuntando a los peces, volver por el mapa, entregar, dormir en la cama de tu habitación (la cama es la acción de pasar al día siguiente) e ir a la boda, donde acaba. El objetivo se marca sobre el personaje y en el mapa. Las zonas no visitadas salen con niebla en el mapa. En el mapa solo hay accesos a los lugares (poblado, lago, castillo...), no a la taberna, la posada ni la isla. Provisional: la marca es un rombo dorado encima y un aro en el sello de la zona. El usuario dijo que cada acción cuesta puntos, incluido moverse: de momento solo cuesta entrar en una zona, como en las reglas. Con el usuario, "tabernero" es el camarero.
+
+Decidido por el usuario: la partida se puede reiniciar desde el pergamino, y en la habitación hay un cofre que se abre para guardar cosas. Provisional: solo guarda el pescado, que también se estropea al acabar el día, para no guardarlo de cara a la misión; cuando haya cartas y objetos, irán ahí.
 
 Decidido por el usuario: la partida y cada día empiezan en la posada. El viaje rápido cobra todas las zonas por las que hay que pasar (del lago a la posada, 2: bosque y poblado), y dentro de la misma zona es gratis. El de cada zona se activa al visitarla; una partida nueva empieza sin zonas visitadas (`MAPA_TODAS` apagado).
 
@@ -33,7 +48,7 @@ Sin decidir: si se puede abandonar una misión (ahora no se puede).
 
 - **Sin misión:** se pasea libre y gratis.
 - **Con misión:** la misión da un presupuesto de puntos. Cada intento empieza con el presupuesto entero.
-- Las misiones se reciben en la **posada** del poblado (hay que construirla), con el camarero y gente diversa.
+- Las misiones se reciben en la **taberna** del poblado, con el camarero y gente diversa.
 - Cada misión decide qué **PNJ** aparecen, desaparecen o cambian, y dónde están.
 
 ### Puntos
@@ -68,7 +83,7 @@ Sin decidir: si se puede abandonar una misión (ahora no se puede).
 
 El camarero tiene una boda y quiere dar un banquete con pescado. Hay que ir al lago, pescar y llevárselo.
 
-- **Recorrido:** posada → bosque (1) → lago (1) → pescar → bosque (1) → poblado (1). Son 4 puntos, con un presupuesto propuesto de 6.
+- **Recorrido:** posada → bosque (1) → lago (1) → pescar (3) → bosque (1) → poblado (1). Son 7 puntos, con un presupuesto de 9.
 - **Propuesto:** si te comes el pescado, te quedas sin encargo y hay que repetir al día siguiente; el camarero paga en monedas, y eso lleva al mercado.
 
 ## Propuestas sin confirmar
@@ -133,14 +148,14 @@ Bajar a las mazmorras con una llave que está en el puerto. Con precios inventad
 - Puntos extra: se gastan antes que los generales y se recargan en cada intento. Los generales sirven también para investigar o convencer.
 - Ninguna misión exige un personaje concreto: sin la habilidad, cuesta más o hay que dar un rodeo.
 
-### PNJ y posada
+### PNJ, taberna y posada
 
 - Cada misión tiene una lista de reparto: quién está, dónde y qué dice. Ejemplo: el carcelero deja su sala y está en el puerto con la llave.
 - Recuerdan lo que sabes: "Ya te lo conté".
 - Pocos modelos, variados con ropa y colores: el `criado` sirve de base para el camarero y el guardia sentado para los clientes.
-- En la posada: rumores gratis, chimenea para cocinar, comida y clientes cuyas charlas cambian según la misión.
+- En la taberna: rumores gratis, chimenea para cocinar, comida y clientes cuyas charlas cambian según la misión.
 - Empezar cada día en la posada, como viajero alojado allí; la partida podría empezar en el castillo, con una escena que te manda al poblado.
-- Quién da las misiones: el usuario prefiere un PNJ en la posada, con el camarero y gente diversa; el camarero da la primera. Sin decidir si es un personaje aparte, como un viejo escribano, o el propio camarero.
+- Quién da las misiones: el usuario prefiere un PNJ en la taberna (cuando lo dijo aún era la posada), con el camarero y gente diversa; el camarero da la primera. Sin decidir si es un personaje aparte, como un viejo escribano, o el propio camarero.
 - La boda podría continuar con otra misión y un banquete real en la plaza.
 
 ### Animales, pesca y caza

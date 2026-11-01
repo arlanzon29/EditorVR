@@ -132,7 +132,7 @@ function sueloEn(p, actual) {
   const terreno = alturaTerreno(p.x, p.z);
   let suelo = terreno, encima = false;
   for (const s of SUPERFICIES) {
-    if (!dentro(p, s)) continue;
+    if (!dentro(p, s) || actual < (s.desde ?? -Infinity)) continue;   // (desde: solo cuenta en el piso de arriba)
     if (s.y > actual + ESCALON_MAX) { if (s.macizo) return null; continue; }
     suelo = Math.max(suelo, s.y);
     encima = true;
@@ -143,12 +143,22 @@ function sueloEn(p, actual) {
 }
 
 // Obstáculo macizo (pedestal, mesa, chimenea…) puesto desde el HTML de una sala: un rectángulo
-// centrado en la entidad, "ancho" en x y "fondo" en z (sin girar), que no se puede atravesar.
+// centrado en la entidad, "ancho" en x y "fondo" en z (sin girar), que no se puede atravesar. Con "desde",
+// solo para quien pisa a esa altura o más: un tabique de arriba no estorba en la planta de abajo.
 AFRAME.registerComponent('macizo', {
-  schema: { ancho: { default: 1 }, fondo: { default: 1 }, alto: { default: 1 } },
+  schema: { ancho: { default: 1 }, fondo: { default: 1 }, alto: { default: 1 }, desde: { type: 'number' } },
   init() {
-    const p = this.el.object3D.position, { ancho, fondo, alto } = this.data;
-    SUPERFICIES.push({ x0: p.x - ancho / 2, x1: p.x + ancho / 2, z0: p.z - fondo / 2, z1: p.z + fondo / 2, y: alto, macizo: true });
+    const p = this.el.object3D.position, { ancho, fondo, alto, desde } = this.data;
+    SUPERFICIES.push({ x0: p.x - ancho / 2, x1: p.x + ancho / 2, z0: p.z - fondo / 2, z1: p.z + fondo / 2, y: alto, macizo: true, desde: desde || undefined });
+  }
+});
+
+// Suelo de un piso alto: se pisa llegando por la escalera y se pasa por debajo.
+AFRAME.registerComponent('piso', {
+  schema: { ancho: { default: 1 }, fondo: { default: 1 }, y: { default: 3 } },
+  init() {
+    const p = this.el.object3D.position, { ancho, fondo, y } = this.data;
+    SUPERFICIES.push({ x0: p.x - ancho / 2, x1: p.x + ancho / 2, z0: p.z - fondo / 2, z1: p.z + fondo / 2, y });
   }
 });
 
