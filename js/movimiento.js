@@ -213,7 +213,8 @@ AFRAME.registerComponent('andar-joystick', {
     } else { this.ajusteVR = undefined; this.mediaGafas = undefined; this.sentado = false; }
     r.y += (this.altura + (this.ajusteVR ?? 0) - r.y) * Math.min(1, dt / 80);   // subir y bajar escalones con suavidad
     this.mandoPC(dt);
-    if (cambiandoDeZona || !partida.ranura) return;   // (sin partida se está en el menú, donde no se anda)
+    // (sin partida se está en el menú: se anda por su salón, pero por nada más)
+    if (cambiandoDeZona || (!partida.ranura && zonaCargada.nombre !== 'menu')) return;
     const mx = THREE.MathUtils.clamp(this.x + this.tx + this.gx, -1, 1), my = THREE.MathUtils.clamp(this.y + this.ty + this.gy, -1, 1);
     if (Math.hypot(mx, my) < 0.15) return;   // zona muerta
     const mando = this.el.sceneEl.is('vr-mode') ? null : [...navigator.getGamepads()].find(g => g && g.mapping === 'standard');

@@ -117,8 +117,9 @@ const MUNDO = {
   // El menú principal (js/menu.js): fuera del mapa, y no se anda por él
   menu: {
     titulo: 'Partidas', salas: ['menu'],
-    sitio: { x0: 2000, x1: 2100, z0: -50, z1: 50 },
-    cielo: 'noche', niebla: '#0e0d0c', fondo: '#07070a', ambiente: { intensity: 2.4, color: '#c9b8a0' }, sol: { intensity: 0.1, color: '#a9bce8' },
+    sitio: { x0: 2000, x1: 2100, z0: -50, z1: 50 }, andar: { x0: 2040.4, x1: 2059.6, z0: -0.6, z1: 13.6 },   // (el salón)
+    // (poca luz general: mandan el rosetón, los braseros y las lámparas)
+    cielo: 'noche', niebla: '#0e0d0c', fondo: '#07070a', ambiente: { intensity: 1.1, color: '#c9b8a0' }, sol: { intensity: 0.1, color: '#a9bce8' },
   },
   // Bajo tierra: fuera del mapa, y se entra por un portal (js/animales.js), no andando
   cueva: {

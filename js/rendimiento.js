@@ -9,7 +9,7 @@
 //    como está. Las piezas fundidas se ocultan, pero siguen en su sitio (y su HTML, igual).
 //  - luces-cercanas: solo 6 luces puntuales, siempre las mismas, que copian a las más cercanas.
 
-const NO_FUNDIR = '[barca], [agua], [camino], [claro], [ciervo], [peces], [portal], [puerta-portal], [salida], [pozo], [pinos], [cartel-madera], [puerta], [agarrable], [antorcha], [criado], [camarero], [cofre], [cama-dormir], [postigos], [tala], [cantera], [mercader], [moza], [persona-animada], [muestra], [marca-paso], [posadero], [boda], [guardia], [cliente], [hoguera], [lampara-rueda], [barrera], [gltf-model], [text], [menu-partidas], .clicable, .cartel';
+const NO_FUNDIR = '[barca], [agua], [camino], [claro], [ciervo], [peces], [portal], [puerta-portal], [salida], [pozo], [pinos], [cartel-madera], [puerta], [agarrable], [antorcha], [criado], [camarero], [cofre], [cama-dormir], [postigos], [tala], [cantera], [mercader], [moza], [persona-animada], [muestra], [marca-paso], [posadero], [boda], [guardia], [cliente], [hoguera], [lampara-rueda], [barrera], [gltf-model], [text], [menu-partidas], [candelabro], [oculo], [mosaico], .clicable, .cartel';
 
 function fundirEstancia(el) {
   el.object3D.updateMatrixWorld(true);
