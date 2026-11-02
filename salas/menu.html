@@ -1,49 +1,45 @@
 <!-- Menú principal: un gran salón de piedra (20 × 15 m, 10 de alto), cerrado y lejos del mundo, con la tabla de las
-     partidas en la pared del fondo (js/menu.js). Es lo primero que se ve: a los lados de la tabla, dos caballeros de
-     piedra y dos antorchas; delante, un mosaico con una rosa de los vientos donde cae la luz de la luna, que entra en
-     diagonal por un óculo del techo (oculo y mosaico, js/menu.js); una alfombra hasta él; y a los lados, columnas con
-     arcos ciegos, cada uno con su estandarte y un candelabro de pie que alumbra la pared; arriba, un techo de vigas
-     con dos lámparas de rueda. Se anda por el salón (andar, en MUNDO.menu); al llegar, te deja delante de la tabla
-     (MENU_SITIO, en js/partida.js). -->
+     partidas en la pared del fondo (js/menu.js). Lo primero que se ve: la sala entera y, al fondo, la tabla entre dos
+     caballeros de piedra y dos antorchas, alumbrada por un haz de luz de luna que entra por un óculo en el centro del
+     techo (oculo, js/menu.js); delante de la tabla, un mosaico con una rosa de los vientos; una alfombra hasta él; y a
+     los lados, columnas con arcos ciegos, cada uno con su estandarte y un candelabro de pie que alumbra la pared;
+     arriba, un techo de vigas con dos lámparas de rueda. No va horneado: todo con sus luces. Se anda por el salón
+     (andar, en MUNDO.menu); al llegar, te deja al fondo, mirando a la tabla (MENU_SITIO, en js/partida.js). -->
 
-<!-- suelo de losas; techo de madera a 10 m, con el hueco cuadrado del óculo (x 2048…2052, z 2,5…6,5: su marco redondo
-     tapa las esquinas) y vigas; y los muros (el del fondo, el de la tabla, en z = -1) -->
+<!-- suelo de losas; techo de madera a 10 m, de una pieza, con el agujero redondo del óculo en el centro, y sus vigas,
+     que no lo tocan; y los muros (el del fondo, el de la tabla, en z = -1) -->
 <a-plane rotation="-90 0 0" position="2050 0 6.5" width="20" height="15" color="#b8b0a2" pared-piedra></a-plane>
-<a-plane rotation="90 0 0" position="2050 10 0.75" width="20" height="3.5" color="#ffffff" suelo-madera></a-plane>
-<a-plane rotation="90 0 0" position="2050 10 10.25" width="20" height="7.5" color="#ffffff" suelo-madera></a-plane>
-<a-plane rotation="90 0 0" position="2044 10 4.5" width="8" height="4" color="#ffffff" suelo-madera></a-plane>
-<a-plane rotation="90 0 0" position="2056 10 4.5" width="8" height="4" color="#ffffff" suelo-madera></a-plane>
+<a-entity techo-con-hueco="ancho: 20; fondo: 15; radio: 1.2" position="2050 10 6.5"></a-entity>
 <a-entity>
   <a-box position="2050 9.85 1.5" width="20" height="0.3" depth="0.35" color="#3a281a"></a-box>
-  <a-box position="2043.6 9.85 5" width="7.2" height="0.3" depth="0.35" color="#3a281a"></a-box>
-  <a-box position="2056.4 9.85 5" width="7.2" height="0.3" depth="0.35" color="#3a281a"></a-box>
-  <a-box position="2050 9.85 8.5" width="20" height="0.3" depth="0.35" color="#3a281a"></a-box>
-  <a-box position="2050 9.85 12" width="20" height="0.3" depth="0.35" color="#3a281a"></a-box>
+  <a-box position="2050 9.85 4.75" width="20" height="0.3" depth="0.35" color="#3a281a"></a-box>
+  <a-box position="2050 9.85 8.25" width="20" height="0.3" depth="0.35" color="#3a281a"></a-box>
+  <a-box position="2050 9.85 11.75" width="20" height="0.3" depth="0.35" color="#3a281a"></a-box>
 </a-entity>
 <a-box position="2050 5 -1.2" width="20.8" height="10" depth="0.4" piedra-mundo="tono: #8a847a"></a-box>
 <a-box position="2050 5 14.2" width="20.8" height="10" depth="0.4" piedra-mundo="tono: #8a847a"></a-box>
 <a-box position="2039.8 5 6.5" width="0.4" height="10" depth="15" piedra-mundo="tono: #8a847a"></a-box>
 <a-box position="2060.2 5 6.5" width="0.4" height="10" depth="15" piedra-mundo="tono: #8a847a"></a-box>
 
-<!-- el óculo del techo, con la luna, y su luz: el haz cae en diagonal sobre el mosaico, delante de la tabla (y una luz
-     fría de verdad allí, que se hornea en el suelo y la tabla) -->
-<a-entity oculo="suelo: 0 -10 -3.6" position="2050 10 4.5"></a-entity>
+<!-- el óculo, con la luna: su haz, del ancho del agujero, cae en diagonal sobre la pared del fondo, en la tabla; y una
+     luz fría de verdad allí -->
+<a-entity oculo="destino: 0 -7.4 -7.48; enPared: true" position="2050 10 6.5"></a-entity>
+<a-entity light="type: point; intensity: 1.2; distance: 8; color: #a8bce0" position="2050 2.6 1"></a-entity>
 <a-entity mosaico position="2050 0.012 0.9"></a-entity>
-<a-entity light="type: point; intensity: 1.2; distance: 8; color: #a8bce0" position="2050 2.2 1.2"></a-entity>
 
 <!-- la alfombra granate con su cenefa, de la puerta hasta el mosaico -->
 <a-plane rotation="-90 0 0" position="2050 0.01 7.6" width="2.2" height="11" color="#4e1c19"></a-plane>
 <a-plane rotation="-90 0 0" position="2048.85 0.015 7.6" width="0.1" height="11" color="#7a6a3c"></a-plane>
 <a-plane rotation="-90 0 0" position="2051.15 0.015 7.6" width="0.1" height="11" color="#7a6a3c"></a-plane>
 
-<!-- la tabla de las partidas -->
-<a-entity menu-partidas position="2050 1.55 -0.98"></a-entity>
+<!-- la tabla de las partidas, grande para leerla desde el fondo (en el menú el rayo llega más lejos: js/menu.js) -->
+<a-entity menu-partidas position="2050 2.2 -0.98" scale="1.8 1.8 1.8"></a-entity>
 
 <!-- dos caballeros de piedra a los lados de la tabla, mirándote, y dos antorchas junto a ella -->
 <a-entity estatua position="2047.2 0 -0.4"></a-entity>
 <a-entity estatua position="2052.8 0 -0.4"></a-entity>
-<a-entity antorcha="intensidad: 1.2" position="2048.4 2 -1"></a-entity>
-<a-entity antorcha="intensidad: 1.2" position="2051.6 2 -1"></a-entity>
+<a-entity antorcha="intensidad: 1.2" position="2047.9 2.3 -1"></a-entity>
+<a-entity antorcha="intensidad: 1.2" position="2052.1 2.3 -1"></a-entity>
 
 <!-- las arcadas de los lados: columnas y, entre ellas, arcos ciegos en el muro, cada uno con su estandarte y, debajo,
      un candelabro de pie contra la pared, con los brazos a lo largo de ella (js/menu.js) -->
@@ -80,6 +76,6 @@
 <a-entity macizo="ancho: 0.7; fondo: 0.7; alto: 2" position="2059.6 0 6.75"></a-entity>
 <a-entity macizo="ancho: 0.7; fondo: 0.7; alto: 2" position="2059.6 0 11.2"></a-entity>
 
-<!-- dos lámparas de rueda colgando de las vigas, lejos del haz del óculo -->
-<a-entity lampara-rueda="radio: 1; velas: 10; techo: 3; intensidad: 1.2" position="2050 7 9"></a-entity>
-<a-entity lampara-rueda="radio: 1; velas: 10; techo: 3; intensidad: 1" position="2050 7 12.5"></a-entity>
+<!-- dos lámparas de rueda colgando entre las vigas, a los lados del óculo -->
+<a-entity lampara-rueda="radio: 1; velas: 10; techo: 3; intensidad: 1.2" position="2050 7 3.1"></a-entity>
+<a-entity lampara-rueda="radio: 1; velas: 10; techo: 3; intensidad: 1" position="2050 7 10"></a-entity>

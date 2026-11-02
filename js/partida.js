@@ -26,8 +26,9 @@ const RANURAS = 3;                          // las partidas que se pueden guarda
 // la que tiene el mapa entero (js/mapa.js), el medidor y el cambio de luz horneada; publicada en GitHub Pages no hay
 // ninguna (solo en el servidor de casa)
 const PARTIDA_DEPURACION = /\.github\.io$/.test(location.hostname) ? null : 1;
-// dónde te deja el menú (salas/menu.html): a 3,4 m de la tabla, para ver el rosetón encima (el rayo llega a 4)
-const MENU_SITIO = { x: 2050, y: 0, z: 2.4, giro: 0 };
+// dónde te deja el menú (salas/menu.html): al fondo del salón, a 9,5 m de la tabla, para verlo entero (allí el rayo
+// llega más lejos: menu-partidas, js/menu.js)
+const MENU_SITIO = { x: 2050, y: 0, z: 8.5, giro: 0 };
 const AVISO_MS = 4500;
 const BIENVENIDA_MS = 8000;
 

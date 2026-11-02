@@ -95,7 +95,7 @@ function liberarEstancia(el) {
 // componentes y sus obstáculos; solo cambia lo que se dibuja: las piezas fijas se ocultan y en su lugar
 // va un modelo con todas ellas (modelos/horneado/<sala>.glb) y su imagen de luz (<sala>-luz.jpg).
 // Lo que se mueve (NO_FUNDIR), lo transparente y lo enorme de fuera (hierba, colinas) sigue como estaba.
-const SALAS_HORNEADAS = ['sala1', 'pasillo', 'sala2', 'pasillo2', 'sala3', 'comedor', 'patio', 'exterior', 'bosque', 'lago', 'poblado', 'taberna', 'posada', 'montana', 'acantilado', 'abadia', 'puerto', 'capilla', 'cueva', 'mazmorras', 'menu'];
+const SALAS_HORNEADAS = ['sala1', 'pasillo', 'sala2', 'pasillo2', 'sala3', 'comedor', 'patio', 'exterior', 'bosque', 'lago', 'poblado', 'taberna', 'posada', 'montana', 'acantilado', 'abadia', 'puerto', 'capilla', 'cueva', 'mazmorras'];   // (el menú no: va con sus luces, que se cambia a menudo)
 // el suelo de cada zona de campo va aparte, en su propia imagen de luz: { estancia: su suelo }
 const SUELOS_HORNEADOS = { exterior: 'campo', bosque: 'campo-bosque', lago: 'campo-lago', poblado: 'campo-poblado', montana: 'campo-montana', acantilado: 'campo-acantilado', abadia: 'campo-abadia', puerto: 'campo-puerto', cueva: 'campo-cueva' };
 const ESCALA_LUZ = 2;   // la imagen guarda la luz dividida por esto: lo que pasa de 1 también cabe

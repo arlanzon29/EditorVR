@@ -6,6 +6,7 @@ const MENU_ANCHO = 2, MENU_ALTO = 1.3;   // metros
 const MENU_PX = 640;                     // píxeles de la tabla por metro
 const MENU_FILA_Y = 190, MENU_FILA_ALTO = 200;   // en píxeles: dónde empieza la primera partida y lo que ocupa cada una
 const MENU_BOTON_ANCHO = 0.46, MENU_BOTON_ALTO = 0.13;
+const MENU_RAYO = 14;                    // hasta dónde llega el rayo en el menú (desde el fondo del salón)
 
 // Un círculo difuminado en un canvas, para halos, motas y charcos de luz: "rgb" del centro, que se apaga hacia el borde
 function texturaDeHalo(rgb, fuerza = 1) {
@@ -71,24 +72,43 @@ AFRAME.registerComponent('candelabro', {
   }
 });
 
-// Óculo: una ventana redonda en el techo, con su brocal de piedra; por ella se ve el cielo de noche, con estrellas, la
-// luna y nubes que pasan despacio por delante, y entra un haz de luz de luna, en diagonal, hasta "suelo" (en
-// coordenadas de la entidad), con motas que flotan en él. El techo tiene el hueco (salas/menu.html). Origen: el
-// centro del hueco, a la altura del techo.
-const OCULO_RADIO = 1.4, OCULO_MOTAS = 140;
-AFRAME.registerComponent('oculo', {
-  schema: { suelo: { type: 'vec3', default: { x: 0, y: -10, z: -3.9 } } },
+// Techo de madera de una pieza con un agujero redondo (para el óculo): como los suelos de tablas (suelo-madera), pero
+// con el hueco cortado de verdad. Origen: el centro del techo, mirando hacia abajo; el hueco, en (hx, hz) de ahí.
+AFRAME.registerComponent('techo-con-hueco', {
+  schema: { ancho: { default: 20 }, fondo: { default: 15 }, radio: { default: 1.2 }, hx: { default: 0 }, hz: { default: 0 } },
   init() {
-    const R = OCULO_RADIO, g = new THREE.Group(), piedra = new THREE.MeshStandardMaterial({ color: '#7d776c', roughness: 0.95, side: THREE.DoubleSide });
+    const { ancho, fondo, radio, hx, hz } = this.data, forma = new THREE.Shape();
+    forma.moveTo(-ancho / 2, -fondo / 2); forma.lineTo(ancho / 2, -fondo / 2); forma.lineTo(ancho / 2, fondo / 2); forma.lineTo(-ancho / 2, fondo / 2); forma.lineTo(-ancho / 2, -fondo / 2);
+    const hueco = new THREE.Path(); hueco.absarc(hx, hz, radio, 0, Math.PI * 2, true);
+    forma.holes.push(hueco);
+    // (la forma va en x, y; girada, su y es la z del mundo y mira hacia abajo. Sus coordenadas de textura son metros)
+    texturaMadera = texturaMadera || crearTexturaMadera();
+    this.tex = texturaMadera.tex.clone(); this.tex.needsUpdate = true;
+    this.tex.wrapS = this.tex.wrapT = THREE.RepeatWrapping;
+    this.tex.repeat.set(1 / texturaMadera.metros, 1 / texturaMadera.metros);
+    const techo = new THREE.Mesh(new THREE.ShapeGeometry(forma, 64), new THREE.MeshStandardMaterial({ map: this.tex, roughness: 0.75 }));
+    techo.rotation.x = Math.PI / 2;
+    this.el.setObject3D('mesh', techo);
+  },
+  remove() { const m = this.el.getObject3D('mesh'); m.geometry.dispose(); m.material.dispose(); this.tex.dispose(); this.el.removeObject3D('mesh'); }
+});
+
+// Óculo: una ventana redonda en el techo (techo-con-hueco), con una moldura de madera oscura en el borde; por ella se ve
+// el cielo de noche, con estrellas, la luna y nubes que pasan despacio por delante, y entra un haz de luz de luna, del
+// ancho del agujero, en diagonal hasta "destino" (en coordenadas de la entidad; con "enPared", en la pared de
+// enfrente, y si no, en el suelo), con motas que flotan en él. Origen: el centro del hueco, a la altura del techo.
+const OCULO_RADIO = 1.2, OCULO_MOTAS = 140;
+AFRAME.registerComponent('oculo', {
+  schema: { destino: { type: 'vec3', default: { x: 0, y: -10, z: 0 } }, enPared: { default: false } },
+  init() {
+    const R = OCULO_RADIO, g = new THREE.Group();
     this.texturas = [];
-    // el marco, por debajo del techo (tapa las esquinas del hueco cuadrado), la moldura y el pozo hasta el cielo
-    const marco = new THREE.Mesh(new THREE.RingGeometry(R, R + 1.6, 48), piedra);
-    marco.rotation.x = Math.PI / 2; marco.position.y = -0.04;
-    const moldura = new THREE.Mesh(new THREE.TorusGeometry(R + 0.05, 0.1, 10, 48), piedra);
-    moldura.rotation.x = Math.PI / 2; moldura.position.y = -0.07;
-    const pozo = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.9, 40, 1, true), new THREE.MeshStandardMaterial({ color: '#4e4a44', roughness: 1, side: THREE.BackSide }));
+    // la moldura del borde y el pozo hasta el cielo
+    const moldura = new THREE.Mesh(new THREE.TorusGeometry(R + 0.03, 0.06, 8, 48), new THREE.MeshStandardMaterial({ color: '#3a281a', roughness: 0.9 }));
+    moldura.rotation.x = Math.PI / 2; moldura.position.y = -0.02;
+    const pozo = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.9, 40, 1, true), new THREE.MeshStandardMaterial({ color: '#3e2c1e', roughness: 1, side: THREE.BackSide }));
     pozo.position.y = 0.45;
-    g.add(marco, moldura, pozo);
+    g.add(moldura, pozo);
     // el cielo: azul de noche, estrellas y la luna, con su halo
     const c = document.createElement('canvas'); c.width = c.height = 512;
     const x = c.getContext('2d'), fondo = x.createRadialGradient(300, 210, 20, 256, 256, 360);
@@ -121,22 +141,23 @@ AFRAME.registerComponent('oculo', {
     this.nubes = new THREE.Mesh(new THREE.CircleGeometry(R, 48), new THREE.MeshBasicMaterial({ map: texNubes, transparent: true, depthWrite: false, fog: false }));
     this.nubes.rotation.x = Math.PI / 2; this.nubes.position.y = 0.86;
     g.add(this.nubes);
-    // el haz de luna, del óculo al suelo
-    const arriba = new THREE.Vector3(0, 0, 0), abajo = new THREE.Vector3().copy(this.data.suelo);
+    // el haz de luna, del óculo a donde cae: tan ancho como el agujero
+    const arriba = new THREE.Vector3(0, 0, 0), abajo = new THREE.Vector3().copy(this.data.destino);
     const texHaz = texturaDeHaz('190, 210, 245'); this.texturas.push(texHaz);
-    this.haz = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.8, R * 0.7, arriba.distanceTo(abajo), 32, 1, true),
+    this.haz = new THREE.Mesh(new THREE.CylinderGeometry(R, R * 1.15, arriba.distanceTo(abajo), 32, 1, true),
       new THREE.MeshBasicMaterial({ ...sumaLuz(texHaz, 0.22), side: THREE.DoubleSide }));
     this.haz.position.copy(arriba).add(abajo).multiplyScalar(0.5);
     this.haz.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), arriba.clone().sub(abajo).normalize());
     g.add(this.haz);
-    // y el charco de luz donde cae
+    // y el charco de luz donde cae, en la pared (de cara a la sala) o en el suelo
     const texCharco = texturaDeHalo('190, 210, 245', 0.8); this.texturas.push(texCharco);
-    this.charco = new THREE.Mesh(new THREE.CircleGeometry(1.3, 32), new THREE.MeshBasicMaterial(sumaLuz(texCharco, 0.5)));
-    this.charco.rotation.x = -Math.PI / 2; this.charco.position.copy(abajo).add(new THREE.Vector3(0, 0.03, 0));
+    this.charco = new THREE.Mesh(new THREE.CircleGeometry(R * 1.6, 32), new THREE.MeshBasicMaterial(sumaLuz(texCharco, 0.5)));
+    if (this.data.enPared) this.charco.position.copy(abajo).add(new THREE.Vector3(0, 0, 0.02));
+    else { this.charco.rotation.x = -Math.PI / 2; this.charco.position.copy(abajo).add(new THREE.Vector3(0, 0.03, 0)); }
     g.add(this.charco);
     // las motas, que bajan despacio por el haz
     this.motas = [];
-    for (let i = 0; i < OCULO_MOTAS; i++) this.motas.push({ t: Math.random(), a: Math.random() * Math.PI * 2, r: Math.sqrt(Math.random()) * R * 0.65, v: 0.008 + Math.random() * 0.012 });
+    for (let i = 0; i < OCULO_MOTAS; i++) this.motas.push({ t: Math.random(), a: Math.random() * Math.PI * 2, r: Math.sqrt(Math.random()) * R * 0.85, v: 0.008 + Math.random() * 0.012 });
     this.geoMotas = new THREE.BufferGeometry();
     this.geoMotas.setAttribute('position', new THREE.BufferAttribute(new Float32Array(OCULO_MOTAS * 3), 3));
     const texMota = texturaDeHalo('235, 240, 255'); this.texturas.push(texMota);
@@ -216,8 +237,12 @@ AFRAME.registerComponent('menu-partidas', {
     this.borrando = null;   // la partida que pregunta si se borra
     this.ultimo = 0;
     this.pintar();
+    // en el menú se empieza al fondo del salón: el rayo (4 m en el resto del juego) llega hasta la tabla
+    this.rayos = [...this.el.sceneEl.querySelectorAll('[raycaster]')];
+    for (const r of this.rayos) r.setAttribute('raycaster', 'far', MENU_RAYO);
   },
   remove() {
+    for (const r of this.rayos) r.setAttribute('raycaster', 'far', 4);
     this.quitarBotones();
     this.tabla.geometry.dispose(); this.tabla.material.dispose(); this.tex.dispose();
   },
