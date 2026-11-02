@@ -119,10 +119,13 @@ function esHorneable(o, raiz, sala) {
   return !ent.closest(NO_FUNDIR) && !ent.closest('[suelo-hierba], [terreno], [camino], [claro], [arbol], [montes]') && !(parseFloat(ent.getAttribute('radius')) > 5);
 }
 
-// Los modelos de Blender que no se mueven también van horneados: su original no se llega a ver.
+// Los modelos de Blender que no se mueven también van horneados: su original no se llega a ver. Solo en las
+// estancias que se hornean: en las demás (el menú) no los sustituye nada
 const MODELOS_HORNEADOS = /marco-|caballero/;
 document.addEventListener('model-loaded', e => {
-  if (luzHorneada && MODELOS_HORNEADOS.test(e.target.getAttribute('gltf-model'))) e.detail.model.visible = false;
+  if (!luzHorneada || !MODELOS_HORNEADOS.test(e.target.getAttribute('gltf-model'))) return;
+  const estancia = e.target.closest('[incluir]'), sala = estancia && estancia.getAttribute('incluir').replace(/^salas\/|\.html$/g, '');
+  if (SALAS_HORNEADAS.includes(sala)) e.detail.model.visible = false;
 });
 
 // Pone el modelo horneado de una estancia y oculta lo que sustituye. Si no se puede cargar, se queda

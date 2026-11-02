@@ -97,7 +97,7 @@ AFRAME.registerComponent('techo-con-hueco', {
 // el cielo de noche, con estrellas, la luna y nubes que pasan despacio por delante, y entra un haz de luz de luna, del
 // ancho del agujero, en diagonal hasta "destino" (en coordenadas de la entidad; con "enPared", en la pared de
 // enfrente, y si no, en el suelo), con motas que flotan en él. Origen: el centro del hueco, a la altura del techo.
-const OCULO_RADIO = 1.2, OCULO_MOTAS = 140;
+const OCULO_RADIO = 1.2, OCULO_MOTAS = 220;
 AFRAME.registerComponent('oculo', {
   schema: { destino: { type: 'vec3', default: { x: 0, y: -10, z: 0 } }, enPared: { default: false } },
   init() {
@@ -141,13 +141,24 @@ AFRAME.registerComponent('oculo', {
     this.nubes = new THREE.Mesh(new THREE.CircleGeometry(R, 48), new THREE.MeshBasicMaterial({ map: texNubes, transparent: true, depthWrite: false, fog: false }));
     this.nubes.rotation.x = Math.PI / 2; this.nubes.position.y = 0.86;
     g.add(this.nubes);
-    // el haz de luna, del óculo a donde cae: tan ancho como el agujero
-    const arriba = new THREE.Vector3(0, 0, 0), abajo = new THREE.Vector3().copy(this.data.destino);
+    // el haz de luna, del óculo a donde cae: un cilindro oblicuo, no uno recto inclinado (su boca saldría torcida, medio
+    // metida en el pozo y medio colgando del techo). Arriba, el círculo del hueco, plano en el techo; abajo, ese círculo
+    // llevado en la dirección del haz hasta la pared (o el suelo), como su sombra, y abierto un poco desde el centro
+    const arriba = new THREE.Vector3(0, 0, 0), abajo = new THREE.Vector3().copy(this.data.destino), dir = abajo.clone().sub(arriba);
+    const geoHaz = new THREE.CylinderGeometry(R, R, 1, 32, 1, true), pos = geoHaz.attributes.position, v = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i);
+      const deAbajo = v.y < 0;
+      v.y = 0;
+      if (deAbajo) {
+        const t = this.data.enPared ? (abajo.z - v.z) / dir.z : abajo.y / dir.y;
+        v.addScaledVector(dir, t).sub(abajo).multiplyScalar(1.15).add(abajo);
+      }
+      pos.setXYZ(i, v.x, v.y, v.z);
+    }
     const texHaz = texturaDeHaz('190, 210, 245'); this.texturas.push(texHaz);
-    this.haz = new THREE.Mesh(new THREE.CylinderGeometry(R, R * 1.15, arriba.distanceTo(abajo), 32, 1, true),
-      new THREE.MeshBasicMaterial({ ...sumaLuz(texHaz, 0.22), side: THREE.DoubleSide }));
-    this.haz.position.copy(arriba).add(abajo).multiplyScalar(0.5);
-    this.haz.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), arriba.clone().sub(abajo).normalize());
+    this.haz = new THREE.Mesh(geoHaz, new THREE.MeshBasicMaterial({ ...sumaLuz(texHaz, 0.22), side: THREE.DoubleSide }));
+    this.haz.frustumCulled = false;
     g.add(this.haz);
     // y el charco de luz donde cae, en la pared (de cara a la sala) o en el suelo
     const texCharco = texturaDeHalo('190, 210, 245', 0.8); this.texturas.push(texCharco);
@@ -161,7 +172,8 @@ AFRAME.registerComponent('oculo', {
     this.geoMotas = new THREE.BufferGeometry();
     this.geoMotas.setAttribute('position', new THREE.BufferAttribute(new Float32Array(OCULO_MOTAS * 3), 3));
     const texMota = texturaDeHalo('235, 240, 255'); this.texturas.push(texMota);
-    const motas = new THREE.Points(this.geoMotas, new THREE.PointsMaterial({ ...sumaLuz(texMota, 0.7), color: '#e8eeff', size: 0.025 }));
+    // (grandes y fuertes: se miran desde el fondo del salón, a 9 m)
+    const motas = new THREE.Points(this.geoMotas, new THREE.PointsMaterial({ ...sumaLuz(texMota, 1), color: '#e8eeff', size: 0.07 }));
     motas.frustumCulled = false;
     g.add(motas);
     this.arriba = arriba; this.abajo = abajo;
