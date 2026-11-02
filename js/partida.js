@@ -23,7 +23,9 @@ const INICIO_DIA = { zona: 'poblado', x: 174.05, y: 3.2, z: -103, giro: Math.PI 
 const CLAVE_PARTIDA = 'editorvr-partida';   // (más el número de la partida)
 const CLAVE_RANURA = 'editorvr-ranura';     // en sessionStorage: la que se está jugando, para seguir en ella al recargar
 const RANURAS = 3;                          // las partidas que se pueden guardar
-const PARTIDA_DEPURACION = 1;               // la que tiene el mapa entero (js/mapa.js), el medidor y el cambio de luz horneada
+// la que tiene el mapa entero (js/mapa.js), el medidor y el cambio de luz horneada; publicada en GitHub Pages no hay
+// ninguna (solo en el servidor de casa)
+const PARTIDA_DEPURACION = /\.github\.io$/.test(location.hostname) ? null : 1;
 const MENU_SITIO = { x: 2050, y: 0, z: 0.7, giro: 0 };   // dónde te deja el menú (salas/menu.html)
 const AVISO_MS = 4500;
 const BIENVENIDA_MS = 8000;
@@ -62,7 +64,7 @@ const partida = {
     return { dia: e.dia, monedas: e.monedas, fecha: e.fecha, zona: zona ? zona.titulo : '', mision: MISIONES[e.mision]?.titulo };
   },
   // La partida de depuración: mapa entero, medidor y cambiar la luz horneada
-  depuracion() { return this.ranura === PARTIDA_DEPURACION; },
+  depuracion() { return !!PARTIDA_DEPURACION && this.ranura === PARTIDA_DEPURACION; },
   borrar(r) { try { localStorage.removeItem(`${CLAVE_PARTIDA}-${r}`); } catch (e) {} },
   // Al cargar la página: si se ha recargado jugando (o con ?partida=1 en la dirección), a esa partida; si no, al menú
   arrancar() {
