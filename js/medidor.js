@@ -44,6 +44,12 @@ AFRAME.registerComponent('medidor', {
     if (this.el.hasLoaded) this.colocar(); else this.el.addEventListener('loaded', this.colocar, { once: true });
   },
   tick(t, dt) {
+    // en el monitor, en la esquina de arriba a la izquierda aunque cambie el tamaño de la ventana
+    if (!this.el.is('vr-mode') && this.panel.parent === this.el.camera.el.object3D) {
+      const c = this.el.camera, alto = 0.5 * Math.tan(c.fov * Math.PI / 360), ancho = alto * c.aspect;
+      this.panel.scale.setScalar(0.8);
+      this.panel.position.set(-ancho + 0.085, alto - 0.045, -0.5);
+    }
     this.panel.visible = this.encendido && partida.depuracion();
     if (!this.panel.visible || !dt) return;
     this.cuadros++; this.ms += dt;

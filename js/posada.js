@@ -16,6 +16,19 @@ function sitioDeLectura(escena) {
   return ojo.addScaledVector(d, TABLA_DISTANCIA).add(new THREE.Vector3(0, -0.55, 0));
 }
 
+// En el monitor, una tabla de "ancho" × "alto" metros (con sus botones) sale recta, de frente a la cámara aunque
+// mire arriba o abajo, y a una escala con la que cabe en la vista. Devuelve dónde ponerla, o null en VR.
+function tablaEnMonitor(escena, ancho, alto) {
+  if (escena.is('vr-mode')) return null;
+  const c = escena.camera, ojo = new THREE.Vector3(), d = new THREE.Vector3(), q = new THREE.Quaternion();
+  c.getWorldPosition(ojo); c.getWorldDirection(d); c.getWorldQuaternion(q);
+  const visAlto = 2 * TABLA_DISTANCIA * Math.tan(c.fov * Math.PI / 360), visAncho = visAlto * c.aspect;
+  return {
+    centro: ojo.addScaledVector(d, TABLA_DISTANCIA), q, arriba: new THREE.Vector3(0, 1, 0).applyQuaternion(q),
+    k: Math.min(0.72 * visAlto / alto, 0.8 * visAncho / ancho),
+  };
+}
+
 // Una tabla con lo que se dice y sus botones, flotando en "sitio" y de cara a quien mira. Las opciones llevan
 // texto y, si hacen algo, "hacer". Devuelve con qué quitarla. "alElegir" recibe la opción elegida.
 function tablaDeOpciones(escena, sitio, charla, alElegir) {
@@ -24,6 +37,8 @@ function tablaDeOpciones(escena, sitio, charla, alElegir) {
   escena.camera.getWorldPosition(ojo);
   tabla.position.copy(sitio);
   tabla.lookAt(ojo.x, sitio.y, ojo.z);
+  const vista = tablaEnMonitor(escena, 0.9, 1.3);   // (su origen está abajo: el contenido sube hasta 1,2 m)
+  if (vista) { tabla.position.copy(vista.centro).addScaledVector(vista.arriba, -0.6 * vista.k); tabla.quaternion.copy(vista.q); tabla.scale.setScalar(vista.k); }
   escena.object3D.add(tabla);
   tabla.updateMatrixWorld(true);
   const { malla, tex } = fraseEnTabla(charla.texto, 0.8);
@@ -34,13 +49,14 @@ function tablaDeOpciones(escena, sitio, charla, alElegir) {
     const t = tablaDeTexto(op.texto, 512, 96);
     texturas.push(t);
     const e = document.createElement('a-entity');
-    e.classList.add('clicable', 'cartel');
+    e.classList.add('clicable', 'cartel', 'pregunta');
     const m = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.15), new THREE.MeshBasicMaterial({ map: t, depthTest: false, transparent: true, fog: false }));
     m.renderOrder = 995;
     e.setObject3D('mesh', m);
     const p = tabla.localToWorld(new THREE.Vector3(0, 0.44 - i * 0.18, 0.01));
     e.setAttribute('position', `${p.x} ${p.y} ${p.z}`);
     e.object3D.quaternion.copy(tabla.quaternion);
+    if (vista) e.object3D.scale.setScalar(vista.k);
     e.addEventListener('mouseenter', () => m.material.color.set('#ffcc33'));
     e.addEventListener('mouseleave', () => m.material.color.set('#ffffff'));
     e.addEventListener('mousedown', () => {
@@ -51,7 +67,10 @@ function tablaDeOpciones(escena, sitio, charla, alElegir) {
     escena.appendChild(e);
     botones.push(e);
   });
+  // en el monitor, el ratón se suelta y solo toca los botones (si no, la cama o el cofre de detrás se llevan el clic)
+  if (vista) ratonLibre('pregunta', true);
   return () => {
+    if (vista) ratonLibre('pregunta', false);
     tabla.parent.remove(tabla);
     tabla.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
     for (const e of botones) e.parentNode.removeChild(e);

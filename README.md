@@ -116,7 +116,7 @@ Diseño y lo que falta: [JUEGO.md](JUEGO.md). Estado y reglas: [js/partida.js](j
 - **Inventario:** las cartas en fila, cada una con su modelo 3D girando delante (`modelosDeCartas`, js/oficios.js; el pez, `modeloInventario`), y un botón para comer el pescado y otro para la carne.
 - **Pescar:** con misión cuesta 3 puntos (`PUNTOS_PESCAR`), y antes pregunta. Al pescar, el aviso recuerda que con el mapa se viaja deprisa a donde ya has estado. Apuntar al agua del banco (`peces`) y apretar el gatillo, a menos de 4 m, por ejemplo desde el embarcadero sur; con misión, una vez al día, y sin misión, todo lo que se quiera, pero sin llevar ya uno encima. **Asar:** apuntar a cualquier `hoguera`. **Comer:** en el inventario.
 - **El círculo de la boda** brilla: una cortina de luz dorada que sube del aro y late despacio, con el aro (`luzCirculo`).
-- **Brindar en la boda:** al sentarte sale el aviso de que cojas tu copa y brindes por los novios (en el tutorial es su último paso, `brindar`). En VR, el botón de levantarte no sale hasta que has brindado; en el ordenador sí, porque no hay manos con que coger la copa.
+- **Brindar en la boda:** al sentarte sale el aviso de que cojas tu copa y brindes por los novios (en el tutorial es su último paso, `brindar`). El botón de levantarte no sale hasta que has brindado: en VR, cogiendo la copa con la mano; en el ordenador, con un clic en una de las copas de tu lado de la mesa (brilla al apuntarla; `sePuedeBrindar`, js/boda.js).
 - **La boda:** aceptar con el camarero (9 puntos), bosque, lago, pescar, bosque, poblado y entregar: cobras en monedas. Después, el camarero ofrece repetirla, con el presupuesto entero y sin volver a pagar.
 
 ### La boda
@@ -130,7 +130,7 @@ Al día siguiente de entregar el pescado por primera vez ([js/boda.js](js/boda.j
 | Control | Qué hace |
 |---|---|
 | **Joystick izquierdo** | Andar hacia donde miras. Sube y baja escalones; no deja atravesar paredes ni puertas cerradas, ni caerse. |
-| **Gatillo lateral izquierdo** | Correr, mientras se aprieta (2,5 veces más rápido). En el ordenador, **Mayúsculas**; con mando de Xbox, **LT**. |
+| **Gatillo lateral izquierdo** | Correr, mientras se aprieta (2,5 veces más rápido). En el ordenador, **Mayúsculas** o el **botón derecho del ratón**; con mando de Xbox, **LT**. |
 | **Joystick derecho** a un lado | Girar 30°. |
 | **Gatillo** apuntando a una puerta | Abrirla o cerrarla (el rayo se pone verde, la aldaba brilla y sale el cartel). |
 | **Gatillo lateral** apuntando a la pantalla, o con la mano junto a una copa | Cogerla y colocarla; la pantalla se queda donde la sueltes y la copa cae. |
@@ -147,6 +147,15 @@ pie, vuelve a tu altura.
 
 **Ordenador:** clic para capturar el ratón, **WASD** o flechas para andar (igual que el joystick:
 con choques y escalones), clic con la mira en una puerta para abrirla, **Esc** suelta el ratón.
+Con **Alt mantenida** el cursor es libre (`cursorLibre`, en movimiento.js): sale la flecha, se clica
+directamente sobre puertas y botones sin girar la cámara, y al soltar Alt vuelve la mira del centro.
+La mira es clara con borde oscuro y se dibuja por encima de los carteles (`encima`, en objetos.js). Se pone verde y más grande sobre todo lo que se puede usar (`rayo-verde`, la misma que pinta de
+verde el rayo del mando), y con Alt la flecha pasa a mano. El día y los puntos salen arriba en el monitor.
+En el monitor, el pergamino (N) y las preguntas de gasto de puntos salen más grandes y suelta el ratón
+(`ratonLibre`, en movimiento.js, con un motivo por cada uno): el ratón solo toca el pergamino o los botones de la
+pregunta, y no gira la cámara ni toca la escena; al cerrarlos se recaptura. Las preguntas y las tablas de opciones del cofre,
+la cama y el posadero salen rectas, de frente a la cámara aunque mire arriba o abajo, y a una escala que cabe en la vista
+(`tablaEnMonitor`, en posada.js). Los avisos del tutorial, más grandes y arriba. En VR todo sigue como estaba.
 
 **Mando de Xbox en el ordenador** (por cable, Bluetooth o adaptador; el navegador lo detecta al
 pulsar cualquier botón con la página delante; dentro de las gafas no cuenta):
@@ -155,7 +164,9 @@ pulsar cualquier botón con la página delante; dentro de las gafas no cuenta):
 |---|---|
 | **Stick izquierdo** | Andar, con los mismos choques y escalones. |
 | **Stick derecho** | Mirar alrededor (girar y mirar arriba o abajo). |
-| **A** | Abrir o cerrar la puerta que hay en la mira. |
+| **A** o **RT** (gatillo derecho) | Hacer clic: abrir o cerrar la puerta, hablar, coger lo que hay en la mira. |
+| **Y** | Abrir el pergamino y pasar de hoja (como la tecla **N**): mapa, misión, diario, inventario, ayuda y cerrado. |
+| **Stick derecho y A, con una ventana abierta** | Con el pergamino o una pregunta (o la tabla del cofre, la cama, el posadero) abiertos, el personaje no se mueve; el stick derecho mueve un aro dorado (`moverCursor`, movimiento.js) y **A** pulsa lo que haya debajo (la primera pulsación solo muestra el aro). |
 | **B** | Traer la pantalla del PC delante. |
 | **LB / RB** | Girar 30° a la izquierda / derecha. |
 | **Vista** (dos cuadraditos) | Recalibrar los sticks: soltarlos y pulsarlo si la vista o el jugador se mueven solos. |

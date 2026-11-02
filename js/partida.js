@@ -129,7 +129,7 @@ const partida = {
   pasoTutorial() {
     const e = this.estado, t = e.tutorial;
     // lo último: sentado a la mesa de la boda, brindar (hasta entonces no se levanta uno; js/boda.js)
-    if (e.bodaVista !== null) return enLaMesa && !t.brindis ? { id: 'brindar', texto: BRINDAR_TEXTO } : null;
+    if (e.bodaVista !== null) return enLaMesa && !t.brindis ? { id: 'brindar', texto: textoBrindar() } : null;
     if (!t.puerta) return { id: 'puerta', quien: 'puerta', texto: 'Apunta a la puerta con el mando derecho y aprieta el gatillo para abrirla.' };
     if (!t.posadero) return { id: 'posadero', quien: 'posadero', texto: 'Anda con el joystick izquierdo. Baja por la escalera del pasillo y habla con el posadero: apúntale y aprieta el gatillo.' };
     if (e.hechas.includes('boda')) {
@@ -511,6 +511,12 @@ AFRAME.registerComponent('partida', {
     const camara = this.el.camera && this.el.camera.el.object3D;
     if (!camara) return;
     if (this.indicador.malla.parent !== camara) { camara.add(this.indicador.malla, this.aviso.malla); }
+    // el indicador: abajo a la izquierda en VR, y arriba en el centro en el monitor
+    if (this.el.is('vr-mode')) this.indicador.malla.position.set(-0.5, -0.42, -1.3);
+    else this.indicador.malla.position.set(0, 1.3 * Math.tan(this.el.camera.fov * Math.PI / 360) - 0.1, -1.3);
+    // los avisos (y el tutorial): en VR delante; en el monitor, más grandes y en la parte de arriba
+    if (this.el.is('vr-mode')) { this.aviso.malla.position.set(0, -0.1, -2); this.aviso.malla.scale.setScalar(1); }
+    else { this.aviso.malla.position.set(0, 2 * Math.tan(this.el.camera.fov * Math.PI / 360) * 0.6, -2); this.aviso.malla.scale.setScalar(1.6); }
     if (!this.aviso.malla.visible) return;
     // (con una pregunta de si se gastan puntos delante, el aviso se quita: la taparía. js/pregunta.js)
     if (preguntaAbierta) this.avisoMs = 0;

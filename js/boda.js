@@ -9,6 +9,9 @@ const BODA_FRASE_MS = 7000;
 // Al sentarte: hasta que brindes (coger tu copa) no te puedes levantar. Lo dice el tutorial (partida.pasoTutorial) o,
 // si ya se acabó, un aviso.
 const BRINDAR_TEXTO = 'Brinda por los novios: acerca la mano a la copa que tienes delante, cógela con el gatillo lateral y álzala. Hasta que brindes no te puedes levantar.';
+const BRINDAR_TEXTO_PC = 'Brinda por los novios: haz clic en la copa que tienes delante. Hasta que brindes no te puedes levantar.';
+const textoBrindar = () => document.querySelector('a-scene').is('vr-mode') ? BRINDAR_TEXTO : BRINDAR_TEXTO_PC;
+const COPA_CLIC_DISTANCIA = 1.6;   // en el ordenador, se brinda haciendo clic en una copa a esta distancia de tu silla
 // El brindis: cuándo acaba de alargar el brazo y coge la copa, cuándo la tiene en alto, cuándo empieza a bajarla, cuándo
 // la deja y cuándo acaba; y los ángulos del brazo, junto a la mesa y en alto
 const BRINDIS_COGE_MS = 450, BRINDIS_ALZA_MS = 950, BRINDIS_BAJA_MS = 2900, BRINDIS_DEJA_MS = 3350, BRINDIS_MS = 4100;
@@ -146,9 +149,22 @@ AFRAME.registerComponent('boda', {
     copa.setAttribute('copa', ''); copa.setAttribute('agarrable', 'cercania: 0.22');
     copa.setAttribute('position', `${x} ${ALTO_MESA} ${z}`);
     copa.addEventListener('cogido', () => this.brindar());
+    // en el ordenador no hay manos: la copa de tu mesa se pulsa con la mira o el ratón, y brilla al apuntarla
+    const clic = document.createElement('a-box');
+    clic.classList.add('clicable');
+    clic.setAttribute('position', '0 0.1 0'); clic.setAttribute('width', 0.3); clic.setAttribute('height', 0.3); clic.setAttribute('depth', 0.3);
+    clic.setAttribute('material', 'visible: false');
+    clic.addEventListener('mouseenter', () => { if (this.sePuedeBrindar(x, z)) copa.emit('al-alcance', true); });
+    clic.addEventListener('mouseleave', () => copa.emit('al-alcance', false));
+    clic.addEventListener('mousedown', () => { if (this.sePuedeBrindar(x, z)) { copa.emit('al-alcance', false); this.brindar(); } });
+    copa.appendChild(clic);
     this.copas.push(copa);
     this.el.appendChild(copa);
     return copa;
+  },
+  // sentado a la mesa, sin brindar aún, y fuera de VR (allí se coge con la mano): ¿vale hacer clic en esta copa?
+  sePuedeBrindar(x, z) {
+    return enLaMesa && !this.brindis && !this.brindado && !this.el.sceneEl.is('vr-mode') && Math.hypot(x - SILLA_BODA.x, z - SILLA_BODA.z) < COPA_CLIC_DISTANCIA;
   },
   montar() {
     const c = (x, y, z, w, h, d, color) => piezaCaja(this.el, x, y, z, w, h, d, { color });
@@ -274,15 +290,15 @@ AFRAME.registerComponent('boda', {
     this.brindado = false;
     this.ponerTabla();
     // (en el tutorial, el paso "brindar" lo dice él)
-    if (partida.pasoTutorial()?.id !== 'brindar') partida.avisar(BRINDAR_TEXTO);
+    if (partida.pasoTutorial()?.id !== 'brindar') partida.avisar(textoBrindar());
   },
   levantarse() {
     this.quitarTabla();
     enLaMesa = false;   // (la altura la recupera andar-joystick)
     this.llevarCabeza(SILLA_BODA.x, SILLA_BODA.z + 1.2);
   },
-  // La frase que toca, encima de los novios, y debajo el botón de levantarse: en VR, solo después de brindar (en el
-  // ordenador no hay manos para coger la copa)
+  // La frase que toca, encima de los novios, y debajo el botón de levantarse, solo después de brindar (en VR, con
+  // la copa en la mano; en el ordenador, con un clic en ella)
   ponerTabla() {
     this.quitarTabla();
     const tabla = this.tabla = document.createElement('a-entity');
@@ -307,7 +323,7 @@ AFRAME.registerComponent('boda', {
       this.ultimo = performance.now();
       this.levantarse();
     });
-    if (this.brindado || !this.el.sceneEl.is('vr-mode')) tabla.appendChild(boton);
+    if (this.brindado) tabla.appendChild(boton);
     this.el.appendChild(tabla);
   },
   quitarTabla() {

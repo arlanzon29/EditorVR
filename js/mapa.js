@@ -123,8 +123,20 @@ AFRAME.registerComponent('mapa', {
     });
     this.apuntado = null;
     this.rayo = new THREE.Raycaster();
+    // dónde está el ratón en la vista (de -1 a 1), para apuntar al pergamino en el ordenador
+    this.ndc = new THREE.Vector2();
+    this.ponerRaton = e => {
+      const c = this.el.canvas; if (!c) return;
+      const r = c.getBoundingClientRect();
+      this.ndc.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height * 2 - 1));
+    };
+    window.addEventListener('mousemove', this.ponerRaton);
     const viajar = () => this.viajar();
-    window.addEventListener('mousedown', () => { if (!this.el.is('vr-mode')) viajar(); });
+    window.addEventListener('mousedown', e => {
+      if (e.button !== 0 || this.el.is('vr-mode')) return;
+      if (this.panel.visible) { this.ponerRaton(e); this.mirarSellos(); this.mirarBotones(); }   // (lo que hay bajo el ratón en este instante)
+      viajar();
+    });   // (el derecho es correr)
     // cerrado → mapa → diario → inventario → ayuda → cerrado
     this.hoja = -1;
     // en el ordenador, la tecla N va pasando de hoja: la mira se mueve con el pergamino y no llega a las pestañas
@@ -137,6 +149,7 @@ AFRAME.registerComponent('mapa', {
       this.panel.visible = this.hoja >= 0;
       this.brillo.visible = false; this.botonApuntado = null;
       if (this.confirmando) { this.confirmando = false; this.pintarDiario(); }
+      this.modoRaton(this.hoja >= 0);
       if (this.hoja < 0) return;
       if (this.hoja === HOJA_MISION) this.pintarMision();
       this.panel.material.map = this.hojas[this.hoja];
@@ -145,6 +158,7 @@ AFRAME.registerComponent('mapa', {
       for (const s of this.sellos) s.visible = this.hoja === HOJA_MAPA;
       this.colocarMarcaMapa();
     };
+    this.el.addEventListener('mapa-alternar', alternar);   // (la Y del mando de Xbox, js/movimiento.js)
     window.addEventListener('keydown', e => {
       if (e.code === 'KeyN') alternar();
       // en el ordenador la mira no puede apuntar al pergamino, que va con ella: con la hoja abierta, teclas
@@ -175,7 +189,7 @@ AFRAME.registerComponent('mapa', {
         this.panel.position.set(0.03, 0.2, -0.12); this.panel.rotation.set(-0.6, 0, 0);
       } else {
         this.el.camera.el.object3D.add(this.panel);
-        this.panel.position.set(0, -0.02, -0.5); this.panel.rotation.set(0, 0, 0);
+        this.panel.position.set(0, 0, -0.5); this.panel.rotation.set(0, 0, 0);
       }
     };
     this.el.addEventListener('enter-vr', () => { for (const ms of [300, 1000, 2500]) setTimeout(this.colocar, ms); });
@@ -306,13 +320,13 @@ AFRAME.registerComponent('mapa', {
   pulsarTerminar() {
     if (!this.confirmando) { this.confirmando = true; return this.pintarDiario(); }
     this.confirmando = false;
-    this.panel.visible = false; this.hoja = -1;
+    this.cerrar();
     partida.terminarDia();
   },
   // Sin confirmar: no se pierde nada
   pulsarSalir() {
     if (!partida.salirAlMenu()) return;
-    this.panel.visible = false; this.hoja = -1;
+    this.cerrar();
   },
   // qué botón de la hoja abierta tiene delante el rayo
   mirarBotones() {
@@ -501,14 +515,23 @@ AFRAME.registerComponent('mapa', {
     // (con misión, se pagan todas las zonas del camino)
     // (si cuesta puntos, primero la pregunta: el pergamino se cierra para verla)
     if (!this.el.components.zonas.cruzar(d.zona, { x: d.a, y: d.y, z: d.b, giro: d.giro * Math.PI / 180 }, partida.precioViaje(d.zona), { viaje: true })) return;
-    this.panel.visible = false; this.hoja = -1;
+    this.cerrar();
   },
-  // dónde toca el pergamino el rayo del mando derecho (fuera de VR, la mira de la cámara), en sus coordenadas
+  // En el ordenador, con el pergamino abierto el ratón se suelta y solo apunta a él: no gira la cámara ni toca
+  // nada de la escena (la cámara pierde su rayo). Al cerrarlo, vuelve a capturarse.
+  modoRaton(si) { ratonLibre('mapa', si); },
+  cerrar() { this.panel.visible = false; this.hoja = -1; this.modoRaton(false); },
+  // dónde toca el pergamino el rayo del mando derecho (fuera de VR, el ratón), en sus coordenadas
   puntoEnPanel() {
-    const fuente = document.querySelector(this.el.is('vr-mode') ? '[laser-controls="hand: right"]' : '[camera]');
-    const rc = fuente && fuente.components.raycaster;
-    if (!rc) return null;
-    this.rayo.ray.copy(rc.raycaster.ray);
+    if (this.el.is('vr-mode')) {
+      const fuente = document.querySelector('[laser-controls="hand: right"]');
+      const rc = fuente && fuente.components.raycaster;
+      if (!rc) return null;
+      this.rayo.ray.copy(rc.raycaster.ray);
+    } else {
+      if (!this.el.camera) return null;
+      this.rayo.setFromCamera(this.ndc, this.el.camera);
+    }
     this.panel.updateWorldMatrix(true, false);
     const h = this.rayo.intersectObject(this.panel, false)[0];
     return h ? this.panel.worldToLocal(h.point.clone()) : null;
@@ -576,6 +599,12 @@ AFRAME.registerComponent('mapa', {
       this.mirarSellos();
     }
     this.mirarBotones();
+    if (!this.el.is('vr-mode')) {
+      // en el monitor, el pergamino ocupa casi toda la vista; y la flecha del ratón pasa a mano sobre lo que se toca
+      const c = this.el.camera, alto = 2 * 0.5 * Math.tan(c.fov * Math.PI / 360), ancho = alto * c.aspect;
+      this.panel.scale.setScalar(Math.min(0.9 * alto / this.alto, 0.92 * ancho / this.ancho));
+      if (this.el.canvas) this.el.canvas.style.cursor = this.apuntado || this.botonApuntado ? 'pointer' : '';
+    } else this.panel.scale.setScalar(1);
     this.el.camera.getWorldPosition(this.yo);
     this.el.camera.getWorldDirection(this.mira);
     const u = (this.yo.x - MAPA.x0) / (MAPA.x1 - MAPA.x0) - 0.5, v = (this.yo.z - MAPA.z0) / (MAPA.z1 - MAPA.z0) - 0.5;

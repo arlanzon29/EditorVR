@@ -38,7 +38,11 @@ ratos desde las gafas y a ratos desde el ordenador.
 ### Controles
 - **Mando de Xbox en el ordenador:** andar, mirar, abrir puertas (A), traer la pantalla (B),
   girar (LB/RB) y recalibrar (Vista). Los sticks se calibran solos: uno por Bluetooth dejaba el
-  derecho en -0,7 sin tocarlo y la vista subía sola.
+  derecho en -0,7 sin tocarlo y la vista subía sola. Fallo corregido: un stick mantenido fijo (andar recto
+  más de 2 s) se tomaba por "soltado" y el personaje se paraba; ahora el stick solo
+  se da por soltado si ha llegado con una bajada rápida (el muelle, `MUELLE`) y se queda quieto: es el stick que se
+  queda a medias al soltarlo. Aflojar poco a poco no cuenta. (Se probó antes con "ha caído X de su pico" y paraba al
+  aflojar un poco andando.)
 - **Puertas al apretar el gatillo**, no al soltarlo: el clic de A-Frame se perdía si al soltar el
   rayo había pasado a otra de las piezas que se solapan (la hoja y las esferas de la aldaba).
 - **Altura en VR:** cuenta la real; sentado, se suben 35 cm. (Se probó fijarla a 1,60 m y no

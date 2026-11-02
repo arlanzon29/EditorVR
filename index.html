@@ -36,10 +36,14 @@
   <!-- Inicio: en la sala 3, mirando a la escalera -->
   <a-entity id="rig" position="6 0 7" rotation="0 180 0">
     <a-entity camera look-controls="pointerLockEnabled: true" wasd-controls="enabled: false" position="0 1.6 0"
-              cursor raycaster="objects: .clicable; far: 4">
+              cursor raycaster="objects: .clicable; far: 4" rayo-verde>
       <!-- mira (solo en el monitor) -->
-      <a-ring class="mira" radius-inner="0.004" radius-outer="0.007" position="0 0 -0.5"
-              material="shader: flat; color: #333; opacity: 0.8"></a-ring>
+      <!-- (clara con un borde oscuro, por encima de los carteles: sobre madera oscura, una mira oscura no se vería) -->
+      <a-ring class="mira" radius-inner="0.004" radius-outer="0.007" position="0 0 -0.5" encima="orden: 1000"
+              material="shader: flat; color: #f4ead0; opacity: 0.9; depthTest: false">
+        <a-ring radius-inner="0.0068" radius-outer="0.0095" encima="orden: 999"
+                material="shader: flat; color: #2a1c10; opacity: 0.85; depthTest: false"></a-ring>
+      </a-ring>
     </a-entity>
     <a-entity laser-controls="hand: left" raycaster="objects: .clicable; far: 4; lineColor: #ffe066" rayo-verde andar-joystick></a-entity>
     <a-entity laser-controls="hand: right" raycaster="objects: .clicable; far: 4; lineColor: #ffe066" rayo-verde giro-por-pasos></a-entity>

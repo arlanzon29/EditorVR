@@ -32,8 +32,7 @@ const VELOCIDAD = 1.5;   // m/s
 const CORRER = 2.5;      // veces más rápido al correr: gatillo lateral izquierdo, Mayúsculas o gatillo LT del mando
 const VELOCIDAD_MIRAR = 2.2;   // rad/s con el stick derecho del mando de Xbox, a tope
 const MIRAR_VERTICAL = 0.6;    // en vertical, esta parte de esa velocidad
-const CONGELADO_MS = 700;      // un eje idéntico durante este tiempo: no lo está moviendo una mano
-const QUIETO_MS = 2000;        // un eje a medias sin separarse 0,08 de un punto durante este tiempo: tampoco
+const MUELLE = 0.15;           // un eje que baja esto en SALTO_MS es el muelle del stick al soltarlo: si luego se queda quieto, no es una mano
 const SALTO_MANO = 0.08, SALTO_MS = 150;   // una mano mueve el eje al menos esto en este tiempo; el mando solo, no
 // En VR cuenta la altura real de las gafas; si estás sentado (las gafas, de media, por debajo de
 // SENTADO_BAJO; se vuelve a "de pie" por encima de SENTADO_ALTO) se suma SUBIR_SENTADO.
@@ -188,13 +187,18 @@ AFRAME.registerComponent('andar-joystick', {
     window.addEventListener('keydown', e => { if (e.key === 'Shift') this.mayusculas = true; });
     window.addEventListener('keyup', e => { if (e.key === 'Shift') this.mayusculas = false; });
     window.addEventListener('blur', () => { this.mayusculas = false; });
+    // botón derecho del ratón mantenido: también corre (más cómodo que Mayúsculas con una mano en el ratón)
+    window.addEventListener('mousedown', e => { if (e.button === 2) this.mayusculas = true; });
+    window.addEventListener('mouseup', e => { if (e.button === 2) this.mayusculas = false; });
+    window.addEventListener('contextmenu', e => e.preventDefault());
   },
   guardarSitio() {
     const o = this.rig.object3D;
     partida.guardarSitio({ x: o.position.x, y: this.altura, z: o.position.z, giro: o.rotation.y });
   },
   tick(t, dt) {
-    if (!dt || enBarco || enLaMesa) return;   // (en la barca, te mueve ella: js/lago.js)
+    if (!dt || enBarco) return;   // (en la barca, te mueve ella: js/lago.js)
+    if (enLaMesa) { this.mandoPC(dt); return; }   // (sentado a la mesa no se anda, pero con el mando se mira y se hace clic)
     const r = this.rig.object3D.position;
     if (t - this.guardado > 500 && partida.ranura && !cambiandoDeZona) {
       this.guardado = t;
@@ -247,6 +251,57 @@ AFRAME.registerComponent('andar-joystick', {
     r.x += mejor.x - cabeza.x;
     r.z += mejor.z - cabeza.z;
   },
+  // El cursor del mando, con una ventana abierta: un aro dorado que mueve el stick derecho (de -1 a 1 en la vista).
+  // Lo lee el pergamino (su "ndc", js/mapa.js) y, para las preguntas y las tablas de opciones, se apunta aquí.
+  moverCursor(dt, dx, dy) {
+    const c = this.cursor = this.cursor || { x: 0, y: 0, usado: false, hover: null, rayo: new THREE.Raycaster(), v: new THREE.Vector2() };
+    if (dx || dy) {
+      c.usado = true;
+      c.x = THREE.MathUtils.clamp(c.x + dx * Math.abs(dx) * 2 * dt / 1000, -1, 1);
+      c.y = THREE.MathUtils.clamp(c.y - dy * Math.abs(dy) * 2 * dt / 1000, -1, 1);
+    }
+    if (!c.usado) return;
+    this.cursorMando(true);
+    const mapa = this.el.sceneEl.components.mapa;
+    if (mapa) mapa.ndc.set(c.x, c.y);
+    if (!motivosRaton.has('pregunta')) return;
+    // hover de los botones de la pregunta, como con el ratón
+    const el = this.botonBajoCursor();
+    if (el === c.hover) return;
+    if (c.hover) c.hover.emit('mouseleave');
+    c.hover = el;
+    if (el) el.emit('mouseenter');
+  },
+  botonBajoCursor() {
+    const c = this.cursor, cam = this.el.sceneEl.camera;
+    if (!c || !cam) return null;
+    const botones = [...document.querySelectorAll('.pregunta')], mallas = botones.map(e => e.getObject3D('mesh'));
+    c.v.set(c.x, c.y);
+    c.rayo.setFromCamera(c.v, cam);
+    const golpe = c.rayo.intersectObjects(mallas.filter(Boolean), false)[0];
+    return golpe ? botones[mallas.indexOf(golpe.object)] : null;
+  },
+  pulsarCursor() {
+    if (!this.cursor || !this.cursor.usado) { if (this.cursor) this.cursor.usado = true; return; }   // (la primera vez solo sale el aro)
+    if (motivosRaton.has('pregunta')) { const el = this.botonBajoCursor(); if (el) el.emit('mousedown'); }
+    else if (motivosRaton.has('mapa')) this.el.sceneEl.components.mapa.viajar();
+  },
+  // El aro del cursor del mando: un círculo sobre la vista, que solo sale mientras se usa el mando con una ventana
+  cursorMando(si) {
+    if (!si && this.cursor) { this.cursor.usado = false; if (this.cursor.hover) { this.cursor.hover.emit('mouseleave'); this.cursor.hover = null; } this.cursor.x = this.cursor.y = 0; }
+    let aro = this.aro;
+    if (!aro) {
+      if (!si) return;
+      aro = this.aro = document.createElement('div');
+      aro.style.cssText = 'position:fixed;width:22px;height:22px;border:3px solid #ffcc33;border-radius:50%;box-shadow:0 0 0 2px #2e2116;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);display:none';
+      document.body.appendChild(aro);
+    }
+    aro.style.display = si ? 'block' : 'none';
+    if (!si) return;
+    const r = this.el.sceneEl.canvas.getBoundingClientRect();
+    aro.style.left = (r.left + (this.cursor.x + 1) / 2 * r.width) + 'px';
+    aro.style.top = (r.top + (1 - this.cursor.y) / 2 * r.height) + 'px';
+  },
   // Mando de Xbox (o cualquier mando "standard") en el PC, fuera de VR: stick izquierdo para
   // andar (deja this.gx, this.gy, como el joystick), stick derecho para mirar, A para abrir la
   // puerta que hay en la mira, B para traer la pantalla del PC, LB / RB para girar 30° y Vista
@@ -269,6 +324,7 @@ AFRAME.registerComponent('andar-joystick', {
       this.ref = m.axes.slice();
       this.refMs = m.axes.map(() => 0);
       this.activo = m.axes.map(() => false);
+      this.suelta = m.axes.map(() => false);
     }
     if (m.buttons[8] && m.buttons[8].pressed) this.reposo = m.axes.slice();
     // cada eje, de -1 a 1 contando desde el reposo hasta cada tope; zona muerta y reescalado para
@@ -278,7 +334,12 @@ AFRAME.registerComponent('andar-joystick', {
       // -0,681 (medido: unos 0,1 por segundo) y se queda ahí, al milésimo. Se distingue de una mano
       // por la rapidez: un eje no cuenta ("activo") hasta que da un salto en poco tiempo; mientras
       // no, lo que marque es su reposo.
-      if (Math.abs(m.axes[i] - this.ref[i]) > SALTO_MANO) { this.activo[i] = true; this.ref[i] = m.axes[i]; this.refMs[i] = 0; }
+      if (Math.abs(m.axes[i] - this.ref[i]) > SALTO_MANO) {
+        // (una bajada rápida es el muelle al soltar; una subida, una mano que empuja)
+        const baja = Math.abs(this.ref[i]) - Math.abs(m.axes[i]);
+        if (baja > MUELLE) this.suelta[i] = true; else if (baja < 0) this.suelta[i] = false;
+        this.activo[i] = true; this.ref[i] = m.axes[i]; this.refMs[i] = 0;
+      }
       else if ((this.refMs[i] += dt) > SALTO_MS) { this.ref[i] = m.axes[i]; this.refMs[i] = 0; }
       // "quieto": sin separarse de un mismo punto (estos sticks tiemblan unas centésimas sin tocarlos)
       if (Math.abs(m.axes[i] - this.ancla[i]) > 0.08) { this.ancla[i] = m.axes[i]; this.quietoMs[i] = 0; }
@@ -287,12 +348,13 @@ AFRAME.registerComponent('andar-joystick', {
       if (m.axes[i] !== this.exacto[i]) { this.exacto[i] = m.axes[i]; this.igualMs[i] = 0; }
       else this.igualMs[i] += dt;
       const valor = Math.abs(m.axes[i]);
+      // al soltarlo, el stick puede quedarse a medias (medido: 19 s en -0,65, andando solo hasta chocar). Eso se
+      // reconoce por cómo llega: una bajada rápida (el muelle, "suelta") y luego quieto. Un stick que se mantiene
+      // (andar recto, girar), aunque aflojes poco a poco, sigue siendo una mano.
       const soltado = (this.quietoMs[i] > 300 && (valor < 0.15 || Math.abs(m.axes[i] - this.reposo[i]) < ZONA_MUERTA))
-        || (this.igualMs[i] > CONGELADO_MS && valor < 0.98)
-        // al soltarlo también puede quedarse a medias, moviéndose solo centésimas (medido: 19 s en
-        // -0,65, andando solo hasta chocar): 2 s sin separarse de un punto, salvo cerca del tope, no es una mano
-        || (this.quietoMs[i] > QUIETO_MS && valor < 0.9);
-      if (soltado) this.activo[i] = false;
+        || (this.suelta[i] && this.quietoMs[i] > 300)
+        || (this.igualMs[i] > 3000 && valor < 0.98);   // (idéntico al milésimo tanto rato: no hay mano)
+      if (soltado) { this.activo[i] = false; this.suelta[i] = false; }
       if (!this.activo[i]) { this.reposo[i] = m.axes[i]; return 0; }
       const r = this.reposo[i] || 0, bruto = m.axes[i] - r;
       if (Math.abs(bruto) < ZONA_MUERTA) return 0;
@@ -300,23 +362,34 @@ AFRAME.registerComponent('andar-joystick', {
       return a < ZONA_MUERTA ? 0 : Math.sign(v) * Math.min(1, (a - ZONA_MUERTA) / (1 - ZONA_MUERTA));
     };
     this.gx = zona(0); this.gy = zona(1);
+    const mx = zona(2), my = zona(3);
+    if (this.gx || this.gy || mx || my || m.buttons.some(b => b.pressed)) usarMando(true);
+    // con una ventana abierta (el pergamino o una pregunta), el personaje no se mueve y el stick derecho mueve el cursor
+    const ventana = motivosRaton.size > 0;
+    if (ventana) this.gx = this.gy = 0;
     // mirar: girar y cabecear la cámara, igual que con el ratón
     const camara = document.querySelector('[camera]');
     const lc = camara.components['look-controls'], s = Math.min(dt, 50) / 1000 * VELOCIDAD_MIRAR;
-    if (lc) {
+    if (ventana) this.moverCursor(dt, mx, my);
+    else this.cursorMando(false);
+    if (lc && !ventana) {
       // al cuadrado, para poder apuntar despacio con poca inclinación; en vertical, más lento: el
       // recorrido es corto (de suelo a techo) y a toda velocidad se pasaba de largo
       const curva = v => v * Math.abs(v);
-      lc.yawObject.rotation.y -= curva(zona(2)) * s;
-      lc.pitchObject.rotation.x = THREE.MathUtils.clamp(lc.pitchObject.rotation.x - curva(zona(3)) * s * MIRAR_VERTICAL, -Math.PI / 2, Math.PI / 2);
+      lc.yawObject.rotation.y -= curva(mx) * s;
+      lc.pitchObject.rotation.x = THREE.MathUtils.clamp(lc.pitchObject.rotation.x - curva(my) * s * MIRAR_VERTICAL, -Math.PI / 2, Math.PI / 2);
     }
     // botones: cuentan al pulsarlos, no mientras se siguen apretando
     const antes = this.botones || [];
     const pulsa = i => m.buttons[i] && m.buttons[i].pressed && !antes[i];
-    if (pulsa(0)) {   // A: como apretar el ratón sobre lo que hay en la mira (abre o cierra la puerta)
-      const el = camara.components.raycaster && camara.components.raycaster.intersectedEls[0];
-      if (el) el.emit('mousedown');
+    if (pulsa(0) || pulsa(7)) {   // A o el gatillo derecho (RT): como apretar el ratón sobre lo que hay en la mira (abre o cierra la puerta)
+      if (ventana) this.pulsarCursor();   // (con una ventana abierta, sobre lo que hay bajo el cursor)
+      else {
+        const el = camara.components.raycaster && camara.components.raycaster.intersectedEls[0];
+        if (el) el.emit('mousedown');
+      }
     }
+    if (pulsa(3)) this.el.sceneEl.emit('mapa-alternar');   // Y: el pergamino, como la N (mapa → misión → diario → inventario → ayuda → cerrado)
     if (pulsa(1))     // B: traer la pantalla del PC
       for (const a of document.querySelectorAll('[agarrable]')) if (a.components.agarrable.data.clave) a.components.agarrable.traer();
     const giro = document.querySelector('[giro-por-pasos]');
@@ -327,11 +400,81 @@ AFRAME.registerComponent('andar-joystick', {
   }
 });
 
+// Ratón libre en el ordenador, por motivos: el pergamino ('mapa': el ratón solo apunta a él y la cámara no toca nada)
+// y las preguntas de gasto ('pregunta': el ratón solo toca sus botones). Mientras haya alguno, no se gira ni se
+// recaptura el ratón; al irse el último, vuelve la mira. En VR no hace nada.
+const motivosRaton = new Set();
+function ratonLibre(motivo, si) {
+  const s = document.querySelector('a-scene'), camara = document.querySelector('[camera]');
+  if (!s || !camara || s.is('vr-mode') || motivosRaton.has(motivo) === si) return;
+  if (si) motivosRaton.add(motivo); else motivosRaton.delete(motivo);
+  aplicarRaton();
+}
+
+// Hay navegadores (el integrado de la aplicación de Claude) que no dejan capturar el ratón: entonces el ratón
+// queda siempre libre, se hace clic donde está la flecha y se gira arrastrando con el botón pulsado.
+let sinCaptura = false, usandoMando = false;
+function sinCapturaDeRaton() {
+  if (sinCaptura) return;
+  sinCaptura = true;
+  aplicarRaton();
+}
+// Sin captura, con el mando la mira vuelve al centro (mirar con el stick); al mover el ratón, el cursor es la flecha
+function usarMando(si) {
+  if (usandoMando === si) return;
+  usandoMando = si;
+  if (sinCaptura) aplicarRaton();
+}
+window.addEventListener('mousemove', e => { if (e.isTrusted && (e.movementX || e.movementY)) usarMando(false); });
+function aplicarRaton() {
+  const s = document.querySelector('a-scene'), camara = document.querySelector('[camera]');
+  if (!s || !camara || s.is('vr-mode')) return;
+  const libre = motivosRaton.size > 0, pregunta = motivosRaton.has('pregunta'), mira = document.querySelector('.mira');
+  camara.setAttribute('look-controls', { pointerLockEnabled: !libre && !sinCaptura, mouseEnabled: !libre });
+  const flecha = sinCaptura && !usandoMando;   // (la flecha del ratón apunta, en vez de la mira del centro)
+  camara.setAttribute('cursor', 'rayOrigin', pregunta || (flecha && !libre) ? 'mouse' : 'entity');
+  camara.setAttribute('raycaster', { enabled: !libre || pregunta, objects: pregunta ? '.pregunta' : '.clicable' });
+  if (mira) mira.setAttribute('visible', !libre && !flecha);
+  if (libre) { if (document.pointerLockElement) document.exitPointerLock(); return; }
+  if (s.canvas) s.canvas.style.cursor = '';
+  if (!sinCaptura && s.canvas && s.canvas.requestPointerLock) Promise.resolve(s.canvas.requestPointerLock()).catch(() => {});
+}
+
+// ¿deja este navegador capturar el ratón? Se prueba al empezar y, si la página no lo permite, se avisa en el primer clic
+document.addEventListener('DOMContentLoaded', () => {
+  const s = document.querySelector('a-scene');
+  const probar = () => {
+    const c = s.canvas;
+    if (!c || !c.requestPointerLock) return;
+    try {
+      Promise.resolve(c.requestPointerLock()).catch(e => { if (e && (e.name === 'WrongDocumentError' || /not valid for pointer lock/i.test(e.message))) sinCapturaDeRaton(); });
+    } catch (e) {}
+  };
+  if (s.hasLoaded) probar(); else s.addEventListener('loaded', probar, { once: true });
+  window.addEventListener('mousedown', probar, { once: true });
+});
+
 // Mira del monitor: solo fuera de VR (en VR apuntan los mandos).
 document.addEventListener('DOMContentLoaded', () => {
   const s = document.querySelector('a-scene');
   const mira = v => document.querySelector('.mira').setAttribute('visible', v);
   const camara = document.querySelector('[camera]');
   s.addEventListener('enter-vr', () => { mira(false); camara.setAttribute('raycaster', 'enabled', false); });
-  s.addEventListener('exit-vr', () => { mira(true); camara.setAttribute('raycaster', 'enabled', true); });
+  s.addEventListener('exit-vr', () => { mira(!sinCaptura || usandoMando); camara.setAttribute('raycaster', 'enabled', true); });
+
+  // Alt mantenida: cursor libre. Se suelta el ratón capturado, se apunta con la flecha (cursor con rayOrigin
+  // mouse) y no se gira ni se vuelve a capturar con el clic; al soltar Alt vuelve la mira del centro.
+  let libre = false;
+  const cursorLibre = si => {
+    if (libre === si || s.is('vr-mode') || motivosRaton.size || sinCaptura) return;   // (con el pergamino o una pregunta abiertos, el ratón ya es libre)
+    libre = si;
+    camara.setAttribute('look-controls', { pointerLockEnabled: !si, mouseEnabled: !si });
+    camara.setAttribute('cursor', 'rayOrigin', si ? 'mouse' : 'entity');
+    mira(!si);
+    if (si) { if (document.pointerLockElement) document.exitPointerLock(); }
+    else if (s.canvas && s.canvas.requestPointerLock) Promise.resolve(s.canvas.requestPointerLock()).catch(() => {});
+  };
+  window.addEventListener('keydown', e => { if (e.key === 'Alt') { e.preventDefault(); cursorLibre(true); } });
+  window.addEventListener('keyup', e => { if (e.key === 'Alt') { e.preventDefault(); cursorLibre(false); } });
+  window.addEventListener('blur', () => cursorLibre(false));
 });

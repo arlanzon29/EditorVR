@@ -52,12 +52,31 @@ const RAYO = '#ffe066', RAYO_ACCION = '#5cff8a';
 
 // El rayo del mando se pone verde sobre lo que se puede usar: todo lo que recibe el rayo (.clicable) es una
 // puerta, un personaje con quien hablar, un cofre, un cartel...
+// Dibuja la pieza por encima de todo lo que tenga un orden menor (los carteles pegados a la cámara llevan 995-997)
+AFRAME.registerComponent('encima', {
+  schema: { orden: { default: 1000 } },
+  init() {
+    const poner = () => { const m = this.el.getObject3D('mesh'); if (m) m.renderOrder = this.data.orden; };
+    this.el.addEventListener('object3dset', poner);
+    poner();
+  }
+});
+
 AFRAME.registerComponent('rayo-verde', {
   tick() {
     const r = this.el.components.raycaster;
     if (!r) return;
-    const color = r.intersectedEls.length ? RAYO_ACCION : RAYO;
+    const acciona = r.intersectedEls.length > 0;
+    const color = acciona ? RAYO_ACCION : RAYO;
     if (r.data.lineColor !== color) this.el.setAttribute('raycaster', 'lineColor', color);
+    // la mira del monitor (la cámara no tiene rayo visible): el anillo se pone verde y más grueso
+    if (this.mira === undefined) this.mira = this.el.querySelector('.mira');
+    if (this.mira && this.mira.acciona !== acciona) {
+      this.mira.acciona = acciona;
+      this.mira.setAttribute('material', { color: acciona ? RAYO_ACCION : '#f4ead0', opacity: acciona ? 1 : 0.9 });
+      this.mira.setAttribute('scale', acciona ? '1.8 1.8 1.8' : '1 1 1');
+      if (this.el.sceneEl.canvas) this.el.sceneEl.canvas.style.cursor = acciona ? 'pointer' : '';   // (con Alt, la flecha pasa a mano)
+    }
   }
 });
 

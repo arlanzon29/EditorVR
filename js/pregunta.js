@@ -43,12 +43,16 @@ function preguntarGasto({ que, de, a, precio, alResponder }) {
   const alto = PREGUNTA_ANCHO * H / W;
   const cartel = new THREE.Mesh(new THREE.PlaneGeometry(PREGUNTA_ANCHO, alto), new THREE.MeshBasicMaterial({ map: tex, depthTest: false, transparent: true, fog: false }));
   cartel.renderOrder = 995;
+  // en el monitor, recta y a una escala con la que cabe con sus botones (alto del cartel y botones: 1,05)
+  const vista = tablaEnMonitor(escena, PREGUNTA_ANCHO, 1.05), k = vista ? vista.k : 1;
+  cartel.scale.setScalar(k);
   // delante de quien mira, a la altura de los ojos
   const ojo = new THREE.Vector3(), sitio = sitioDeLectura(escena);
   escena.camera.getWorldPosition(ojo);
   sitio.y += 0.5;
   cartel.position.copy(sitio);
   cartel.lookAt(ojo.x, sitio.y, ojo.z);
+  if (vista) { cartel.position.copy(vista.centro).addScaledVector(vista.arriba, 0.08 * k); cartel.quaternion.copy(vista.q); }
   escena.object3D.add(cartel);
   cartel.updateMatrixWorld(true);
   const desde = ojo.clone();
@@ -66,6 +70,8 @@ function preguntarGasto({ que, de, a, precio, alResponder }) {
     m.renderOrder = 996;
     e.setObject3D('mesh', m);
     const p = cartel.localToWorld(new THREE.Vector3(i ? 0.28 : -0.28, -alto / 2 - 0.1, 0.01));
+    e.object3D.scale.setScalar(k);
+    e.classList.add('pregunta');
     e.setAttribute('position', `${p.x} ${p.y} ${p.z}`);
     e.object3D.quaternion.copy(cartel.quaternion);
     e.addEventListener('mouseenter', () => m.material.color.set('#ffcc33'));
@@ -79,6 +85,7 @@ function preguntarGasto({ que, de, a, precio, alResponder }) {
     botones.push(e);
   });
 
+  ratonLibre('pregunta', true);
   // mientras está abierta, el tutorial espera (partida.comprobarPaso)
   partida.charlaAbierta = true;
   const vigilar = setInterval(() => {
@@ -89,6 +96,7 @@ function preguntarGasto({ que, de, a, precio, alResponder }) {
     responder(si) {
       if (preguntaAbierta !== pregunta) return;
       preguntaAbierta = null;
+      ratonLibre('pregunta', false);
       clearInterval(vigilar);
       cartel.parent.remove(cartel);
       cartel.geometry.dispose(); cartel.material.dispose();
