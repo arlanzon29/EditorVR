@@ -27,20 +27,32 @@
 <a-box position="160 14 -162" width="1.1" height="1.1" depth="4.6" color="#1e1813"></a-box>
 <a-entity macizo="ancho: 4.6; fondo: 4.6; alto: 13" position="160 0 -162"></a-entity>
 
-<!-- pozo y mercado en la plaza -->
-<a-cylinder position="160 0.45 -120" radius="1.1" height="0.9" segments-radial="14" color="#857f72"></a-cylinder>
-<a-cylinder position="160 0.86 -120" radius="0.86" height="0.04" segments-radial="14" color="#1a2a33"></a-cylinder>
-<a-box position="159 1.4 -120" width="0.12" height="2.8" depth="0.12" color="#4e3421"></a-box>
-<a-box position="161 1.4 -120" width="0.12" height="2.8" depth="0.12" color="#4e3421"></a-box>
-<a-box position="160 2.8 -120" width="2.5" height="0.12" depth="0.12" color="#3a281a"></a-box>
-<a-entity macizo="ancho: 2.2; fondo: 2.2; alto: 1" position="160 0 -120"></a-entity>
+<!-- pozo y mercado en la plaza. El pozo, como el del patio del castillo: brocal de piedra, boca oscura,
+     dos postes con el eje del torno, y manivela, cuerda y cubo para sacar agua (js/animales.js) -->
+<a-cylinder position="160 0.4 -120" radius="0.65" height="0.8" segments-radial="20" piedra-mundo></a-cylinder>
+<a-circle position="160 0.805 -120" rotation="-90 0 0" radius="0.5" segments="20" color="#1a1f1f"></a-circle>
+<a-box position="159.425 1.55 -120" width="0.1" height="1.5" depth="0.12" color="#3a281a"></a-box>
+<a-box position="160.575 1.55 -120" width="0.1" height="1.5" depth="0.12" color="#3a281a"></a-box>
+<a-cylinder position="160.03 2.15 -120" rotation="0 0 90" radius="0.05" height="1.36" color="#4e3421"></a-cylinder>
+<a-entity pozo position="160 0 -120"></a-entity>
+<a-entity macizo="ancho: 1.4; fondo: 1.4; alto: 0.8" position="160 0 -120"></a-entity>
 <a-entity puesto="toldo: #7a3f35" position="150 0 -130"></a-entity>
+<!-- el tendero, detrás de su puesto: compra las cartas (js/oficios.js; herramientas/modelar-tendero.py) -->
+<a-entity persona-animada="modelo: tendero" mercader position="150 0 -131.1"></a-entity>
 <a-entity puesto="toldo: #3f4f6e" position="169 0 -131"></a-entity>
 <a-entity puesto="toldo: #6e6a3f" position="150 0 -110" rotation="0 180 0"></a-entity>
 
-<!-- gente: dos guardias en la entrada y una moza con su jarra por la plaza -->
+<!-- gente: un guardia en la entrada, delante de su garita, y una moza con su jarra por la plaza -->
 <a-entity guardia position="99 0 -122.8"></a-entity>
-<a-entity guardia position="99 0 -117.2" rotation="0 180 0" scale="-1 1 1"></a-entity>
+<!-- la garita: tablas, abierta hacia el camino, con tejadillo de paja; las paredes de los lados van de punta a
+     punta y la del fondo y el dintel, entre ellas (sin caras en el mismo plano) -->
+<a-box position="98.35 1.25 -124.4" width="0.1" height="2.5" depth="1.4" madera-mundo="tono: #8a7660"></a-box>
+<a-box position="99.65 1.25 -124.4" width="0.1" height="2.5" depth="1.4" madera-mundo="tono: #8a7660"></a-box>
+<a-box position="99 1.25 -125.05" width="1.2" height="2.5" depth="0.1" madera-mundo="tono: #8a7660"></a-box>
+<a-box position="99 2.35 -123.75" width="1.2" height="0.3" depth="0.1" color="#3a2a1b"></a-box>
+<a-box position="99 0.05 -124.45" width="1.2" height="0.1" depth="1.1" color="#4a3424"></a-box>
+<a-entity tejado="ancho: 1.6; fondo: 1.6; pico: 0.7; vuelo: 0.15; color: #6e5c33" position="99 2.5 -124.4"></a-entity>
+<a-entity macizo="ancho: 1.7; fondo: 1.7; alto: 3" position="99 0 -124.4"></a-entity>
 <a-entity moza="puntos: 171 -113 2, 171 -127 0, 149 -127 3, 149 -113 0" position="171 0 -113"></a-entity>
 
 <!-- la boda: solo sale el día que toca (js/boda.js) -->
@@ -108,7 +120,7 @@
   <a-entity arbol="alto: 6.3; semilla: 672" position="212.56 0 -141.81"></a-entity>
   <a-entity arbol="alto: 8.6; semilla: 673" position="221.72 0 -60.68"></a-entity>
   <a-entity arbol="alto: 6.5; semilla: 674" position="141.64 0 -172.02"></a-entity>
-  <a-entity arbol="alto: 9.7; semilla: 675" position="184.97 0 -109.01"></a-entity>
+  <a-entity arbol="alto: 9.7; semilla: 675" position="184 0 -114"></a-entity>
   <a-entity arbol="alto: 5.7; semilla: 676" position="223.59 0 -145.45"></a-entity>
   <a-entity arbol="alto: 7.3; semilla: 677" position="137.65 0 -90.31"></a-entity>
   <a-entity arbol="alto: 7.2; semilla: 678" position="103.31 0 -111.17"></a-entity>
@@ -119,7 +131,7 @@
   <a-entity arbol="alto: 9.9; semilla: 683" position="184.53 0 -158.13"></a-entity>
   <a-entity arbol="alto: 8.1; semilla: 684" position="135.36 0 -130.03"></a-entity>
   <a-entity arbol="alto: 9.4; semilla: 685" position="188.38 0 -179.86"></a-entity>
-  <a-entity arbol="alto: 8.8; semilla: 686" position="98.25 0 -127.93"></a-entity>
+  <a-entity arbol="alto: 8.8; semilla: 686" position="97.5 0 -130.5"></a-entity>
   <a-entity arbol="alto: 8.6; semilla: 687" position="182.16 0 -175.62"></a-entity>
   <a-entity arbol="alto: 7.7; semilla: 688" position="196.26 0 -88.71"></a-entity>
   <a-entity arbol="alto: 8.5; semilla: 689" position="214.86 0 -97.19"></a-entity>

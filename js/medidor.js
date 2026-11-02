@@ -3,7 +3,7 @@
 // dibujo, los triángulos y las luces puntuales encendidas. En VR va sobre el mando izquierdo; en el
 // ordenador, arriba a la izquierda de la vista. Sale encendido; se apaga y se enciende con el botón X,
 // apretando el joystick izquierdo (hacia dentro) o con la tecla M. Sirve para ver cuánto margen
-// queda en el Quest.
+// queda en el Quest. Solo sale en la partida de depuración (PARTIDA_DEPURACION, js/partida.js).
 
 AFRAME.registerComponent('medidor', {
   init() {
@@ -15,9 +15,10 @@ AFRAME.registerComponent('medidor', {
     this.panel = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.103125),
       new THREE.MeshBasicMaterial({ map: this.tex, transparent: true, depthTest: false }));
     this.panel.renderOrder = 999;
-    this.panel.visible = true;
+    this.panel.visible = false;
+    this.encendido = true;   // lo que se ha elegido con el botón; se ve si además es la partida de depuración
     this.cuadros = 0; this.ms = 0; this.peor = Infinity; this.calentando = 3000;   // al cargar va a tirones: no cuenta
-    const alternar = () => { this.panel.visible = !this.panel.visible; this.peor = Infinity; this.calentando = 1500; };
+    const alternar = () => { if (!partida.depuracion()) return; this.encendido = !this.encendido; this.peor = Infinity; this.calentando = 1500; };
     window.addEventListener('keydown', e => { if (e.code === 'KeyM') alternar(); });
     const mando = () => document.querySelector('[laser-controls="hand: left"]');
     const enganchar = () => {
@@ -43,6 +44,7 @@ AFRAME.registerComponent('medidor', {
     if (this.el.hasLoaded) this.colocar(); else this.el.addEventListener('loaded', this.colocar, { once: true });
   },
   tick(t, dt) {
+    this.panel.visible = this.encendido && partida.depuracion();
     if (!this.panel.visible || !dt) return;
     this.cuadros++; this.ms += dt;
     if (this.calentando > 0) this.calentando -= dt;   // el primer segundo y medio no cuenta para "peor"

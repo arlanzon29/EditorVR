@@ -17,17 +17,25 @@
 <a-dodecahedron position="8.5 0.15 -87.5" radius="0.45" color="#6d6b62" material="roughness: 1; flatShading: true" macizo="ancho: 0.8; fondo: 0.8; alto: 0.6"></a-dodecahedron>
 <a-dodecahedron position="6.5 0.35 -89" radius="0.8" color="#7c7a70" material="roughness: 1; flatShading: true" macizo="ancho: 1.3; fondo: 1.3; alto: 1.1"></a-dodecahedron>
 
-<!-- boca de la cueva, en un montículo de roca al este del camino -->
-<a-dodecahedron position="28 5.54 -150" radius="7" scale="1 0.8 1.2" color="#6f6d65" material="roughness: 1; flatShading: true"></a-dodecahedron>
-<a-dodecahedron position="24 4.84 -156" radius="3" color="#77756c" material="roughness: 1; flatShading: true"></a-dodecahedron>
-<a-dodecahedron position="24 4.84 -144" radius="3.2" color="#6d6b62" material="roughness: 1; flatShading: true"></a-dodecahedron>
-<a-entity arco-ciego="ancho: 2.8; alto: 2.4; dovela: 0.4" position="21.6 4.24 -150" rotation="0 -90 0"></a-entity>
-<a-entity portal="texto: Entrar en la cueva; zona: cueva; x: 1010; z: -100; giro: -90" position="21.5 5.84 -150" rotation="0 -90 0"></a-entity>
-<a-entity macizo="ancho: 13; fondo: 22; alto: 11.34" position="28.4 0 -150"></a-entity>
+<!-- boca de la cueva, en la ladera del oeste de su loma (LADERA_CUEVA, en js/mundo.js: el terreno sube detrás y
+     deja un rellano delante, a 6,3 m). Un camino corto sube a ella desde el del lago. Rocas medio enterradas a los
+     lados y encima tapan el encuentro del arco con la ladera -->
+<a-entity camino="puntos: 9 -150, 11.5 -150, 13.6 -150; y: 0.08"></a-entity>
+<a-entity arco-ciego="ancho: 2.8; alto: 2.4; dovela: 0.4" position="16 6.3 -150" rotation="0 -90 0"></a-entity>
+<a-entity portal="texto: Entrar en la cueva; zona: cueva; x: 1010; z: -100; giro: -90" position="15.9 7.9 -150" rotation="0 -90 0"></a-entity>
+<a-dodecahedron position="16.9 6.9 -152.5" radius="1.5" color="#77756c" material="roughness: 1; flatShading: true"></a-dodecahedron>
+<a-dodecahedron position="16.9 6.9 -147.5" radius="1.6" color="#6d6b62" material="roughness: 1; flatShading: true"></a-dodecahedron>
+<a-dodecahedron position="17.6 9.5 -150" radius="1.8" scale="1 0.6 1.4" color="#6f6d65" material="roughness: 1; flatShading: true"></a-dodecahedron>
+<a-entity macizo="ancho: 1.6; fondo: 6; alto: 12" position="17 0 -150"></a-entity>
 
-<!-- un ciervo y una cierva, paseando -->
-<a-entity ciervo="puntos: 20 -95, 34 -110, 28 -128, 12 -120, -8 -128, -18 -112, -2 -96"></a-entity>
-<a-entity ciervo="puntos: -8 -62, -30 -70, -36 -92, -18 -96, 2 -78; astas: false; color: #8a6a48; velocidad: 0.9"></a-entity>
+<!-- un ciervo y una cierva, paseando por su llanura, al oeste (LLANURA_CIERVOS, en js/mundo.js: llana en 14 m).
+     Se cazan apuntándoles y apretando el gatillo (js/animales.js) -->
+<a-entity ciervo="puntos: -45 -129, -36 -133, -33 -143, -40 -151, -51 -150, -57 -141, -54 -131"></a-entity>
+<a-entity ciervo="puntos: -42 -136, -49 -135, -51 -143, -44 -146; astas: false; color: #8a6a48; velocidad: 0.9"></a-entity>
+
+<!-- la tala, en el borde del claro: tocón con el hacha y troncos apilados (js/oficios.js) -->
+<a-entity tala position="1 0 -87"></a-entity>
+<a-entity macizo="ancho: 2.2; fondo: 2.2; alto: 0.8" position="1.6 0 -86.9"></a-entity>
 
 <!-- árboles -->
 <a-entity>

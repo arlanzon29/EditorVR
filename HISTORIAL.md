@@ -85,8 +85,22 @@ Se fue haciendo con el usuario probando en las gafas y pidiendo cambios sobre la
 
 - **Taberna y posada, separadas:** el edificio de antes pasó a ser la taberna (Las Chatungas) y se hizo una posada nueva (La Parada), de dos plantas, para que las habitaciones estuvieran arriba, con la tuya mirando a la plaza. Hizo falta `piso` y `macizo` con `desde`, porque un obstáculo valía para todas las alturas.
 - **Puerta y luz:** primero las puertas eran fijas y las estancias salieron oscuras; el usuario pidió poder abrir la suya, y se aclararon paredes y antorchas.
-- **Tutorial:** se calcula de cómo va la partida, no se guarda en qué paso vas, para que aguante perder el pescado o acabar el día.
+- **Tutorial:** se calcula de cómo va la partida, no se guarda en qué paso vas, para que aguante perder el pescado o acabar el día. El aviso de ir al tabernero salía a la vez que la charla del posadero, encima, y decía lo mismo: ahora sale al cerrarla y explica cómo hablarle, sin repetir dónde está la taberna. Lo mismo con el tabernero: el aviso de los puntos salía al aceptar, con la charla aún abierta; ahora espera a que se acabe.
 - **Calidad:** subir la imagen de luz no mejoró las texturas, porque el horneado solo pone la luz. Por eso se probó con más resolución en las gafas y una textura de madera mejor. Falta ver si basta y cuánto cuesta en el Quest.
-- **Mapa:** un acceso por lugar, y niebla sobre lo no visitado. Los primeros bordes de niebla eran duros y salían círculos; se suavizaron con degradados.
+- **Pozo del poblado:** era un cilindro con dos palos y un travesaño; se cambió por una copia del del patio del castillo, con su manivela y su cubo, y se volvió a hornear el poblado.
+- **Pregunta antes de gastar:** el usuario pidió que, al moverse de lugar o pescar, saliera un cartel con lo que cuesta, un dibujo de lo que se va a hacer y sí o no; luego, una foto del sitio al que se va. Las fotos se sacan de la propia escena; desde la llegada de algunas zonas se veía una pared, una ladera o un pilar, y se miró a otro lado. La cueva por dentro es oscura de verdad y se dejó así.
+- **Taberna:** los muros de tablas estaban metidos 70 cm en el zócalo de piedra, 2 cm por detrás de su cara, y de lejos asomaban parpadeando: ahora empiezan encima.
+- **Boda:** el usuario pidió que al sentarte avisara de brindar y que no se pudiera uno levantar hasta alzar la copa. El brindis empieza al coger la copa, así que cuenta desde ahí; el botón de levantarse sale al acabar.
+- **Misión en el pergamino:** una pestaña nueva, entre el mapa y el diario, con lo hecho y lo siguiente.
+- **Árboles del poblado:** de prueba, con detalle hasta 40 m en vez de 18, para que se vean mejor. Un árbol a 1 m de la esquina de la posada metía la copa en ella: se apartó 5 m hacia la calle.
+- **Postigos:** el usuario quiso poder cerrar la ventana de su habitación: los postigos de fuera giran hacia fuera, para no meterse en la pared.
+- **Entrada del poblado:** de dos guardias se quedó uno, con una garita de tablas detrás; un árbol que la tocaba se apartó.
+- **Oficios y mercado:** el usuario pidió cazar el ciervo (3 puntos, carta de carne), talar (5, madera) y picar piedra en la cueva (5, pieza), y alguien en el mercado que comprara las cartas por 5 monedas; luego, un personaje nuevo para el tendero y un modelo 3D en cada carta, como el pez. Se hizo con un mismo sistema de cartas (`partida.cartas`); el pescado sigue aparte por la misión.
+- **Ciervo:** el de cajas se cambió por uno modelado en Blender, y se llevó a una llanura: en las cuestas las patas se hundían o flotaban.
+- **Cueva:** la boca estaba en un montón de rocas sobre el terreno; se hizo una loma en el propio terreno y la boca en su ladera, con rellano y camino.
+- **Boda:** el círculo de la boda, con luz que late.
+- **Modo libre con puntos:** sin misión todo era gratis; el usuario decidió dar 30 puntos al día y que todo cueste igual. Las partidas guardadas sin misión pasan a tener 30 al abrirlas.
+- **Menú:** dos caballeros de piedra junto a la tabla y estandartes, para que no fuera una sala vacía.
+- **Mapa:** un acceso por lugar, y niebla sobre lo no visitado. Los primeros bordes de niebla eran duros y salían círculos; se suavizaron con degradados. Para probar se dejó todo el mapa abierto; luego el usuario pidió volver a la niebla y dejar el mapa entero solo en la partida 1, de depuración. Después pasaron también allí, y solo allí, el medidor y el cambio de luz horneada.
 
 - **Personajes con esqueleto (prueba):** todos eran piezas rígidas en su postura final. Los novios se rehicieron en T-pose, con una malla, esqueleto y animaciones. Los pesos se calculan por distancia a los huesos, sin depender del automático de Blender, y las poses de los brazos se dan diciendo adónde apunta cada tramo, que es mucho más fácil de acertar que con ángulos.

@@ -3,6 +3,11 @@
 // del mundo. Para añadir una: su entrada en MUNDO, sus pasos en PASOS y su archivo en salas/.
 
 const rampa = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
+// La llanura de los ciervos en el bosque: llana hasta 14 m del centro y empalmando con las lomas hasta 30
+const LLANURA_CIERVOS = { x: -45, z: -140 };
+// La loma de la cueva, en el bosque: su cima (x, z) y, en su ladera del oeste, el rellano de la boca (x de su centro y
+// altura). La boca (salas/bosque.html) está en el borde del rellano, en x = 16.
+const LADERA_CUEVA = { x: 36, z: -150, boca: 14.2, rellano: 6.3 };
 
 // sitio: dónde se considera que estás en esa zona (se reparte el plano entero, sin huecos).
 // andar: por dónde se puede andar, 2 m más corto que el sitio en cada lado que da a otra zona: entre
@@ -20,7 +25,14 @@ const MUNDO = {
     altura(x, z) {
       if (z >= -46) return 0;
       const h = 3.2 * Math.sin(x * 0.045 + 1) + 2.4 * Math.sin(z * 0.06 + 0.5) + Math.sin((x + z) * 0.11) + 0.35 * Math.sin((x - z) * 0.23) + 4;
-      return h * (1 - rampa(-100, -46, z)) * rampa(9, 40, Math.hypot(x - 6, z + 84));
+      // y una llanura al oeste, donde pastan los ciervos (sin cuestas, para que no fallen las patas), a -1,5 m, la
+      // altura que ya tenía el terreno por allí
+      const llano = rampa(14, 30, Math.hypot(x - LLANURA_CIERVOS.x, z - LLANURA_CIERVOS.z));
+      let y = (h * llano - 1.5 * (1 - llano)) * (1 - rampa(-100, -46, z)) * rampa(9, 40, Math.hypot(x - 6, z + 84));
+      // la loma de la cueva: 10 m más arriba en su cima, y la boca en su ladera del oeste, con un rellano delante
+      const c = LADERA_CUEVA;
+      y += 10 * rampa(26, 7, Math.hypot(x - c.x, z - c.z));
+      return y + (c.rellano - y) * rampa(3.5, 2, Math.hypot(x - c.boca, z - c.z));
     },
   },
   lago: {
@@ -38,6 +50,7 @@ const MUNDO = {
   },
   poblado: {
     titulo: 'El Poblado', salas: ['poblado', 'taberna', 'posada'],
+    arbolesCerca: 40,   // (de prueba) hasta dónde se ven los árboles con su detalle; si no lo dice, DIST_CERCA (js/arboles.js)
     sitio: { x0: 90, x1: 230, z0: -200, z1: -40 }, andar: { x0: 92, x1: 228, z0: -190, z1: -50 },
     cielo: 'mediodia', niebla: '#d3cfc4', fondo: '#a9cfe8', ambiente: { intensity: 2.2, color: '#ffffff' }, sol: { intensity: 1.6, color: '#fff2dc' },
     altura(x, z) {

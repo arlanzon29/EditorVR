@@ -69,7 +69,7 @@ AFRAME.registerComponent('menu-partidas', {
     g.strokeStyle = '#4a4640'; g.lineWidth = 3;
     g.beginPath(); g.moveTo(40, y); g.lineTo(W - 40, y); g.stroke();
     g.textAlign = 'left'; g.fillStyle = '#d8c7a0';
-    g.font = '600 44px Georgia, serif'; g.fillText(`Partida ${r}`, 60, y + 48);
+    g.font = '600 44px Georgia, serif'; g.fillText(`Partida ${r}${r === PARTIDA_DEPURACION ? ' (depuración)' : ''}`, 60, y + 48);
     g.font = '30px Georgia, serif';
     if (!s) {
       g.font = 'italic 30px Georgia, serif'; g.fillText('Vacía', 60, y + 100);

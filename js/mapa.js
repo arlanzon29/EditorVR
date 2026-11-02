@@ -1,5 +1,6 @@
-// Editor VR: el mapa, el diario, el inventario y la ayuda. Un pergamino con cuatro pestañas: el mapa, con todas
-// las zonas, los caminos y una flecha que dice dónde estás y hacia dónde miras; el diario de la partida, con lo
+// Editor VR: el mapa, la misión, el diario, el inventario y la ayuda. Un pergamino con cinco pestañas: el mapa, con todas
+// las zonas, los caminos y una flecha que dice dónde estás y hacia dónde miras; la misión, con lo hecho y lo que toca
+// (partida.resumenMision); el diario de la partida, con lo
 // aprendido y el botón de terminar el día; el inventario, con las cartas, las monedas y el botón de comer; y
 // la ayuda, con todos los botones. A o Y lo abren y cierran, y de hoja se cambia apuntando a su pestaña (en el
 // ordenador, la tecla N pasa a la siguiente, y después de la última se guarda). En VR va
@@ -7,8 +8,7 @@
 
 const MAPA = { x0: -300, x1: 370, z0: -445, z1: 60 };   // lo que abarca, en metros del mundo
 // Viaje rápido: en la pestaña del mapa, apuntar a un sello y apretar el gatillo derecho (en el ordenador,
-// mirarlo y hacer clic) te lleva allí. Solo salen los de las zonas ya visitadas; con MAPA_TODAS, todos.
-const MAPA_TODAS = true;    // para depurar: en true salen todos, sin haberlos visitado
+// mirarlo y hacer clic) te lleva allí. Solo salen los de las zonas ya visitadas; en la partida de depuración, todos.
 const NIEBLA_MAPA = 'rgb(185, 178, 163)';
 // Un sello por lugar. Zona; dónde está en el mapa (x, z); adónde lleva (a, b); hacia dónde mira
 const DESTINOS_MAPA = [
@@ -32,7 +32,7 @@ const CAMINOS_MAPA = [
   [[3, -58], [-40, -95], [-80, -120], [-125, -125], [-150, -160], [-180, -200], [-180, -230], [-180, -290], [-180, -315]],
 ];
 const B_MANTENIDO_MS = 600;   // botón B: pulsado, las cartas; mantenido, la pantalla del PC (js/conexion.js)
-const HOJA_MAPA = 0, HOJA_DIARIO = 1, HOJA_INVENTARIO = 2, HOJA_AYUDA = 3;
+const HOJA_MAPA = 0, HOJA_MISION = 1, HOJA_DIARIO = 2, HOJA_INVENTARIO = 3, HOJA_AYUDA = 4;
 AFRAME.registerComponent('mapa', {
   init() {
     const W = 1024, H = Math.round(W * (MAPA.z1 - MAPA.z0) / (MAPA.x1 - MAPA.x0));
@@ -44,21 +44,23 @@ AFRAME.registerComponent('mapa', {
     this.dibujar(this.mapaBase.getContext('2d'), W, H);
     const lienzo = l => { const t = new THREE.CanvasTexture(l); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
     const tex = lienzo(c);
-    const c2 = document.createElement('canvas');
+    const c2 = this.lienzoAyuda = document.createElement('canvas');
     c2.width = W; c2.height = H;
-    this.dibujarAyuda(c2.getContext('2d'), W, H);
-    this.pestanas(c2.getContext('2d'), W, HOJA_AYUDA);
-    // el diario y el inventario se redibujan cuando cambia la partida
+    this.pintarAyuda();
+    // la misión, el diario y el inventario se redibujan cuando cambia la partida
+    this.lienzoMision = document.createElement('canvas');
+    this.lienzoMision.width = W; this.lienzoMision.height = H;
     this.lienzoDiario = document.createElement('canvas');
     this.lienzoDiario.width = W; this.lienzoDiario.height = H;
     this.lienzoInventario = document.createElement('canvas');
     this.lienzoInventario.width = W; this.lienzoInventario.height = H;
-    this.hojas = [tex, lienzo(this.lienzoDiario), lienzo(this.lienzoInventario), lienzo(c2)];
+    this.hojas = [tex, lienzo(this.lienzoMision), lienzo(this.lienzoDiario), lienzo(this.lienzoInventario), lienzo(c2)];
     this.botones = { [HOJA_DIARIO]: [], [HOJA_INVENTARIO]: [] };   // { x, y, w, h (en el lienzo), hacer }
     this.confirmando = false;
+    this.pintarMision();
     this.pintarDiario();
     this.pintarInventario();
-    document.addEventListener('partida-cambia', () => { this.pintarDiario(); this.pintarInventario(); });
+    document.addEventListener('partida-cambia', () => { this.pintarMision(); this.pintarDiario(); this.pintarInventario(); });
     const ancho = 0.42, alto = ancho * H / W;
     this.ancho = ancho; this.alto = alto;
     this.panel = new THREE.Mesh(new THREE.PlaneGeometry(ancho, alto), new THREE.MeshBasicMaterial({ map: tex, fog: false, depthTest: false, transparent: true }));
@@ -85,18 +87,22 @@ AFRAME.registerComponent('mapa', {
     this.puntero.visible = false;
     this.panel.add(this.puntero);
     this.modeloInventario = new THREE.Mesh(formaDePez(), new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: false, transparent: true }));
-    this.modeloInventario.scale.setScalar(0.13);
-    // (en el hueco del dibujo de la carta, que se pinta en 50, 245 a 0,72)
-    this.modeloInventario.position.set((180 / W - 0.5) * ancho, (0.5 - 417 / H) * alto, 0.03);
+    this.modeloInventario.scale.setScalar(0.09);
+    // (en el hueco del dibujo de la carta del pescado, la primera, que se pinta en 50, 235 a la mitad: pintarInventario)
+    this.modeloInventario.position.set((140 / W - 0.5) * ancho, (0.5 - 355 / H) * alto, 0.03);
     this.modeloInventario.renderOrder = 998;
     this.modeloInventario.visible = false;
     this.panel.add(this.modeloInventario);
+    // y los de las demás cartas (js/oficios.js), cada uno en el hueco de la suya (huecosCartas, de pintarInventario)
+    this.modelosCartas = modelosDeCartas();
+    for (const m of Object.values(this.modelosCartas)) { m.scale.setScalar(0.045); m.visible = false; this.panel.add(m); }
     this.mira = new THREE.Vector3(); this.yo = new THREE.Vector3();
     // los sellos de los destinos: se encienden al apuntarlos
     this.visitadas = new Set();
     this.pintarMapa();
     // cada partida tiene sus zonas visitadas
-    document.addEventListener('partida-abierta', () => { this.visitadas = new Set(partida.estado.visitadas); this.pintarMapa(); });
+    // (y la ayuda: los botones de depurar solo salen en su partida)
+    document.addEventListener('partida-abierta', () => { this.visitadas = new Set(partida.estado.visitadas); this.pintarMapa(); this.pintarAyuda(); this.hojas[HOJA_AYUDA].needsUpdate = true; });
     // el aro dorado alrededor de la zona que pide el tutorial
     this.colocarMarcaMapa = () => {
       const paso = partida.pasoTutorial(), d = paso && paso.zona && DESTINOS_MAPA.find(s => s.zona === paso.zona);
@@ -132,6 +138,7 @@ AFRAME.registerComponent('mapa', {
       this.brillo.visible = false; this.botonApuntado = null;
       if (this.confirmando) { this.confirmando = false; this.pintarDiario(); }
       if (this.hoja < 0) return;
+      if (this.hoja === HOJA_MISION) this.pintarMision();
       this.panel.material.map = this.hojas[this.hoja];
       this.panel.material.needsUpdate = true;
       this.flecha.visible = this.hoja === HOJA_MAPA;
@@ -177,7 +184,7 @@ AFRAME.registerComponent('mapa', {
   },
   // Las pestañas, arriba a la izquierda, con la que está abierta más clara
   pestanas(g, W, abierta) {
-    ['Mapa', 'Diario', 'Inventario', 'Ayuda'].forEach((texto, i) => {
+    ['Mapa', 'Misión', 'Diario', 'Inventario', 'Ayuda'].forEach((texto, i) => {
       const x = 30 + i * 145;
       g.fillStyle = i === abierta ? '#ead9ae' : '#a4906a';
       g.strokeStyle = '#3a2616'; g.lineWidth = 3;
@@ -209,22 +216,59 @@ AFRAME.registerComponent('mapa', {
     g.textAlign = 'left';
     this.botones[hoja].push({ x, y: by, w, h: bh, hacer });
   },
-  // La hoja del inventario: las cartas que llevas, las monedas y el botón de comer
+  // La hoja de la misión: en cuál estás, sus pasos (hechos, con su marca) y lo siguiente que hay que hacer
+  pintarMision() {
+    const r = partida.resumenMision(), c = this.lienzoMision, g = c.getContext('2d'), W = c.width, H = c.height, TINTA = '#3a2616';
+    this.fondoHoja(g, W, H, HOJA_MISION);
+    let y = 110;
+    const fila = (texto, letra, x = 50) => {
+      g.font = `${letra} Georgia, serif`;
+      for (const l of partirTexto(g, texto, W - x - 50)) { g.fillText(l, x, y); y += parseInt(letra.match(/(\d+)px/)[1], 10) + 11; }
+    };
+    fila(r.titulo, '600 38px');
+    if (r.estado) fila(r.estado, 'italic 25px');
+    y += 14;
+    if (r.pasos.length) {
+      fila('Lo hecho', '600 30px');
+      for (const p of r.pasos) {
+        // una casilla, con su marca si está hecho
+        g.strokeStyle = TINTA; g.lineWidth = 3; g.strokeRect(52, y - 13, 26, 26);
+        if (p.hecho) { g.lineWidth = 5; g.beginPath(); g.moveTo(56, y); g.lineTo(64, y + 9); g.lineTo(80, y - 16); g.stroke(); }
+        g.fillStyle = p.hecho ? TINTA : 'rgba(58, 38, 22, 0.6)';
+        fila(p.texto, p.hecho ? '26px' : 'italic 26px', 96);
+        g.fillStyle = TINTA;
+        y += 2;
+      }
+      y += 14;
+    }
+    fila('Lo siguiente', '600 30px');
+    fila(r.siguiente, '600 27px');
+    this.hojas[HOJA_MISION].needsUpdate = true;
+  },
+  // La hoja del inventario: las cartas que llevas, en fila (el pescado, el primero), las monedas y los botones de comer
   pintarInventario() {
     const e = partida.estado, c = this.lienzoInventario, g = c.getContext('2d'), W = c.width, H = c.height;
     this.fondoHoja(g, W, H, HOJA_INVENTARIO);
     this.botones[HOJA_INVENTARIO] = [];
     g.font = '600 38px Georgia, serif'; g.fillText('Inventario', 50, 110);
     g.font = '27px Georgia, serif'; g.fillText(`Monedas de plata: ${e.monedas}`, 50, 158);
-    g.font = '600 30px Georgia, serif'; g.fillText('Cartas', 50, 215);
-    if (e.pescado) {
-      g.save(); g.translate(50, 245); g.scale(0.72, 0.72);
-      dibujarCartaPescado(g, 360, 520, e.pescado, false);   // (el pez va aparte, en 3D: modeloInventario)
+    g.font = '600 30px Georgia, serif'; g.fillText('Cartas', 50, 205);
+    const cartas = partida.cartasQueLlevas();
+    if (!cartas.length) { g.font = 'italic 25px Georgia, serif'; g.fillText('No llevas ninguna.', 50, 250); }
+    let boton = 0;
+    this.huecosCartas = {};
+    cartas.forEach(([tipo, como], i) => {
+      this.huecosCartas[tipo] = { x: 50 + i * 200 + 90, y: 344 };   // (el centro del hueco del dibujo, en el lienzo)
+      g.save(); g.translate(50 + i * 200, 235); g.scale(0.5, 0.5);
+      // (los dibujos van aparte, en 3D: modeloInventario, el pez, y modelosCartas)
+      if (tipo === 'pescado') dibujarCartaPescado(g, 360, 520, como, false);
+      else dibujarCarta(g, 360, 520, tipo, como, false);
       g.restore();
-      this.boton(g, H, HOJA_INVENTARIO, 50, 400, `Comer el pescado ${e.pescado} (C)`, () => partida.comer());
-    } else { g.font = 'italic 25px Georgia, serif'; g.fillText('No llevas ninguna.', 50, 255); }
+      if (CARTAS[tipo].comer && boton < 2) this.boton(g, H, HOJA_INVENTARIO, 50 + boton++ * 440, 420, `Comer ${CARTAS[tipo].una}${boton === 1 ? ' (C)' : ''}`, () => partida.comer(tipo));
+    });
     g.fillStyle = '#3a2616'; g.textAlign = 'left'; g.textBaseline = 'middle';
-    g.font = 'italic 24px Georgia, serif'; g.fillText('Solo se puede llevar una carta de cada tipo.', 330, 300);
+    g.font = 'italic 24px Georgia, serif';
+    g.fillText(`Solo se puede llevar una carta de cada tipo. El mercader del poblado las compra a ${PRECIO_CARTA} monedas.`, 50, 525, W - 100);
     this.hojas[HOJA_INVENTARIO].needsUpdate = true;
     this.botonApuntado = null;
     if (this.brillo) this.brillo.visible = false;   // (la primera vez aún no existe)
@@ -242,8 +286,9 @@ AFRAME.registerComponent('mapa', {
     y += 4;
     const paso = partida.pasoTutorial();
     if (paso) fila('Ahora: ' + paso.texto, '600 27px');
-    fila(m ? `Misión: ${m.titulo}. Te ${e.puntos === 1 ? 'queda 1 punto' : `quedan ${e.puntos} puntos`}.` : 'Sin misión: se pasea libre y gratis. Las misiones se reciben en la taberna.');
-    if (m) fila('Entrar cuesta: ' + Object.entries(PRECIOS_ZONA).map(([z, p]) => `${MUNDO[z].titulo.replace(/^(El|La|Las) /, '')} ${p}`).join(', ') + '.', '22px');
+    const quedan = `Te ${e.puntos === 1 ? 'queda 1 punto' : `quedan ${e.puntos} puntos`}`;
+    fila(m ? `Misión: ${m.titulo}. ${quedan}.` : `Sin misión: ${quedan} de los ${PUNTOS_LIBRE} del día. Las misiones se reciben en la taberna.`);
+    fila('Entrar cuesta: ' + Object.entries(PRECIOS_ZONA).map(([z, p]) => `${MUNDO[z].titulo.replace(/^(El|La|Las) /, '')} ${p}`).join(', ') + '.', '22px');
     y += 12;
     fila('Lo aprendido', '600 30px');
     if (!e.aprendido.length) fila('Todavía nada.', 'italic 25px');
@@ -285,6 +330,11 @@ AFRAME.registerComponent('mapa', {
     this.brillo.scale.set(mejor.w / W * this.ancho, mejor.h / H * this.alto, 1);
     this.brillo.position.set(((mejor.x + mejor.w / 2) / W - 0.5) * this.ancho, (0.5 - (mejor.y + mejor.h / 2) / H) * this.alto, 0.001);
   },
+  pintarAyuda() {
+    const g = this.lienzoAyuda.getContext('2d'), W = this.lienzoAyuda.width;
+    this.dibujarAyuda(g, W, this.lienzoAyuda.height);
+    this.pestanas(g, W, HOJA_AYUDA);
+  },
   dibujarAyuda(g, W, H) {
     g.fillStyle = '#d7c49a'; g.fillRect(0, 0, W, H);
     let s = 15;
@@ -318,8 +368,7 @@ AFRAME.registerComponent('mapa', {
       ['Gatillo dcho. en un botón', 'terminar el día, comer'],
       ['B', 'ver tus cartas; mantenido, traer la pantalla del PC'],
       ['Joystick derecho, mantenido', 'cambiar la resolución (recarga)'],
-      ['X o apretar joystick izq.', 'medidor de rendimiento'],
-      ['Apretar joystick dcho.', 'luz horneada, sí o no'],
+      ...(partida.depuracion() ? [['X o apretar joystick izq.', 'medidor de rendimiento'], ['Apretar joystick dcho.', 'luz horneada, sí o no']] : []),
     ]);
     columna(50, 590, 'En el ordenador', [
       ['WASD o flechas', 'andar; Mayúsculas, correr'],
@@ -327,7 +376,7 @@ AFRAME.registerComponent('mapa', {
       ['N', 'mapa, diario, inventario, ayuda, cerrar'],
       ['T / Q, en el diario', 'terminar el día / salir al menú'],
       ['C, en el inventario', 'comer'],
-      ['M / H', 'medidor / luz horneada'],
+      ...(partida.depuracion() ? [['M / H', 'medidor / luz horneada']] : []),
     ]);
     g.textAlign = 'left'; g.font = 'italic 24px Georgia, serif'; g.fillText('Los pasos entre tierras se cruzan por los caminos, entre la niebla.', 50, H - 40);
   },
@@ -424,7 +473,7 @@ AFRAME.registerComponent('mapa', {
     g.beginPath(); g.rect(10, 10, W - 20, H - 20); g.clip();
     for (const nombre of Object.keys(MUNDO)) {
       const s = MUNDO[nombre].sitio;
-      if (MAPA_TODAS || this.visitadas.has(nombre) || s.x0 > MAPA.x1) continue;   // (cueva y mazmorras están fuera del mapa)
+      if (partida.depuracion() || this.visitadas.has(nombre) || s.x0 > MAPA.x1) continue;   // (cueva y mazmorras están fuera del mapa)
       const x0 = X(s.x0), x1 = X(Math.min(s.x1, MAPA.x1 + 20)), y0 = Y(Math.max(s.z0, MAPA.z0 - 20)), y1 = Y(Math.min(s.z1, MAPA.z1 + 20));
       // la base, y encima bocanadas claras y oscuras, siempre las mismas para cada zona
       g.fillStyle = NIEBLA_MAPA; g.fillRect(x0, y0, x1 - x0, y1 - y0);
@@ -450,7 +499,8 @@ AFRAME.registerComponent('mapa', {
     if (!this.panel.visible || this.hoja !== HOJA_MAPA || !this.apuntado || cambiandoDeZona || enBarco || enLaMesa) return;
     const d = this.apuntado.destino;
     // (con misión, se pagan todas las zonas del camino)
-    if (!this.el.components.zonas.cruzar(d.zona, { x: d.a, y: d.y, z: d.b, giro: d.giro * Math.PI / 180 }, partida.precioViaje(d.zona))) return;
+    // (si cuesta puntos, primero la pregunta: el pergamino se cierra para verla)
+    if (!this.el.components.zonas.cruzar(d.zona, { x: d.a, y: d.y, z: d.b, giro: d.giro * Math.PI / 180 }, partida.precioViaje(d.zona), { viaje: true })) return;
     this.panel.visible = false; this.hoja = -1;
   },
   // dónde toca el pergamino el rayo del mando derecho (fuera de VR, la mira de la cámara), en sus coordenadas
@@ -510,8 +560,17 @@ AFRAME.registerComponent('mapa', {
       this.modeloInventario.rotation.y = performance.now() / 1200;
       this.modeloInventario.material.color.set(pescado === 'asado' ? '#a8703a' : '#ffffff');   // asado, tostado
     }
+    const W = this.lienzoInventario.width, H = this.lienzoInventario.height;
+    for (const [tipo, m] of Object.entries(this.modelosCartas)) {
+      const h = this.huecosCartas[tipo];
+      m.visible = this.hoja === HOJA_INVENTARIO && !!h;
+      if (!m.visible) continue;
+      m.position.set((h.x / W - 0.5) * this.ancho, (0.5 - h.y / H) * this.alto, 0.03);
+      m.rotation.set(0.35, performance.now() / 1200, 0);
+      if (tipo === 'carne') m.userData.carne.material.color.set(partida.estado.cartas.carne === 'asada' ? '#6a3a1c' : '#9a4a3a');
+    }
     if (this.hoja === HOJA_MAPA) {
-      for (const s of this.sellos) s.visible = MAPA_TODAS || this.visitadas.has(s.destino.zona);
+      for (const s of this.sellos) s.visible = partida.depuracion() || this.visitadas.has(s.destino.zona);
       this.colocarMarcaMapa();
       this.marcaMapa.scale.setScalar(1 + 0.2 * Math.sin(performance.now() / 300));
       this.mirarSellos();

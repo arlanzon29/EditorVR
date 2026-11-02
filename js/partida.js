@@ -1,6 +1,6 @@
 // Editor VR: el juego. Estado de la partida (misión, puntos, día, lo aprendido, lo que llevas), guardado en
-// el navegador, y sus reglas: entrar en una zona cuesta puntos, andar dentro es gratis y sin misión todo es
-// gratis. Diseño: JUEGO.md. Aquí también el indicador de puntos y los avisos que se ven en VR.
+// el navegador, y sus reglas: entrar en una zona cuesta puntos y andar dentro es gratis; con misión, el día trae su
+// presupuesto y, sin ella, PUNTOS_LIBRE. Diseño: JUEGO.md. Aquí también el indicador de puntos y los avisos que se ven en VR.
 
 // Lo que cuesta entrar en cada zona. Acordados: bosque y montaña; lago y poblado salen de la ruta de la
 // boda en JUEGO.md. Los demás son provisionales.
@@ -10,13 +10,20 @@ const ENTRADAS_ZONA = [['bosque', 'cueva'], ['castillo', 'mazmorras']];
 const MISIONES = {
   boda: { titulo: 'El pescado de la boda', presupuesto: 9, pago: 5 },   // (el pago es provisional)
 };
+const PUNTOS_LIBRE = 30;   // los puntos de acción de cada día sin misión (decidido por el usuario)
 const PUNTOS_PESCAR = 3;   // lo que cuesta pescar con misión
-const PUNTOS_COMIDA = { crudo: 1, asado: 3 };   // propuesta de JUEGO.md
-// Cada día empieza en tu habitación de la posada, arriba, mirando a la puerta
-const INICIO_DIA = { zona: 'poblado', x: 174.8, y: 3.2, z: -101.8, giro: Math.PI };
+// y los demás oficios (pedidos por el usuario): cazar el ciervo, talar en el bosque y picar piedra en la cueva
+const PUNTOS_CAZAR = 3, PUNTOS_TALAR = 5, PUNTOS_PICAR = 5;
+const PRECIO_CARTA = 5;   // monedas de plata que paga el mercader del poblado por cada carta
+// lo que da comer, según cómo esté: el pescado (crudo, asado) y la carne (cruda, asada). Propuesta de JUEGO.md
+const PUNTOS_COMIDA = { crudo: 1, asado: 3, cruda: 1, asada: 3 };
+// Cada día empieza en tu habitación de la posada, arriba, mirando a la puerta: al fondo, entre la cama y el
+// taburete, para ver la puerta entera
+const INICIO_DIA = { zona: 'poblado', x: 174.05, y: 3.2, z: -103, giro: Math.PI };
 const CLAVE_PARTIDA = 'editorvr-partida';   // (más el número de la partida)
 const CLAVE_RANURA = 'editorvr-ranura';     // en sessionStorage: la que se está jugando, para seguir en ella al recargar
 const RANURAS = 3;                          // las partidas que se pueden guardar
+const PARTIDA_DEPURACION = 1;               // la que tiene el mapa entero (js/mapa.js), el medidor y el cambio de luz horneada
 const MENU_SITIO = { x: 2050, y: 0, z: 0.7, giro: 0 };   // dónde te deja el menú (salas/menu.html)
 const AVISO_MS = 4500;
 const BIENVENIDA_MS = 8000;
@@ -24,7 +31,8 @@ const BIENVENIDA_MS = 8000;
 const partida = {
   estado: null,   // sin partida abierta (en el menú), uno vacío que no se guarda
   ranura: null,   // el número de la partida abierta
-  nuevo() { return { dia: 1, mision: null, puntos: 0, monedas: 0, pescado: null, pescadoHoy: false, cofre: [], tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, visitadas: [], sitio: null, fecha: null }; },
+  charlaAbierta: false,   // hablando con el tabernero: el tutorial espera a que acabe (comprobarPaso)
+  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, visitadas: [], sitio: null, fecha: null }; },
   cargar() {
     this.estado = this.nuevo();
     this.traerPartidaVieja();
@@ -53,6 +61,8 @@ const partida = {
     const zona = e.sitio ? zonaEn(e.sitio.x, e.sitio.z) : MUNDO[INICIO_DIA.zona];
     return { dia: e.dia, monedas: e.monedas, fecha: e.fecha, zona: zona ? zona.titulo : '', mision: MISIONES[e.mision]?.titulo };
   },
+  // La partida de depuración: mapa entero, medidor y cambiar la luz horneada
+  depuracion() { return this.ranura === PARTIDA_DEPURACION; },
   borrar(r) { try { localStorage.removeItem(`${CLAVE_PARTIDA}-${r}`); } catch (e) {} },
   // Al cargar la página: si se ha recargado jugando (o con ?partida=1 en la dirección), a esa partida; si no, al menú
   arrancar() {
@@ -63,9 +73,14 @@ const partida = {
   // Abre la partida "r" (si está vacía, empieza una en la posada) y va a donde se dejó, sin salir de VR
   abrir(r) {
     if (cambiandoDeZona) return;
-    this.estado = Object.assign(this.nuevo(), this.leer(r));
+    const guardada = this.leer(r);
+    this.estado = Object.assign(this.nuevo(), guardada);
+    // (las partidas de cuando sin misión no había puntos empiezan con los de hoy)
+    if (guardada && !guardada.puntosLibres && !this.estado.mision) this.estado.puntos = PUNTOS_LIBRE;
     if (this.estado.hechas.includes('boda') && this.estado.bodaDia === null) this.estado.bodaDia = this.estado.dia;   // (partidas de antes de la boda)
     this.ranura = r;
+    // fuera de la de depuración, la luz que diga la dirección (por si se cambió en aquella)
+    if (!this.depuracion()) luzHorneada = !/sinhornear|sinfundir/.test(location.search);
     this.ultimoPaso = undefined;
     try { sessionStorage.setItem(CLAVE_RANURA, r); } catch (e) {}
     document.dispatchEvent(new CustomEvent('partida-abierta'));
@@ -109,7 +124,8 @@ const partida = {
   // Lo marca el rombo de lo que diga "quien" (marca-paso), el aro del mapa en "zona", el aviso y el diario.
   pasoTutorial() {
     const e = this.estado, t = e.tutorial;
-    if (e.bodaVista !== null) return null;
+    // lo último: sentado a la mesa de la boda, brindar (hasta entonces no se levanta uno; js/boda.js)
+    if (e.bodaVista !== null) return enLaMesa && !t.brindis ? { id: 'brindar', texto: BRINDAR_TEXTO } : null;
     if (!t.puerta) return { id: 'puerta', quien: 'puerta', texto: 'Apunta a la puerta con el mando derecho y aprieta el gatillo para abrirla.' };
     if (!t.posadero) return { id: 'posadero', quien: 'posadero', texto: 'Anda con el joystick izquierdo. Baja por la escalera del pasillo y habla con el posadero: apúntale y aprieta el gatillo.' };
     if (e.hechas.includes('boda')) {
@@ -117,14 +133,15 @@ const partida = {
       if (e.dia === e.bodaDia) return { id: 'dormir', quien: 'cama', zona: 'poblado', texto: 'Encargo cumplido. Vuelve a tu habitación de la posada y duerme: apunta a la cama y aprieta el gatillo.' };
       return { id: 'boda', quien: 'boda', zona: 'poblado', texto: 'Hoy es la boda, en la plaza, delante de la iglesia. Apunta a la silla libre y aprieta el gatillo para sentarte.' };
     }
-    if (e.mision !== 'boda') return { id: 'tabernero', quien: 'tabernero', texto: 'La taberna está aquí al lado. Apunta al tabernero, aprieta el gatillo y acepta su encargo.' };
-    if (e.pescado) return { id: 'volver', quien: 'tabernero', zona: 'poblado', texto: 'Abre el mapa con A o Y, apunta al sello del poblado y aprieta el gatillo: el viaje también cuesta puntos. Lleva el pescado al tabernero.' };
+    if (e.mision !== 'boda') return { id: 'tabernero', quien: 'tabernero', texto: 'El rombo dorado marca al tabernero. Cuando llegues, apúntale, aprieta el gatillo y acepta su encargo.' };
+    if (e.pescado) return { id: 'volver', quien: 'tabernero', zona: 'poblado', texto: 'Abre el mapa con A o Y, apunta al sello del poblado y aprieta el gatillo. El viaje cuesta los puntos de las zonas del camino. Lleva el pescado al tabernero.' };
     if (zonaCargada.nombre === 'lago') return { id: 'pescar', zona: 'lago', texto: `Ve al embarcadero del sur, apunta a los peces y aprieta el gatillo para pescar. Pescar cuesta ${PUNTOS_PESCAR} puntos.` };
     return { id: 'lago', zona: 'lago', luego: ['Para ver el mapa, pulsa el botón A o Y: el aro dorado marca adónde ir. Apunta a las pestañas de arriba para ver el diario, el inventario o la ayuda, y vuelve a pulsar para cerrarlo.', 'Para ir más deprisa, corre: mantén apretado el gatillo lateral izquierdo mientras andas.'], texto: 'Tienes puntos para el encargo: entrar en cada zona cuesta puntos, y sin ellos se acaba el día. Ve por el camino al bosque y de allí, al norte, al lago.' };
   },
   // Si el paso ha cambiado, lo avisa. Lo llama quien cambia algo y zonas.js, al terminar de cargar una zona.
+  // Mientras se habla con alguien (charlaAbierta), espera: el aviso saldría encima de la charla.
   comprobarPaso() {
-    if (!this.zonaLista) return;
+    if (!this.zonaLista || this.charlaAbierta) return;
     const paso = this.pasoTutorial(), id = paso ? paso.id : null;
     if (id === this.ultimoPaso) return;
     if (paso && paso.callado) { this.ultimoPaso = id; return; }
@@ -140,14 +157,14 @@ const partida = {
       };
       decir(paso.texto, paso.luego || []);
     }
-    else if (this.ultimoPaso) this.avisar('Se acabó el tutorial. Ya sabes moverte por estas tierras.', true);
+    else if (this.ultimoPaso) this.avisar(`Se acabó el tutorial. Ya sabes moverte por estas tierras.${enLaMesa ? ' Puedes levantarte cuando quieras.' : ''}`, true);
     this.ultimoPaso = id;
   },
   marcarTutorial(que) { if (!this.estado.tutorial[que]) { this.estado.tutorial[que] = true; this.guardar(); } },
   avisar(texto, tutorial = false) { if (this.ranura) document.dispatchEvent(new CustomEvent('partida-aviso', { detail: { texto, tutorial } })); },
   aprender(texto) { if (!this.estado.aprendido.includes(texto)) this.estado.aprendido.push(texto); },
   misionActiva() { return MISIONES[this.estado.mision] || null; },
-  precio(nombre) { return this.misionActiva() ? PRECIOS_ZONA[nombre] ?? 0 : 0; },
+  precio(nombre) { return PRECIOS_ZONA[nombre] ?? 0; },
   puedeEntrar(nombre) { return nombre === zonaCargada.nombre || this.estado.puntos >= this.precio(nombre); },
 
   // Lo que cuesta el viaje rápido: las entradas de todas las zonas del camino más barato hasta "nombre"
@@ -188,10 +205,11 @@ const partida = {
   // Presupuesto entero y sin nada de lo pescado
   prepararDia() {
     const e = this.estado, m = this.misionActiva();
-    e.puntos = m ? m.presupuesto : 0;
+    e.puntos = m ? m.presupuesto : PUNTOS_LIBRE;
     e.pescado = null;
     e.cofre = [];   // lo pescado también se estropea en el cofre: si no, se guardaría para la misión
     e.pescadoHoy = false;
+    delete e.cartas.carne;   // la carne también; la madera y la piedra no
   },
   // Qué dice el cofre de tu habitación y sus botones (sin "hacer", se cierra). Solo hay pescado que guardar, por ahora.
   opcionesCofre() {
@@ -208,7 +226,7 @@ const partida = {
     this.guardar();
     const m = this.misionActiva();
     const boda = this.bodaHoy() ? ' Hoy es la boda, en la plaza.' : '';
-    this.avisar(`${motivo ? motivo + ' ' : ''}Día ${this.estado.dia}.${m ? ` Tienes ${m.presupuesto} puntos.` : ''}${boda}`);
+    this.avisar(`${motivo ? motivo + ' ' : ''}Día ${this.estado.dia}. Tienes ${this.estado.puntos} puntos.${boda}`);
     const { zona, x, y, z, giro } = INICIO_DIA;
     document.querySelector('a-scene').components.zonas.ir(zona, { x, y, z, giro });
   },
@@ -218,32 +236,62 @@ const partida = {
   // pescado encima, crudo o asado, no se coge otro
   puedePescar() { return !this.estado.pescado && (!this.misionActiva() || !this.estado.pescadoHoy); },
   pescar() {
-    if (this.misionActiva()) this.estado.puntos -= PUNTOS_PESCAR;
+    this.estado.puntos -= PUNTOS_PESCAR;
     this.estado.pescado = 'crudo';
     this.estado.pescadoHoy = true;
     this.aprender('Los peces del lago se pescan junto al embarcadero del sur.');
     this.guardar();
-    this.avisar(this.estado.mision === 'boda' ? `Has pescado uno por ${PUNTOS_PESCAR} puntos. Te ${this.estado.puntos === 1 ? 'queda 1' : `quedan ${this.estado.puntos}`}. Llévaselo al tabernero.` : 'Has pescado uno. Se come desde el inventario.');
+    // (cómo se usa el mapa lo dice luego el tutorial: aquí, que se puede)
+    const rapido = 'No hace falta volver andando: con el mapa viajas deprisa a cualquier sitio donde ya hayas estado.';
+    this.avisar(this.estado.mision === 'boda' ? `Has pescado uno por ${PUNTOS_PESCAR} puntos. Te ${this.estado.puntos === 1 ? 'queda 1' : `quedan ${this.estado.puntos}`}. Llévaselo al tabernero. ${rapido}` : `Has pescado uno. Se come desde el inventario. ${rapido}`);
   },
+  // En la hoguera se asa lo que haya crudo: el pescado y la carne
   asar() {
-    if (this.estado.pescado === 'crudo') {
-      this.estado.pescado = 'asado';
-      this.aprender('El pescado asado en una hoguera alimenta más que crudo.');
+    const e = this.estado, asado = [];
+    if (e.pescado === 'crudo') { e.pescado = 'asado'; asado.push('el pescado'); }
+    if (e.cartas.carne === 'cruda') { e.cartas.carne = 'asada'; asado.push('la carne'); }
+    if (asado.length) {
+      this.aprender('Lo asado en una hoguera alimenta más que crudo.');
       this.guardar();
-      this.avisar('Pescado asado.');
-    } else this.avisar(this.estado.pescado ? 'Este pescado ya está asado.' : 'No llevas nada que asar.');
+      this.avisar(`Asas ${asado.join(' y ')}.`);
+    } else this.avisar(e.pescado || e.cartas.carne ? 'Ya está asado.' : 'No llevas nada que asar.');
   },
-  comer() {
-    const e = this.estado, comida = e.pescado;
-    if (!comida) return;
-    e.pescado = null;
-    // sin misión los puntos no cuentan
-    if (this.misionActiva()) {
-      e.puntos += PUNTOS_COMIDA[comida];
-      this.guardar();
-      const sinEncargo = e.mision === 'boda' ? ' Te quedas sin encargo: habrá que pescar otro día.' : '';
-      this.avisar(`Te comes el pescado: ${PUNTOS_COMIDA[comida]} ${PUNTOS_COMIDA[comida] === 1 ? 'punto' : 'puntos'}. Tienes ${e.puntos}.${sinEncargo}`);
-    } else { this.guardar(); this.avisar('Te comes el pescado. Buen provecho.'); }
+  // Comer el pescado o la carne (sin decir cuál, lo que haya, el pescado antes)
+  comer(tipo = this.estado.pescado ? 'pescado' : 'carne') {
+    const e = this.estado, comida = tipo === 'pescado' ? e.pescado : e.cartas[tipo];
+    if (!comida || !PUNTOS_COMIDA[comida]) return;
+    if (tipo === 'pescado') e.pescado = null; else delete e.cartas[tipo];
+    const que = tipo === 'pescado' ? 'el pescado' : 'la carne';
+    e.puntos += PUNTOS_COMIDA[comida];
+    this.guardar();
+    const sinEncargo = tipo === 'pescado' && e.mision === 'boda' ? ' Te quedas sin encargo: habrá que pescar otro día.' : '';
+    this.avisar(`Te comes ${que}: ${PUNTOS_COMIDA[comida]} ${PUNTOS_COMIDA[comida] === 1 ? 'punto' : 'puntos'}. Tienes ${e.puntos}.${sinEncargo}`);
+  },
+
+  // --- Las cartas de los oficios (js/oficios.js): cartas = { tipo: cómo está }. El pescado va aparte (pescado),
+  // por la misión, pero se enseña y se vende igual. Solo una de cada tipo.
+  cartasQueLlevas() { const e = this.estado; return [...(e.pescado ? [['pescado', e.pescado]] : []), ...Object.entries(e.cartas)]; },
+  llevaCarta(tipo) { return tipo === 'pescado' ? !!this.estado.pescado : !!this.estado.cartas[tipo]; },
+  // Si se puede hacer un oficio que da una carta de "tipo" y cuesta "precio"; si no, el aviso
+  puedeOficio(tipo, precio) {
+    if (this.llevaCarta(tipo)) { this.avisar(`Ya llevas ${CARTAS[tipo].una}: solo una carta de cada tipo. Véndela en el mercado del poblado.`); return false; }
+    if (this.estado.puntos < precio) { this.avisar(`Cuesta ${precio} puntos y no te llegan.`); return false; }
+    return true;
+  },
+  conseguir(tipo, como, precio, texto) {
+    const e = this.estado;
+    e.puntos -= precio;
+    e.cartas[tipo] = como;
+    this.guardar();
+    this.avisar(`${texto} Te ${e.puntos === 1 ? 'queda 1 punto' : `quedan ${e.puntos} puntos`}. El mercader del poblado te la compra.`);
+  },
+  vender(tipo) {
+    const e = this.estado;
+    if (!this.llevaCarta(tipo)) return;
+    if (tipo === 'pescado') e.pescado = null; else delete e.cartas[tipo];
+    e.monedas += PRECIO_CARTA;
+    this.guardar();
+    this.avisar(`Vendes ${CARTAS[tipo].una} por ${PRECIO_CARTA} monedas de plata. Tienes ${e.monedas}.`);
   },
 
   // --- La misión del tutorial ---
@@ -275,6 +323,33 @@ const partida = {
     this.estado.bodaVista = this.estado.dia;
     this.aprender('El tabernero se ha casado, y en su banquete se sirvió tu pescado.');
     this.guardar();
+  },
+  // Para la hoja de la misión del pergamino (js/mapa.js): título, cómo va, los pasos (texto y si está hecho) y lo siguiente.
+  // Lo siguiente es lo que pide el tutorial, si lo hay; si no, el primer paso sin hacer.
+  resumenMision() {
+    const e = this.estado, m = this.misionActiva(), paso = this.pasoTutorial(), cumplida = e.hechas.includes('boda');
+    if (!m && !cumplida) return {
+      titulo: 'Sin misión', estado: `Día ${e.dia}. Te ${e.puntos === 1 ? 'queda 1 punto' : `quedan ${e.puntos} puntos`} de los ${PUNTOS_LIBRE} del día.`, pasos: [],
+      siguiente: paso ? paso.texto : 'Las misiones se reciben en la taberna del poblado: habla con el tabernero.',
+    };
+    // (con la misión en marcha, también si se repite, solo cuenta hasta la entrega; la boda es una vez)
+    const entregada = !m && cumplida, vista = e.bodaVista !== null, pasos = [
+      { texto: 'Aceptar el encargo del tabernero: pescado del lago para su banquete.', hecho: true, falta: 'Habla con el tabernero y acepta su encargo.' },
+      { texto: 'Pescar un pez en el lago.', hecho: !!e.pescado || entregada, falta: 'Ve al lago, al embarcadero del sur, apunta a los peces y aprieta el gatillo.' },
+      { texto: 'Llevárselo al tabernero.', hecho: entregada, falta: 'Lleva el pescado al tabernero, en la taberna del poblado. Con el mapa viajas deprisa a donde ya has estado.' },
+    ];
+    if (!m) pasos.push(
+      { texto: 'Dormir: la boda es al día siguiente.', hecho: vista || (e.bodaDia !== null && e.dia > e.bodaDia), falta: 'Vuelve a tu habitación de la posada y duerme en la cama.' },
+      { texto: 'Ir a la boda y brindar por los novios.', hecho: vista && !!e.tutorial.brindis, falta: 'Ve a la plaza, siéntate en la silla libre y brinda: coge tu copa y álzala.' },
+    );
+    const falta = pasos.find(p => !p.hecho);
+    return {
+      titulo: m ? m.titulo : 'El pescado de la boda',
+      estado: m ? `Día ${e.dia}. Te ${e.puntos === 1 ? 'queda 1 punto' : `quedan ${e.puntos} puntos`}: entrar en cada zona cuesta puntos.`
+        : falta ? 'Encargo entregado: te pagó en monedas de plata.' : 'Misión cumplida.',
+      pasos,
+      siguiente: paso ? paso.texto : falta ? falta.falta : 'Nada por ahora. Si quieres, el tabernero te pide otro pescado.',
+    };
   },
   // Qué dice el camarero ahora: su frase y las respuestas (texto y qué hacen; sin "hacer", se acaba la charla)
   charlaCamarero() {
@@ -399,7 +474,7 @@ AFRAME.registerComponent('partida', {
   },
   pintarIndicador() {
     const e = partida.estado, { lienzo, tex, malla } = this.indicador;
-    malla.visible = !!partida.misionActiva();
+    malla.visible = !!partida.ranura;
     if (!malla.visible) return;
     const g = lienzo.getContext('2d'), W = lienzo.width, H = lienzo.height;
     fondoDeTabla(g, W, H);
@@ -433,6 +508,8 @@ AFRAME.registerComponent('partida', {
     if (!camara) return;
     if (this.indicador.malla.parent !== camara) { camara.add(this.indicador.malla, this.aviso.malla); }
     if (!this.aviso.malla.visible) return;
+    // (con una pregunta de si se gastan puntos delante, el aviso se quita: la taparía. js/pregunta.js)
+    if (preguntaAbierta) this.avisoMs = 0;
     this.avisoMs -= Math.min(dt || 0, 100);
     if (this.avisoMs <= 0) this.aviso.malla.visible = false;
     else this.aviso.malla.material.opacity = Math.min(1, this.avisoMs / 800);

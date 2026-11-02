@@ -95,6 +95,7 @@ AFRAME.registerComponent('camarero', {
   hablar() {
     this.cerrar();
     this.el.components.criado.charlando = true;
+    partida.charlaAbierta = true;
     const charla = partida.charlaCamarero(), o = this.el.object3D.position;
     this.el.sceneEl.camera.getWorldPosition(this.ojo);
     // a un lado de él, para que se le siga viendo, y de cara a quien le habla
@@ -140,6 +141,9 @@ AFRAME.registerComponent('camarero', {
     this.tabla = null;
     for (const t of this.texturas) t.dispose();
     this.el.components.criado.charlando = false;
+    // lo que pide ahora el tutorial (al aceptar, "Tienes puntos..."), cuando ya se ha acabado de hablar
+    partida.charlaAbierta = false;
+    setTimeout(() => partida.comprobarPaso());
   },
   tick() {
     if (!this.tabla) return;
@@ -147,5 +151,5 @@ AFRAME.registerComponent('camarero', {
     const o = this.el.object3D.position;
     if (Math.hypot(this.ojo.x - o.x, this.ojo.z - o.z) > CHARLA_SE_ACABA) this.cerrar();
   },
-  remove() { this.tabla = null; }
+  remove() { if (this.tabla) partida.charlaAbierta = false; this.tabla = null; }
 });

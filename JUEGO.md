@@ -38,7 +38,11 @@ Decidido por el usuario: hay un menú principal con hasta tres partidas guardada
 
 Decidido por el usuario: en la habitación hay un cofre que se abre para guardar cosas. Provisional: solo guarda el pescado, que también se estropea al acabar el día, para no guardarlo de cara a la misión; cuando haya cartas y objetos, irán ahí.
 
-Decidido por el usuario: la partida y cada día empiezan en la posada. El viaje rápido cobra todas las zonas por las que hay que pasar (del lago a la posada, 2: bosque y poblado), y dentro de la misma zona es gratis. El de cada zona se activa al visitarla; una partida nueva empieza sin zonas visitadas (`MAPA_TODAS` apagado).
+Decidido por el usuario: la partida y cada día empiezan en la posada. El viaje rápido cobra todas las zonas por las que hay que pasar (del lago a la posada, 2: bosque y poblado), y dentro de la misma zona es gratis. El de cada zona se activa al visitarla; una partida nueva empieza sin zonas visitadas. Antes de gastar puntos (cruzar a otra zona, viajar, pescar, cazar, talar o picar) se pregunta, con un dibujo y una foto del destino; sin misión también.
+
+Decidido por el usuario: sin misión (modo libre) se tienen 30 puntos de acción al día, y todo cuesta lo mismo que con misión.
+
+Decidido por el usuario: oficios que dan cartas, una de cada tipo: pescar (3 puntos, pescado), cazar el ciervo del bosque (3, carne), talar en el bosque (5, madera) y picar piedra en la cueva (5, pieza). El tendero del mercado del poblado compra cada carta por 5 monedas. La partida 1 del menú es de depuración, con el mapa entero; las demás, con niebla.
 
 Decidido por el usuario: una misión cumplida se puede repetir hablando con quien la dio, y solo se paga la primera vez.
 
@@ -100,6 +104,11 @@ El camarero tiene una boda y quiere dar un banquete con pescado. Hay que ir al l
 
 Todo lo hablado que no es regla: propuestas de Claude que el usuario no ha confirmado ni descartado, salvo donde se indica.
 
+### Pendiente de decidir
+
+
+- La sombra a la salida de la posada: el usuario la ve mal; en la vista previa la sombra del edificio sale algo irregular sobre el camino. Falta una foto (botón A o X) para saber qué es.
+
 ### Historia
 
 - El señor del castillo ha desaparecido y nadie cuenta lo mismo; cada zona guarda una parte y el final está en la abadía, de noche.
@@ -110,7 +119,7 @@ Todo lo hablado que no es regla: propuestas de Claude que el usuario no ha confi
 - Con cero puntos, el día termina al intentar cruzar a otra zona; así se recorre entera la última que has pagado.
 - "Terminar el día" en el pergamino, con confirmación que avise de lo que se pierde.
 - Un aviso en la niebla con lo que cuesta la zona. Precio visible en el mapa o en un cartel antes de cruzar.
-- El viaje rápido cuesta lo mismo que entrar en el destino, o más. Hay que apagar `MAPA_TODAS`.
+- El viaje rápido cuesta lo mismo que entrar en el destino, o más.
 - El presupuesto, algo mayor que la ruta buena: si cuesta 5, darle unos 7.
 - Aceptar una misión empieza un día nuevo, para no llevar comida fresca preparada.
 - Sin misión, reservar algunos sitios para las misiones (la torre de la isla, el fondo de las mazmorras); las pistas importantes solo aparecen con su misión.

@@ -141,6 +141,60 @@ AFRAME.registerComponent('cofre', {
   }
 });
 
+// Postigos de una ventana, por fuera: dos hojas que se abren contra la pared o se cierran tapando el hueco. Al
+// apuntar a la ventana desde dentro y apretar el gatillo, se cierran o se abren, girando hacia fuera; la partida
+// lo recuerda (partida.estado.postigos). Origen: en el centro del hueco, en la cara de fuera, con lo de fuera
+// hacia -z local. "ancho": el del hueco.
+const POSTIGOS_VEL = 3;   // radianes por segundo
+AFRAME.registerComponent('postigos', {
+  schema: { ancho: { default: 1 }, alto: { default: 1 } },
+  init() {
+    const { ancho, alto } = this.data, media = ancho / 2 + 0.02;
+    const material = new THREE.MeshStandardMaterial({ color: '#4a3424', roughness: 0.9 });
+    this.hojas = [-1, 1].map(lado => {
+      // la bisagra, en el borde del hueco; la hoja, abierta, hacia fuera de él
+      const bisagra = new THREE.Group();
+      bisagra.position.x = lado * media;
+      const hoja = new THREE.Mesh(new THREE.BoxGeometry(media, alto, 0.05), material);
+      hoja.position.x = lado * media / 2;
+      bisagra.add(hoja);
+      this.el.object3D.add(bisagra);
+      return { bisagra, cerrada: lado * Math.PI };   // (el signo hace que giren por fuera, no contra la pared)
+    });
+    this.material = material;
+    this.cerrados = !!partida.estado.postigos;
+    this.giro = this.cerrados ? 1 : 0;   // 0 abiertos, 1 cerrados
+    this.poner();
+    // lo que recibe el rayo: el hueco, por dentro
+    const rayo = document.createElement('a-box');
+    rayo.classList.add('clicable');
+    rayo.setAttribute('position', '0 0 0.3'); rayo.setAttribute('width', ancho); rayo.setAttribute('height', alto); rayo.setAttribute('depth', 0.1);
+    rayo.setAttribute('material', 'visible: false');
+    rayo.addEventListener('mouseenter', () => partida.avisar(`Aprieta el gatillo para ${this.cerrados ? 'abrir' : 'cerrar'} los postigos.`));
+    this.ultimo = 0;
+    rayo.addEventListener('mousedown', () => {
+      if (performance.now() - this.ultimo < 500) return;
+      this.ultimo = performance.now();
+      this.cerrados = !this.cerrados;
+      partida.estado.postigos = this.cerrados;
+      partida.escribir();
+    });
+    this.el.appendChild(rayo);
+  },
+  poner() { for (const h of this.hojas) h.bisagra.rotation.y = h.cerrada * this.giro; },
+  tick(t, dt) {
+    const meta = this.cerrados ? 1 : 0;
+    if (this.giro === meta || !dt) return;
+    const paso = Math.min(dt, 100) / 1000 * POSTIGOS_VEL / Math.PI;
+    this.giro = meta > this.giro ? Math.min(meta, this.giro + paso) : Math.max(meta, this.giro - paso);
+    this.poner();
+  },
+  remove() {
+    for (const h of this.hojas) { h.bisagra.parent.remove(h.bisagra); h.bisagra.children[0].geometry.dispose(); }
+    this.material.dispose();
+  }
+});
+
 // La cama de tu habitación: al apuntarle y apretar el gatillo, se puede dormir hasta el día siguiente
 AFRAME.registerComponent('cama-dormir', {
   init() {
@@ -166,15 +220,17 @@ AFRAME.registerComponent('posadero', {
     cajaDeRayo(this.el, 0, 0.95, 0, 0.9, 1.9, 0.9, () => {
       if (this.quitar) return this.cerrar();
       this.el.components.criado.charlando = true;
-      partida.marcarTutorial('posadero');
       const charla = { texto: 'La taberna está aquí al lado: saliendo por la puerta, a la izquierda. Allí el tabernero anda buscando quien le haga un encargo.', opciones: [{ texto: 'Gracias' }] };
       this.quitar = tablaDeOpciones(this.el.sceneEl, sitioDeLectura(this.el.sceneEl), charla, () => this.cerrar());
     });
   },
+  // El paso del tutorial se da al acabar la charla: si no, su aviso sale encima de la tabla
   cerrar() {
-    if (this.quitar) this.quitar();
+    if (!this.quitar) return;
+    this.quitar();
     this.quitar = null;
     if (this.el.components.criado) this.el.components.criado.charlando = false;
+    partida.marcarTutorial('posadero');
   },
   tick() { if (this.quitar && seHaAlejado(this.el, this.ojo)) this.cerrar(); },
   remove() { if (this.quitar) this.quitar(); this.quitar = null; }

@@ -7,7 +7,8 @@ const URL_ARBOLES = 'modelos/arboles.glb';
 const ARBOLES_MAX = 300;       // de cada modelo, en cada versión
 const ALTO_MODELOS = [5.43, 7.24, 6.14];   // lo que mide cada modelo en el .glb (arbol: alto escala a esto)
 // se pasa a la versión de cerca a menos de DIST_CERCA y a la de lejos a más de DIST_LEJOS: con la
-// diferencia, un árbol justo en el límite no cambia una y otra vez
+// diferencia, un árbol justo en el límite no cambia una y otra vez. Una zona puede ponerse otra
+// (arbolesCerca, en MUNDO: js/mundo.js), y la de lejos es esa más la misma diferencia.
 const DIST_CERCA = 18, DIST_LEJOS = 22;
 const ARBOLES_CADA_MS = 300;
 
@@ -69,9 +70,10 @@ AFRAME.registerSystem('arbol', {
     if (!this.piezas || !this.el.camera || t - this.cuando < ARBOLES_CADA_MS) return;
     this.cuando = t;
     this.el.camera.getWorldPosition(this.ojo);
+    const dCerca = (zonaCargada && zonaCargada.arbolesCerca) || DIST_CERCA, dLejos = dCerca + DIST_LEJOS - DIST_CERCA;
     for (const a of this.arboles) {
       const d = Math.hypot(a.x - this.ojo.x, a.z - this.ojo.z);
-      const cerca = a.cerca ? d < DIST_LEJOS : d < DIST_CERCA;
+      const cerca = a.cerca ? d < dLejos : d < dCerca;
       if (cerca !== a.cerca) { a.cerca = cerca; this.cambiado = true; }
     }
     if (this.cambiado) this.colocar();

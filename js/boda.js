@@ -6,6 +6,9 @@
 const SILLA_BODA = { x: 161, z: -136.05 };   // la silla libre, en el lado norte, frente a los novios
 const ALTURA_SENTADO = 1.15;                 // a qué altura quedan los ojos
 const BODA_FRASE_MS = 7000;
+// Al sentarte: hasta que brindes (coger tu copa) no te puedes levantar. Lo dice el tutorial (partida.pasoTutorial) o,
+// si ya se acabó, un aviso.
+const BRINDAR_TEXTO = 'Brinda por los novios: acerca la mano a la copa que tienes delante, cógela con el gatillo lateral y álzala. Hasta que brindes no te puedes levantar.';
 // El brindis: cuándo acaba de alargar el brazo y coge la copa, cuándo la tiene en alto, cuándo empieza a bajarla, cuándo
 // la deja y cuándo acaba; y los ángulos del brazo, junto a la mesa y en alto
 const BRINDIS_COGE_MS = 450, BRINDIS_ALZA_MS = 950, BRINDIS_BAJA_MS = 2900, BRINDIS_DEJA_MS = 3350, BRINDIS_MS = 4100;
@@ -211,6 +214,20 @@ AFRAME.registerComponent('boda', {
     circulo.setAttribute('radius-inner', 6.7); circulo.setAttribute('radius-outer', 7); circulo.setAttribute('segments-theta', 64);
     circulo.setAttribute('material', 'shader: flat; color: #d9b04a; opacity: 0.75; transparent: true; depthWrite: false');
     this.el.appendChild(circulo);
+    this.circulo = circulo;
+    // y su luz: una cortina dorada que sube del aro y se desvanece hacia arriba; late despacio (tick)
+    const lienzo = document.createElement('canvas');
+    lienzo.width = 4; lienzo.height = 128;
+    const gl = lienzo.getContext('2d'), grad = gl.createLinearGradient(0, 128, 0, 0);
+    grad.addColorStop(0, 'rgba(255, 214, 120, 1)'); grad.addColorStop(0.35, 'rgba(255, 200, 100, 0.35)'); grad.addColorStop(1, 'rgba(255, 190, 90, 0)');
+    gl.fillStyle = grad; gl.fillRect(0, 0, 4, 128);
+    const texLuz = new THREE.CanvasTexture(lienzo);
+    const luz = this.luzCirculo = new THREE.Mesh(new THREE.CylinderGeometry(6.85, 6.85, 1.6, 64, 1, true),
+      new THREE.MeshBasicMaterial({ map: texLuz, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false, opacity: 0.4 }));
+    luz.position.set(161, 0.9, -137);
+    this.el.object3D.add(luz);
+    this.mallas.push(luz);
+    this.texLuz = texLuz;
     // el cartel y la silla libre
     const cartel = document.createElement('a-entity');
     cartel.setAttribute('position', '155.4 0 -134.6'); cartel.setAttribute('rotation', '0 150 0');
@@ -254,14 +271,18 @@ AFRAME.registerComponent('boda', {
     cam.getWorldPosition(p);
     rig.position.y += ALTURA_SENTADO - p.y;
     this.frase = 0; this.fraseMs = 0;
+    this.brindado = false;
     this.ponerTabla();
+    // (en el tutorial, el paso "brindar" lo dice él)
+    if (partida.pasoTutorial()?.id !== 'brindar') partida.avisar(BRINDAR_TEXTO);
   },
   levantarse() {
     this.quitarTabla();
     enLaMesa = false;   // (la altura la recupera andar-joystick)
     this.llevarCabeza(SILLA_BODA.x, SILLA_BODA.z + 1.2);
   },
-  // La frase que toca, encima de los novios, y debajo el botón de levantarse
+  // La frase que toca, encima de los novios, y debajo el botón de levantarse: en VR, solo después de brindar (en el
+  // ordenador no hay manos para coger la copa)
   ponerTabla() {
     this.quitarTabla();
     const tabla = this.tabla = document.createElement('a-entity');
@@ -286,7 +307,7 @@ AFRAME.registerComponent('boda', {
       this.ultimo = performance.now();
       this.levantarse();
     });
-    tabla.appendChild(boton);
+    if (this.brindado || !this.el.sceneEl.is('vr-mode')) tabla.appendChild(boton);
     this.el.appendChild(tabla);
   },
   quitarTabla() {
@@ -341,10 +362,24 @@ AFRAME.registerComponent('boda', {
       this.novio.components['persona-animada'].poner('brindis', true);   // y él, al llegar, alza la copa
       for (const g of b.gente) { g.e.brazoBoda.rotation.x = 0; g.e.copaBoda.visible = false; g.e.object3D.position.y = 0; if (g.mesa) g.mesa.object3D.visible = true; }
       this.brindis = null;
+      // sentado, ya has brindado: sale el botón de levantarte (el fin del tutorial ya lo dice; si no, un aviso)
+      if (enLaMesa && !this.brindado) {
+        this.brindado = true;
+        this.ponerTabla();
+        if (partida.pasoTutorial()?.id !== 'brindar') partida.avisar('Ya puedes levantarte cuando quieras.');
+        partida.marcarTutorial('brindis');
+      }
     }
   },
   tick(t, dt) {
     if (this.brindis && dt) this.moverBrindis(Math.min(dt, 100));
+    // la luz del círculo late, y el aro con ella
+    if (this.luzCirculo) {
+      const latido = 0.5 + 0.5 * Math.sin(t / 700);
+      this.luzCirculo.material.opacity = 0.25 + 0.25 * latido;
+      const aro = this.circulo.getObject3D('mesh');
+      if (aro) aro.material.opacity = 0.55 + 0.35 * latido;
+    }
     if (!this.tabla || !dt || this.frase >= FRASES_BODA.length - 1) return;
     this.fraseMs += Math.min(dt, 100);
     if (this.fraseMs < BODA_FRASE_MS) return;
@@ -354,5 +389,6 @@ AFRAME.registerComponent('boda', {
   remove() {
     enLaMesa = false;
     for (const m of this.mallas || []) { m.parent.remove(m); m.geometry.dispose(); m.material.dispose(); }
+    if (this.texLuz) this.texLuz.dispose();
   }
 });

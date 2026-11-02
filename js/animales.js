@@ -74,8 +74,10 @@ AFRAME.registerComponent('puerta-portal', {
     this.el.appendChild(rayo);
     this.apuntada = false;
     rayo.addEventListener('mousedown', () => {
-      if (!this.el.sceneEl.components.zonas.cruzar(d.zona, { x: d.x, y: d.y > -999 ? d.y : undefined, z: d.z, giro: d.giro * Math.PI / 180 })) return;
-      this.hoja.setAttribute('animation', { property: 'rotation', to: '0 -80 0', dur: 500, easing: 'easeInQuad' });
+      // (la puerta se abre cuando ya se va: si cuesta puntos, después de decir que sí)
+      this.el.sceneEl.components.zonas.cruzar(d.zona, { x: d.x, y: d.y > -999 ? d.y : undefined, z: d.z, giro: d.giro * Math.PI / 180 }, undefined, {
+        alIr: () => this.hoja.setAttribute('animation', { property: 'rotation', to: '0 -80 0', dur: 500, easing: 'easeInQuad' }),
+      });
     });
   },
   tick() {
@@ -104,8 +106,8 @@ AFRAME.registerComponent('salida', {
     c.getWorldPosition(this.ojo);
     const dentro = this.ojo.x > d.x0 && this.ojo.x < d.x1 && this.ojo.z > d.z0 && this.ojo.z < d.z1;
     if (!dentro) { this.armada = true; return; }
-    if (this.armada && this.el.sceneEl.components.zonas.cruzar(d.zona, { x: d.x, z: d.z, giro: d.giro * Math.PI / 180 })) return;
-    // (si no se puede pagar, no vuelve a avisar hasta que se salga y se entre otra vez)
+    // (una vez por entrada: si no se puede pagar o se dice que no, no vuelve a preguntar hasta que se salga y se entre otra vez)
+    if (this.armada) this.el.sceneEl.components.zonas.cruzar(d.zona, { x: d.x, z: d.z, giro: d.giro * Math.PI / 180 });
     this.armada = false;
   }
 });
@@ -239,66 +241,75 @@ AFRAME.registerComponent('techo-cueva', {
   remove() { this.el.removeObject3D('mesh'); }
 });
 
-// Animal de cajas: cuerpo, cuello y cabeza, y cuatro patas que se mueven al andar. Da vueltas por una
-// ruta ("x z" separados por comas), pegado al terreno, y se para de vez en cuando a pastar.
+// Ciervo (modelos/ciervo.glb, de herramientas/modelar-ciervo.py): cuerpo, cuello con la cabeza (y las astas, que la
+// cierva no lleva) y cuatro patas que se mueven al andar. Da vueltas por una ruta ("x z" separados por comas), pegado al
+// terreno, y se para de vez en cuando a pastar: mejor en un llano, que en las cuestas las patas se hunden o flotan. Se
+// caza apuntándole y apretando el gatillo (js/oficios.js): cae de lado y, al rato, ya no está (hasta volver a la zona).
+let modeloCiervo = null;   // la carga, compartida
+const CIERVO_CAE_MS = 700, CIERVO_SE_VA_MS = 8000;
 AFRAME.registerComponent('ciervo', {
-  schema: { puntos: { type: 'string' }, color: { default: '#7a5635' }, astas: { default: true }, velocidad: { default: 1.1 } },
+  schema: { puntos: { type: 'string' }, color: { default: '' }, astas: { default: true }, velocidad: { default: 1.1 } },
   init() {
-    const { color, astas } = this.data;
     this.ruta = this.data.puntos.split(',').map(p => p.trim().split(/\s+/).map(Number));
     this.i = 0; this.pausa = 0; this.fase = 0; this.pasto = 0;
-    const piel = new THREE.MeshStandardMaterial({ color, roughness: 1 }), clara = new THREE.MeshStandardMaterial({ color: '#c9b79a', roughness: 1 });
-    const oscuro = new THREE.MeshStandardMaterial({ color: '#2e2219', roughness: 1 });
-    const caja = (padre, x, y, z, w, h, d, m = piel) => { const c = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); c.position.set(x, y, z); padre.add(c); return c; };
-    const g = new THREE.Group();
-    caja(g, 0, 1.02, 0, 0.42, 0.5, 1.15);
-    caja(g, 0, 0.95, -0.42, 0.3, 0.26, 0.25, clara);   // la grupa clara y el rabo
-    caja(g, 0, 1.15, -0.62, 0.1, 0.2, 0.08, clara);
-    this.patas = [];
-    for (const [x, z] of [[-0.15, 0.45], [0.15, 0.45], [-0.15, -0.45], [0.15, -0.45]]) {
-      const p = new THREE.Group();
-      p.position.set(x, 0.86, z);
-      caja(p, 0, -0.43, 0, 0.09, 0.86, 0.1);
-      caja(p, 0, -0.84, 0, 0.1, 0.06, 0.13, oscuro);
-      g.add(p);
-      this.patas.push(p);
-    }
-    // el cuello gira en el hombro para bajar a pastar
-    this.cuello = new THREE.Group();
-    this.cuello.position.set(0, 1.2, 0.5);
-    this.cuello.rotation.x = 0.5;
-    const cu = caja(this.cuello, 0, 0.2, 0.05, 0.18, 0.55, 0.2);
-    cu.rotation.x = -0.15;
-    caja(this.cuello, 0, 0.5, 0.2, 0.2, 0.2, 0.38);
-    caja(this.cuello, 0, 0.47, 0.42, 0.12, 0.12, 0.12, oscuro);
-    for (const l of [-1, 1]) {
-      const oreja = caja(this.cuello, l * 0.15, 0.62, 0.12, 0.14, 0.05, 0.06);
-      oreja.rotation.z = l * 0.4;
-      if (!astas) continue;
-      const a = new THREE.Group();
-      a.position.set(l * 0.07, 0.6, 0.15);
-      a.rotation.z = l * -0.3;
-      caja(a, 0, 0.3, 0, 0.03, 0.6, 0.03, clara);
-      for (const [y, s] of [[0.25, 1], [0.45, -1], [0.58, 1]]) { const r = caja(a, l * 0.09, y, s * 0.06, 0.02, 0.22, 0.02, clara); r.rotation.set(s * 0.8, 0, l * -0.8); }
-      this.cuello.add(a);
-    }
-    g.add(this.cuello);
-    this.el.setObject3D('mesh', g);
+    this.patas = []; this.cuello = null; this.cazado = null;   // (cazado: ms desde que cayó)
+    modeloCiervo = modeloCiervo || new Promise(listo => new THREE.GLTFLoader().load('modelos/ciervo.glb', g => listo(g.scene)));
+    modeloCiervo.then(escena => {
+      if (!this.el.parentNode) return;
+      const g = escena.clone(true);
+      // la cierva, de otro color y sin astas
+      if (this.data.color) g.traverse(o => { if (o.isMesh && o.material.name === 'Piel') { o.material = o.material.clone(); o.material.color.set(this.data.color); } });
+      const astas = g.getObjectByName('Astas');
+      if (astas && !this.data.astas) astas.visible = false;
+      this.cuello = g.getObjectByName('Cuello');
+      this.patas = ['PataDI', 'PataDD', 'PataTI', 'PataTD'].map(n => g.getObjectByName(n)).filter(Boolean);
+      this.el.setObject3D('mesh', g);
+    });
     const [x, z] = this.ruta[0];
     this.el.object3D.position.set(x, alturaTerreno(x, z), z);
+    // lo que recibe el rayo, para cazarlo
+    const rayo = this.rayo = document.createElement('a-box');
+    rayo.classList.add('clicable');
+    rayo.setAttribute('position', '0 1.1 0'); rayo.setAttribute('width', 0.7); rayo.setAttribute('height', 1.6); rayo.setAttribute('depth', 1.7);
+    rayo.setAttribute('material', 'visible: false');
+    rayo.addEventListener('mouseenter', () => { if (!this.cazado) partida.avisar('Aprieta el gatillo para cazarlo.'); });
+    let ultimo = 0;
+    rayo.addEventListener('mousedown', () => {
+      if (this.cazado !== null || performance.now() - ultimo < 500) return;
+      ultimo = performance.now();
+      if (!partida.ranura || preguntaAbierta || !partida.puedeOficio('carne', PUNTOS_CAZAR)) return;
+      this.quieto = true;   // mientras se pregunta, no se va
+      preguntarGasto({ que: 'caza', precio: PUNTOS_CAZAR, alResponder: si => {
+        this.quieto = false;
+        if (!si || !partida.puedeOficio('carne', PUNTOS_CAZAR)) return;
+        this.cazado = 0;
+        partida.conseguir('carne', 'cruda', PUNTOS_CAZAR, 'Has cazado un ciervo: te llevas su carne.');
+      } });
+    });
+    this.el.appendChild(rayo);
+  },
+  // Cae de lado y, al rato, desaparece
+  caer(s) {
+    this.cazado += s * 1000;
+    const o = this.el.object3D, f = Math.min(1, this.cazado / CIERVO_CAE_MS);
+    o.rotation.z = (Math.PI / 2) * f * f;
+    o.position.y = alturaTerreno(o.position.x, o.position.z) + 0.15 * f;
+    if (this.cazado > CIERVO_SE_VA_MS) { o.visible = false; if (this.rayo.parentNode) this.rayo.parentNode.removeChild(this.rayo); }
   },
   tick(t, dt) {
-    if (!dt) return;
+    if (!dt || !this.cuello || !this.el.object3D.visible) return;
     const s = Math.min(dt, 100) / 1000, o = this.el.object3D;
+    if (this.cazado !== null) return this.caer(s);
+    if (this.quieto) { for (const p of this.patas) p.rotation.x *= 0.85; return; }
     if (this.pausa > 0) {
       this.pausa -= s;
       this.pasto = Math.min(1, this.pasto + s * 1.2);
-      this.cuello.rotation.x = 0.5 + this.pasto * 1.5 + 0.06 * Math.sin(t / 200);   // baja la cabeza
+      this.cuello.rotation.x = this.pasto * 1.9 + 0.06 * Math.sin(t / 200);   // baja la cabeza
       for (const p of this.patas) p.rotation.x *= 0.85;
       return;
     }
     this.pasto = Math.max(0, this.pasto - s * 1.5);
-    this.cuello.rotation.x = 0.5 + this.pasto * 1.5;
+    this.cuello.rotation.x = this.pasto * 1.9;
     if (this.pasto > 0) return;
     const [mx, mz] = this.ruta[this.i], dx = mx - o.position.x, dz = mz - o.position.z, d = Math.hypot(dx, dz);
     if (d < 0.6) {
@@ -313,7 +324,8 @@ AFRAME.registerComponent('ciervo', {
     dg = Math.atan2(Math.sin(dg), Math.cos(dg));
     o.rotation.y += dg * Math.min(1, s * 2.5);
     this.fase += v * 4.5;
-    this.patas.forEach((p, k) => { p.rotation.x = 0.5 * Math.sin(this.fase + (k === 0 || k === 3 ? 0 : Math.PI)); });
+    // las patas en diagonal van a la vez (delante izquierda con detrás derecha)
+    this.patas.forEach((p, k) => { p.rotation.x = 0.45 * Math.sin(this.fase + (k === 0 || k === 3 ? 0 : Math.PI)); });
   },
   remove() { this.el.removeObject3D('mesh'); }
 });
@@ -394,9 +406,18 @@ AFRAME.registerComponent('peces', {
     });
   },
   pescar(punto) {
-    if (this.espera !== null) return;
-    if (partida.misionActiva() && !partida.estado.pescado && !partida.estado.pescadoHoy && partida.estado.puntos < PUNTOS_PESCAR) return partida.avisar(`Pescar cuesta ${PUNTOS_PESCAR} puntos y no te llegan.`);
+    if (this.espera !== null || this.preguntando) return;
+    if (!partida.estado.pescado && !partida.estado.pescadoHoy && partida.estado.puntos < PUNTOS_PESCAR) return partida.avisar(`Pescar cuesta ${PUNTOS_PESCAR} puntos y no te llegan.`);
     if (!partida.puedePescar()) return partida.avisar(partida.estado.pescado ? 'Ya llevas un pescado: solo una carta de cada tipo.' : 'Hoy ya has pescado: con misión, se puede una vez al día.');
+    // antes, la pregunta (js/pregunta.js)
+    this.preguntando = true;
+    preguntarGasto({ que: 'pesca', precio: PUNTOS_PESCAR, alResponder: si => {
+      this.preguntando = false;
+      if (si && this.el.parentNode && partida.puedePescar()) this.lanzar(punto);
+    } });
+  },
+  // El corcho cae donde se apuntó
+  lanzar(punto) {
     const p = punto ? this.el.object3D.worldToLocal(punto.clone()) : new THREE.Vector3();
     this.corcho.position.set(p.x, 0, p.z);
     this.corcho.visible = true;

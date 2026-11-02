@@ -7,6 +7,7 @@ const RADIO_NIEBLA = 10;        // a esta distancia del límite empieza a notars
 const NIEBLA_LIMITE = 0.28;     // densidad justo en el límite (a 10 m ya no se ve nada)
 const NIEBLA_CERRADA = 3;       // densidad mientras se carga: no se ve ni el suelo
 const CERRAR_MS = 600, ABRIR_MS = 1500;
+const NO_PREGUNTAR_MS = 1500;   // tras decir que no a pagar una zona, tanto rato sin volver a preguntar
 // Letrero con el nombre de la zona al entrar: aparece, se queda y se desvanece.
 const LETRERO_APARECE_MS = 500, LETRERO_DURA_MS = 3500, LETRERO_SE_VA_MS = 1000;
 
@@ -22,6 +23,8 @@ AFRAME.registerComponent('zonas', {
     this.bueno = new THREE.Vector3();   // el último sitio donde se estaba sin meterse en una zona sin pagar
     this.cierre = 1;      // 0 abierta, 1 cerrada; se arranca cerrada mientras carga la primera zona
     this.actual = null;   // nombre de la zona cargada
+    this.pregunta = null; // la de si se pagan los puntos de la zona (cruzar)
+    this.noHasta = 0;     // hasta cuándo no se vuelve a preguntar, tras decir que no
     this.raiz = null;     // entidad con las estancias de la zona
     this.crearLetrero();
     // Para comparar: apretar el joystick derecho, o la tecla H, recarga la zona con la otra luz, sin salir de VR
@@ -36,8 +39,9 @@ AFRAME.registerComponent('zonas', {
     };
     enganchar();
   },
+  // (solo en la partida de depuración)
   cambiarLuz() {
-    if (cambiandoDeZona || !this.actual) return;
+    if (cambiandoDeZona || !this.actual || !partida.depuracion()) return;
     luzHorneada = !luzHorneada;
     const medidor = this.el.components.medidor;
     this.ir(this.actual).then(() => { if (medidor) { medidor.peor = Infinity; medidor.calentando = 1500; } });
@@ -90,18 +94,21 @@ AFRAME.registerComponent('zonas', {
       partida.arrancar();
     }
     if (!cambiandoDeZona && this.actual) {
-      const justo = zonaEn(this.cabeza.x, this.cabeza.z);
-      if (justo && justo.nombre !== this.actual && !partida.puedeEntrar(justo.nombre)) {
-        // sin puntos para esa zona no se cruza: de vuelta al sitio de antes (también si se ha ido andando de verdad)
-        const rig = document.getElementById('rig').object3D;
+      const justo = zonaEn(this.cabeza.x, this.cabeza.z), ajena = justo && justo.nombre !== this.actual;
+      const esperando = this.pregunta || performance.now() < this.noHasta;
+      const rig = document.getElementById('rig').object3D;
+      if (ajena && (esperando || !partida.puedeEntrar(justo.nombre))) {
+        // sin puntos para esa zona, o mientras se pregunta si se paga, no se cruza: de vuelta al sitio de antes
+        // (también si se ha ido andando de verdad)
         rig.position.x += this.bueno.x - this.cabeza.x;
         rig.position.z += this.bueno.z - this.cabeza.z;
-        partida.entrar(justo.nombre);
+        if (!esperando) partida.entrar(justo.nombre);
       } else {
-        this.bueno.copy(this.cabeza);
+        // (el sitio bueno, solo dentro de la zona: si se dice que no, se vuelve ahí)
+        if (!ajena) this.bueno.copy(this.cabeza);
         // (con medio metro de margen: justo en el límite, el cambio no se dispara dos veces)
         const aqui = zonaEn(this.cabeza.x, this.cabeza.z, 0.5);
-        if (aqui && aqui.nombre !== this.actual) this.cruzar(aqui.nombre);
+        if (aqui && aqui.nombre !== this.actual) this.cruzar(aqui.nombre, { x: rig.position.x, y: rig.position.y, z: rig.position.z, giro: rig.rotation.y });
       }
     }
     // cerrar mientras se cambia de zona; abrir cuando ya ha cargado
@@ -129,10 +136,23 @@ AFRAME.registerComponent('zonas', {
     sol.setAttribute('light', a.sol);
     sol.object3D.position.set(...CIELOS[a.cielo].sol);
   },
-  // Ir a otra zona pagando la entrada, o "precio" si se indica (js/partida.js). Devuelve si se ha podido.
-  cruzar(nombre, destino, precio) {
-    if (cambiandoDeZona || !partida.entrar(nombre, precio)) return false;
-    this.ir(nombre, destino);
+  // Ir a otra zona pagando la entrada, o "precio" si se indica (js/partida.js). Si los puntos llegan, antes se
+  // pregunta (js/pregunta.js): "viaje" dice si es por el mapa, y "alIr" se llama cuando ya se va.
+  // Devuelve si se va o se está preguntando.
+  cruzar(nombre, destino, precio = partida.precio(nombre), { viaje = false, alIr } = {}) {
+    if (cambiandoDeZona || this.pregunta) return false;
+    const ir = () => {
+      if (cambiandoDeZona || !partida.entrar(nombre, precio)) return false;
+      if (alIr) alIr();
+      this.ir(nombre, destino);
+      return true;
+    };
+    if (!partida.ranura || nombre === zonaCargada.nombre || partida.estado.puntos < precio) return ir();
+    this.pregunta = preguntarGasto({ que: viaje ? 'viaje' : 'andar', de: this.actual, a: nombre, precio, alResponder: si => {
+      this.pregunta = null;
+      // si no, un momento sin volver a preguntar, aunque se siga empujando hacia el paso
+      if (si) ir(); else this.noHasta = performance.now() + NO_PREGUNTAR_MS;
+    } });
     return true;
   },
   // "destino" (x, z, giro): para los portales, que te llevan a otro sitio mientras la niebla está cerrada
