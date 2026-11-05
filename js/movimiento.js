@@ -489,16 +489,32 @@ function crucetas() {
   const andar = document.querySelector('[andar-joystick]');
   if (!s || !camara || !andar || !esTactil()) return;
   const estilo = document.createElement('style');
-  estilo.textContent = '.cruceta{position:fixed;bottom:24px;width:132px;height:132px;z-index:20;touch-action:none;user-select:none;-webkit-user-select:none;opacity:.55}'
-    + '.cruceta.izq{left:24px}.cruceta.der{right:24px}.cruceta b{position:absolute;width:44px;height:44px;border-radius:8px;background:#2b2118;border:2px solid #8a6b3f;color:#d9c9a0;font:bold 22px sans-serif;display:flex;align-items:center;justify-content:center}'
-    + '.cruceta b.on{background:#8a6b3f;color:#1a120b}.cruceta .n{left:44px;top:0}.cruceta .s{left:44px;top:88px}.cruceta .o{left:0;top:44px}.cruceta .e{left:88px;top:44px}';
+  // como un escudo redondo: disco de madera oscura con aro de hierro, una cruz grabada, un remache en el
+  // centro y una cuña de latón viejo en cada brazo, que se enciende al pulsarla
+  estilo.textContent = '.cruceta{position:fixed;bottom:28px;width:140px;height:140px;z-index:20;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;opacity:.7;border-radius:50%;'
+    + 'background:radial-gradient(circle at 50% 38%,#4a3826 0%,#2e2216 55%,#1c140c 100%);'
+    + 'box-shadow:0 0 0 3px #3a3a3a,0 0 0 5px #1a1a1a,0 0 0 6px #5a5a5a,0 6px 14px rgba(0,0,0,.55),inset 0 2px 6px rgba(255,220,160,.12),inset 0 -6px 12px rgba(0,0,0,.5)}'
+    + '.cruceta.izq{left:28px}.cruceta.der{right:28px}'
+    // la cruz grabada en la madera
+    + '.cruceta::before{content:"";position:absolute;inset:14px;border-radius:50%;background:'
+    + 'linear-gradient(#0000 calc(50% - 15px),rgba(0,0,0,.35) calc(50% - 15px),rgba(0,0,0,.35) calc(50% + 15px),#0000 calc(50% + 15px)),'
+    + 'linear-gradient(90deg,#0000 calc(50% - 15px),rgba(0,0,0,.35) calc(50% - 15px),rgba(0,0,0,.35) calc(50% + 15px),#0000 calc(50% + 15px))}'
+    // el remache del centro
+    + '.cruceta::after{content:"";position:absolute;left:58px;top:58px;width:24px;height:24px;border-radius:50%;'
+    + 'background:radial-gradient(circle at 35% 30%,#9a9a9a,#4a4a4a 55%,#222 100%);box-shadow:0 1px 3px rgba(0,0,0,.7)}'
+    + '.cruceta b{position:absolute;width:46px;height:46px;display:block}'
+    + '.cruceta b::after{content:"";position:absolute;left:11px;top:11px;width:24px;height:24px;background:#a8875a;'
+    + 'clip-path:polygon(50% 8%,96% 82%,50% 64%,4% 82%);filter:drop-shadow(0 1px 1px #000);transition:background .08s,transform .08s}'
+    + '.cruceta b.on::after{background:#f0c878;transform:scale(1.18)}'
+    + '.cruceta .n{left:47px;top:6px}.cruceta .s{left:47px;top:88px;transform:rotate(180deg)}'
+    + '.cruceta .o{left:6px;top:47px;transform:rotate(-90deg)}.cruceta .e{left:88px;top:47px;transform:rotate(90deg)}';
   document.head.appendChild(estilo);
-  const flechas = { n: '▲', s: '▼', o: '◀', e: '▶' };
+  const flechas = { n: 'arriba', s: 'abajo', o: 'izquierda', e: 'derecha' };   // (la flecha es una cuña de CSS)
   const valor = { izq: { x: 0, y: 0 }, der: { x: 0, y: 0 } };
   const hacer = lado => {
     const c = document.createElement('div');
     c.className = 'cruceta ' + lado;
-    for (const k in flechas) { const b = document.createElement('b'); b.className = k; b.textContent = flechas[k]; c.appendChild(b); }
+    for (const k in flechas) { const b = document.createElement('b'); b.className = k; c.appendChild(b); }
     // el dedo puede deslizarse de una flecha a otra sin levantarlo: se mira qué flecha hay bajo cada toque
     const leer = e => {
       const v = valor[lado]; v.x = v.y = 0;
@@ -519,6 +535,57 @@ function crucetas() {
     return c;
   };
   const cruces = [hacer('izq'), hacer('der')];
+  // Apaisado: el navegador solo deja fijar la orientación en pantalla completa (Chrome de Android; el
+  // iPhone no deja), así que al primer toque se pide pantalla completa y se fija; si aun así está en
+  // vertical, un aviso tapa la escena hasta que se gire el móvil.
+  const fijar = () => {
+    const d = document.documentElement, pedir = d.requestFullscreen || d.webkitRequestFullscreen;
+    if (!document.fullscreenElement && pedir) Promise.resolve(pedir.call(d)).then(() => {
+      if (screen.orientation && screen.orientation.lock) return screen.orientation.lock('landscape');
+    }).catch(() => {});
+  };
+  window.addEventListener('touchend', fijar, { once: true });
+  // Tocar con el dedo: un toque corto (sin arrastrar, que es girar) lanza un rayo desde ese punto de la
+  // pantalla y hace lo mismo que el clic de la mira sobre lo primero .clicable que encuentra a menos de
+  // 4 m (la puerta por su aldaba, el posadero, una copa, los botones de una pregunta...).
+  // (el cursor de la mira también hace clic al tocar la pantalla, sobre lo que hay en el centro: se le quita
+  // el toque, o una puerta centrada se abriría y cerraría a la vez)
+  const cursor = camara.components.cursor;
+  if (cursor) {
+    s.canvas.removeEventListener('touchstart', cursor.onCursorDown);
+    s.canvas.removeEventListener('touchend', cursor.onCursorUp);
+  }
+  const rayo = new THREE.Raycaster(), punto = new THREE.Vector2();
+  let toque = null;
+  s.canvas.addEventListener('touchstart', e => {
+    toque = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY, t: performance.now() } : null;
+  }, { passive: true });
+  s.canvas.addEventListener('touchend', e => {
+    const p = e.changedTouches[0];
+    if (!toque || !p || s.is('vr-mode') || performance.now() - toque.t > 400 || Math.hypot(p.clientX - toque.x, p.clientY - toque.y) > 12) return;
+    toque = null;
+    const r = s.canvas.getBoundingClientRect();
+    punto.set((p.clientX - r.left) / r.width * 2 - 1, -(p.clientY - r.top) / r.height * 2 + 1);
+    rayo.setFromCamera(punto, s.camera);
+    rayo.far = 4;
+    const objetos = [...document.querySelectorAll('.clicable')].filter(el => el.object3D && el.object3D.visible).map(el => el.object3D);
+    const golpe = rayo.intersectObjects(objetos, true)[0];
+    let el = golpe && golpe.object;
+    while (el && !(el.el && el.el.classList.contains('clicable'))) el = el.parent;
+    if (!el) return;
+    el = el.el;
+    el.emit('mousedown'); el.emit('mouseup'); el.emit('click');
+  });
+  estilo.textContent += '.girar-movil{position:fixed;inset:0;z-index:30;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;'
+    + 'background:#1c140c;color:#d9c9a0;font:22px Georgia,serif;text-align:center;padding:24px}'
+    + '.girar-movil i{width:56px;height:96px;border:5px solid #a8875a;border-radius:10px;animation:girar-movil 1.8s ease-in-out infinite}'
+    + '@keyframes girar-movil{0%,25%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}'
+    + '@media (orientation:portrait){.girar-movil{display:flex}}';
+  const aviso = document.createElement('div');
+  aviso.className = 'girar-movil';
+  aviso.innerHTML = '<i></i><div>Gira el móvil para jugar</div>';
+  aviso.addEventListener('touchend', fijar);   // (tocando el aviso se vuelve a pedir, por si se salió de pantalla completa)
+  document.body.appendChild(aviso);
   const mostrar = si => cruces.forEach(c => { c.style.display = si ? '' : 'none'; });
   s.addEventListener('enter-vr', () => mostrar(false));
   s.addEventListener('exit-vr', () => mostrar(true));
