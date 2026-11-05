@@ -130,7 +130,7 @@ Al día siguiente de entregar el pescado por primera vez ([js/boda.js](js/boda.j
 | Control | Qué hace |
 |---|---|
 | **Joystick izquierdo** | Andar hacia donde miras. Sube y baja escalones; no deja atravesar paredes ni puertas cerradas, ni caerse. |
-| **Gatillo lateral izquierdo** | Correr, mientras se aprieta (2,5 veces más rápido). En el ordenador, **Mayúsculas** o el **botón derecho del ratón**; con mando de Xbox, **LT**. |
+| **Gatillo lateral izquierdo** | Correr, mientras se aprieta (2,5 veces más rápido). En el ordenador, **Mayúsculas** o el **botón derecho del ratón**; con mando de Xbox, **LT**; en el móvil, **doble toque** en la cruceta de andar. |
 | **Joystick derecho** a un lado | Girar 30°. |
 | **Gatillo** apuntando a una puerta | Abrirla o cerrarla (el rayo se pone verde, la aldaba brilla y sale el cartel). |
 | **Gatillo lateral** apuntando a la pantalla, o con la mano junto a una copa | Cogerla y colocarla; la pantalla se queda donde la sueltes y la copa cae. |
@@ -161,6 +161,8 @@ la cama y el posadero salen rectas, de frente a la cámara aunque mire arriba o 
 derecha para mirar (`crucetas`, al final de movimiento.js; se detecta con `pointer: coarse` (el puntero principal es el dedo; un portátil táctil con ratón no cuenta), y no
 sale en el navegador de las Quest). La de andar se suma al joystick (`cx`, `cy` en `andar-joystick`); la de mirar gira la
 cámara como el stick derecho del mando. Se pueden usar las dos a la vez, y arrastrar por la escena también gira.
+**Correr en el móvil:** doble toque en la cruceta de andar, manteniendo el segundo (antes de `DOBLE_TOQUE_MS`, 300 ms):
+corre hasta levantar el dedo, y mientras el aro se enciende en latón (`correTactil` en `andar-joystick`).
 **Botón Pergamino** (arriba a la derecha, en el ordenador y en el móvil, fuera de VR y del menú): abre el pergamino por el
 mapa y, abierto, pone "Cerrar" (js/mapa.js). En el ordenador se pulsa con el ratón libre (Alt, Esc o con el pergamino abierto);
 con el ratón capturado sigue la tecla **N**.

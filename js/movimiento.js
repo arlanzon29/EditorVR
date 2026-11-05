@@ -32,6 +32,7 @@ const VELOCIDAD = 1.5;   // m/s
 const CORRER = 2.5;      // veces más rápido al correr: gatillo lateral izquierdo, Mayúsculas o gatillo LT del mando
 const VELOCIDAD_MIRAR = 2.2;   // rad/s con el stick derecho del mando de Xbox, a tope
 const MIRAR_VERTICAL = 0.6;    // en vertical, esta parte de esa velocidad
+const DOBLE_TOQUE_MS = 300;    // en el móvil, volver a tocar la cruceta de andar antes de esto es correr
 const MUELLE = 0.15;           // un eje que baja esto en SALTO_MS es el muelle del stick al soltarlo: si luego se queda quieto, no es una mano
 const SALTO_MANO = 0.08, SALTO_MS = 150;   // una mano mueve el eje al menos esto en este tiempo; el mando solo, no
 // En VR cuenta la altura real de las gafas; si estás sentado (las gafas, de media, por debajo de
@@ -223,7 +224,7 @@ AFRAME.registerComponent('andar-joystick', {
     const mx = THREE.MathUtils.clamp(this.x + this.tx + this.gx + this.cx, -1, 1), my = THREE.MathUtils.clamp(this.y + this.ty + this.gy + this.cy, -1, 1);
     if (Math.hypot(mx, my) < 0.15) return;   // zona muerta
     const mando = this.el.sceneEl.is('vr-mode') ? null : [...navigator.getGamepads()].find(g => g && g.mapping === 'standard');
-    const corre = this.corriendo || this.mayusculas || (mando && mando.buttons[6] && mando.buttons[6].value > 0.5);
+    const corre = this.corriendo || this.mayusculas || this.correTactil || (mando && mando.buttons[6] && mando.buttons[6].value > 0.5);
     const s = Math.min(dt / 1000, 0.05) * VELOCIDAD * (corre ? CORRER : 1);
     const cam = document.querySelector('[camera]').object3D;
     const delante = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.getWorldQuaternion(new THREE.Quaternion()));
@@ -506,6 +507,9 @@ function crucetas() {
     + '.cruceta b::after{content:"";position:absolute;left:11px;top:11px;width:24px;height:24px;background:#a8875a;'
     + 'clip-path:polygon(50% 8%,96% 82%,50% 64%,4% 82%);filter:drop-shadow(0 1px 1px #000);transition:background .08s,transform .08s}'
     + '.cruceta b.on::after{background:#f0c878;transform:scale(1.18)}'
+    // corriendo: el aro de hierro brilla a latón y las flechas, más encendidas
+    + '.cruceta.corre{opacity:.85;box-shadow:0 0 0 3px #a8875a,0 0 0 5px #1a1a1a,0 0 0 6px #f0c878,0 0 16px 4px rgba(240,200,120,.45),inset 0 -6px 12px rgba(0,0,0,.5)}'
+    + '.cruceta.corre b.on::after{background:#ffe2a0}'
     + '.cruceta .n{left:47px;top:6px}.cruceta .s{left:47px;top:88px;transform:rotate(180deg)}'
     + '.cruceta .o{left:6px;top:47px;transform:rotate(-90deg)}.cruceta .e{left:88px;top:47px;transform:rotate(90deg)}';
   document.head.appendChild(estilo);
@@ -516,8 +520,13 @@ function crucetas() {
     c.className = 'cruceta ' + lado;
     for (const k in flechas) { const b = document.createElement('b'); b.className = k; c.appendChild(b); }
     // el dedo puede deslizarse de una flecha a otra sin levantarlo: se mira qué flecha hay bajo cada toque
+    // doble toque en la de andar: si se vuelve a tocar al poco de soltarla y se mantiene, corre hasta levantar el dedo
+    let soltada = -1e9;
     const leer = e => {
       const v = valor[lado]; v.x = v.y = 0;
+      if (e.type === 'touchstart' && e.targetTouches.length === 1 && performance.now() - soltada < DOBLE_TOQUE_MS) v.corre = true;
+      if (e.type !== 'touchstart' && e.type !== 'touchmove' && e.targetTouches.length === 0) { v.corre = false; soltada = performance.now(); }
+      c.classList.toggle('corre', !!v.corre);
       for (const b of c.children) b.classList.remove('on');
       for (const p of e.touches) {
         const r = c.getBoundingClientRect();
@@ -595,6 +604,7 @@ function crucetas() {
     const dt = Math.min(ahora - antes, 50) / 1000; antes = ahora;
     andar.components['andar-joystick'].cx = valor.izq.x;
     andar.components['andar-joystick'].cy = valor.izq.y;
+    andar.components['andar-joystick'].correTactil = !!valor.izq.corre;
     const lc = camara.components['look-controls'];
     if (lc && !motivosRaton.size && !s.is('vr-mode')) {
       lc.yawObject.rotation.y -= valor.der.x * dt * VELOCIDAD_MIRAR;
