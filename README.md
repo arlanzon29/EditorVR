@@ -157,6 +157,11 @@ pregunta, y no gira la cámara ni toca la escena; al cerrarlos se recaptura. Las
 la cama y el posadero salen rectas, de frente a la cámara aunque mire arriba o abajo, y a una escala que cabe en la vista
 (`tablaEnMonitor`, en posada.js). Los avisos del tutorial, más grandes y arriba. En VR todo sigue como estaba.
 
+**Móvil o tableta** (pantalla táctil, fuera de VR): salen **dos crucetas** abajo, la izquierda para andar y la
+derecha para mirar (`crucetas`, al final de movimiento.js; se detecta con `pointer: coarse` (el puntero principal es el dedo; un portátil táctil con ratón no cuenta), y no
+sale en el navegador de las Quest). La de andar se suma al joystick (`cx`, `cy` en `andar-joystick`); la de mirar gira la
+cámara como el stick derecho del mando. Se pueden usar las dos a la vez, y arrastrar por la escena también gira.
+
 **Mando de Xbox en el ordenador** (por cable, Bluetooth o adaptador; el navegador lo detecta al
 pulsar cualquier botón con la página delante; dentro de las gafas no cuenta):
 

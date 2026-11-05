@@ -167,6 +167,7 @@ AFRAME.registerComponent('andar-joystick', {
     // en el ordenador, WASD o flechas hacen lo mismo que el joystick (antes era wasd-controls,
     // que movía la cámara sin choques ni escalones)
     this.tx = 0; this.ty = 0;
+    this.cx = 0; this.cy = 0;   // cruceta táctil del móvil (la pone crucetas(), abajo)
     const teclas = new Set();
     const pulsada = (...c) => c.some(k => teclas.has(k)) ? 1 : 0;
     const actualizar = () => {
@@ -219,7 +220,7 @@ AFRAME.registerComponent('andar-joystick', {
     this.mandoPC(dt);
     // (sin partida se está en el menú: se anda por su salón, pero por nada más)
     if (cambiandoDeZona || (!partida.ranura && zonaCargada.nombre !== 'menu')) return;
-    const mx = THREE.MathUtils.clamp(this.x + this.tx + this.gx, -1, 1), my = THREE.MathUtils.clamp(this.y + this.ty + this.gy, -1, 1);
+    const mx = THREE.MathUtils.clamp(this.x + this.tx + this.gx + this.cx, -1, 1), my = THREE.MathUtils.clamp(this.y + this.ty + this.gy + this.cy, -1, 1);
     if (Math.hypot(mx, my) < 0.15) return;   // zona muerta
     const mando = this.el.sceneEl.is('vr-mode') ? null : [...navigator.getGamepads()].find(g => g && g.mapping === 'standard');
     const corre = this.corriendo || this.mayusculas || (mando && mando.buttons[6] && mando.buttons[6].value > 0.5);
@@ -477,4 +478,66 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('keydown', e => { if (e.key === 'Alt') { e.preventDefault(); cursorLibre(true); } });
   window.addEventListener('keyup', e => { if (e.key === 'Alt') { e.preventDefault(); cursorLibre(false); } });
   window.addEventListener('blur', () => cursorLibre(false));
+});
+
+// Móvil o tableta (pantalla táctil, fuera de VR y sin las gafas): dos crucetas en pantalla, a la izquierda
+// para andar (como el joystick) y a la derecha para mirar (como el stick derecho del mando). Arrastrar
+// por la escena también gira, que es lo que ya hace look-controls.
+const esTactil = () => matchMedia('(pointer: coarse)').matches && !/OculusBrowser/.test(navigator.userAgent);
+function crucetas() {
+  const s = document.querySelector('a-scene'), camara = document.querySelector('[camera]');
+  const andar = document.querySelector('[andar-joystick]');
+  if (!s || !camara || !andar || !esTactil()) return;
+  const estilo = document.createElement('style');
+  estilo.textContent = '.cruceta{position:fixed;bottom:24px;width:132px;height:132px;z-index:20;touch-action:none;user-select:none;-webkit-user-select:none;opacity:.55}'
+    + '.cruceta.izq{left:24px}.cruceta.der{right:24px}.cruceta b{position:absolute;width:44px;height:44px;border-radius:8px;background:#2b2118;border:2px solid #8a6b3f;color:#d9c9a0;font:bold 22px sans-serif;display:flex;align-items:center;justify-content:center}'
+    + '.cruceta b.on{background:#8a6b3f;color:#1a120b}.cruceta .n{left:44px;top:0}.cruceta .s{left:44px;top:88px}.cruceta .o{left:0;top:44px}.cruceta .e{left:88px;top:44px}';
+  document.head.appendChild(estilo);
+  const flechas = { n: '▲', s: '▼', o: '◀', e: '▶' };
+  const valor = { izq: { x: 0, y: 0 }, der: { x: 0, y: 0 } };
+  const hacer = lado => {
+    const c = document.createElement('div');
+    c.className = 'cruceta ' + lado;
+    for (const k in flechas) { const b = document.createElement('b'); b.className = k; b.textContent = flechas[k]; c.appendChild(b); }
+    // el dedo puede deslizarse de una flecha a otra sin levantarlo: se mira qué flecha hay bajo cada toque
+    const leer = e => {
+      const v = valor[lado]; v.x = v.y = 0;
+      for (const b of c.children) b.classList.remove('on');
+      for (const p of e.touches) {
+        const r = c.getBoundingClientRect();
+        if (p.clientX < r.left - 20 || p.clientX > r.right + 20 || p.clientY < r.top - 20 || p.clientY > r.bottom + 20) continue;
+        const dx = p.clientX - (r.left + r.width / 2), dy = p.clientY - (r.top + r.height / 2);
+        if (Math.hypot(dx, dy) < 14) continue;   // (el centro no hace nada)
+        const k = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'e' : 'o') : (dy > 0 ? 's' : 'n');
+        c.querySelector('.' + k).classList.add('on');
+        if (k === 'e') v.x = 1; else if (k === 'o') v.x = -1; else if (k === 's') v.y = 1; else v.y = -1;
+      }
+      e.preventDefault();
+    };
+    for (const ev of ['touchstart', 'touchmove', 'touchend', 'touchcancel']) c.addEventListener(ev, leer, { passive: false });
+    document.body.appendChild(c);
+    return c;
+  };
+  const cruces = [hacer('izq'), hacer('der')];
+  const mostrar = si => cruces.forEach(c => { c.style.display = si ? '' : 'none'; });
+  s.addEventListener('enter-vr', () => mostrar(false));
+  s.addEventListener('exit-vr', () => mostrar(true));
+  // cada fotograma: andar con la izquierda (se suma al joystick, ver andar-joystick) y mirar con la derecha
+  let antes = performance.now();
+  const paso = ahora => {
+    const dt = Math.min(ahora - antes, 50) / 1000; antes = ahora;
+    andar.components['andar-joystick'].cx = valor.izq.x;
+    andar.components['andar-joystick'].cy = valor.izq.y;
+    const lc = camara.components['look-controls'];
+    if (lc && !motivosRaton.size && !s.is('vr-mode')) {
+      lc.yawObject.rotation.y -= valor.der.x * dt * VELOCIDAD_MIRAR;
+      lc.pitchObject.rotation.x = THREE.MathUtils.clamp(lc.pitchObject.rotation.x - valor.der.y * dt * VELOCIDAD_MIRAR * MIRAR_VERTICAL, -Math.PI / 2, Math.PI / 2);
+    }
+    requestAnimationFrame(paso);
+  };
+  requestAnimationFrame(paso);
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const s = document.querySelector('a-scene');
+  if (s.hasLoaded) crucetas(); else s.addEventListener('loaded', crucetas);
 });
