@@ -32,7 +32,8 @@ const VELOCIDAD = 1.5;   // m/s
 const CORRER = 2.5;      // veces más rápido al correr: gatillo lateral izquierdo, Mayúsculas o gatillo LT del mando
 const VELOCIDAD_MIRAR = 2.2;   // rad/s con el stick derecho del mando de Xbox, a tope
 const MIRAR_VERTICAL = 0.6;    // en vertical, esta parte de esa velocidad
-const DOBLE_TOQUE_MS = 300;    // en el móvil, volver a tocar la cruceta de andar antes de esto es correr
+const DOBLE_TOQUE_MS = 400;    // en el móvil, volver a tocar la cruceta de andar antes de esto es correr
+const SEGUIR_CORRIENDO_MS = 600;   // corriendo, se puede levantar el dedo este rato sin dejar de correr
 const MUELLE = 0.15;           // un eje que baja esto en SALTO_MS es el muelle del stick al soltarlo: si luego se queda quieto, no es una mano
 const SALTO_MANO = 0.08, SALTO_MS = 150;   // una mano mueve el eje al menos esto en este tiempo; el mando solo, no
 // En VR cuenta la altura real de las gafas; si estás sentado (las gafas, de media, por debajo de
@@ -520,12 +521,16 @@ function crucetas() {
     c.className = 'cruceta ' + lado;
     for (const k in flechas) { const b = document.createElement('b'); b.className = k; c.appendChild(b); }
     // el dedo puede deslizarse de una flecha a otra sin levantarlo: se mira qué flecha hay bajo cada toque
-    // doble toque en la de andar: si se vuelve a tocar al poco de soltarla y se mantiene, corre hasta levantar el dedo
-    let soltada = -1e9;
+    // doble toque en la de andar: si se vuelve a tocar al poco de soltarla, corre. Sigue corriendo mientras se
+    // toca, y aunque se levante el dedo un momento (toque, toque y apoyar también vale); quieta un rato, deja
+    // de correr (eso lo mira paso(), abajo)
     const leer = e => {
       const v = valor[lado]; v.x = v.y = 0;
-      if (e.type === 'touchstart' && e.targetTouches.length === 1 && performance.now() - soltada < DOBLE_TOQUE_MS) v.corre = true;
-      if (e.type !== 'touchstart' && e.type !== 'touchmove' && e.targetTouches.length === 0) { v.corre = false; soltada = performance.now(); }
+      const ahora = performance.now();
+      if (e.type === 'touchstart' && e.targetTouches.length === 1)
+        v.corre = v.soltada !== undefined && ahora - v.soltada < (v.corre ? SEGUIR_CORRIENDO_MS : DOBLE_TOQUE_MS);
+      v.suelta = e.targetTouches.length === 0;
+      if (v.suelta && e.type !== 'touchstart' && e.type !== 'touchmove') v.soltada = ahora;
       c.classList.toggle('corre', !!v.corre);
       for (const b of c.children) b.classList.remove('on');
       for (const p of e.touches) {
@@ -604,7 +609,9 @@ function crucetas() {
     const dt = Math.min(ahora - antes, 50) / 1000; antes = ahora;
     andar.components['andar-joystick'].cx = valor.izq.x;
     andar.components['andar-joystick'].cy = valor.izq.y;
-    andar.components['andar-joystick'].correTactil = !!valor.izq.corre;
+    const vi = valor.izq;
+    if (vi.corre && vi.suelta && ahora - vi.soltada > SEGUIR_CORRIENDO_MS) { vi.corre = false; cruces[0].classList.remove('corre'); }
+    andar.components['andar-joystick'].correTactil = !!vi.corre;
     const lc = camara.components['look-controls'];
     if (lc && !motivosRaton.size && !s.is('vr-mode')) {
       lc.yawObject.rotation.y -= valor.der.x * dt * VELOCIDAD_MIRAR;

@@ -161,8 +161,9 @@ la cama y el posadero salen rectas, de frente a la cámara aunque mire arriba o 
 derecha para mirar (`crucetas`, al final de movimiento.js; se detecta con `pointer: coarse` (el puntero principal es el dedo; un portátil táctil con ratón no cuenta), y no
 sale en el navegador de las Quest). La de andar se suma al joystick (`cx`, `cy` en `andar-joystick`); la de mirar gira la
 cámara como el stick derecho del mando. Se pueden usar las dos a la vez, y arrastrar por la escena también gira.
-**Correr en el móvil:** doble toque en la cruceta de andar, manteniendo el segundo (antes de `DOBLE_TOQUE_MS`, 300 ms):
-corre hasta levantar el dedo, y mientras el aro se enciende en latón (`correTactil` en `andar-joystick`).
+**Correr en el móvil:** doble toque en la cruceta de andar (el segundo antes de `DOBLE_TOQUE_MS`, 400 ms). Corre mientras se
+toca, y aunque se levante el dedo un momento (`SEGUIR_CORRIENDO_MS`, 600 ms: toque, toque y apoyar también vale); el aro se
+enciende en latón mientras (`correTactil` en `andar-joystick`).
 **Botón Pergamino** (arriba a la derecha, en el ordenador y en el móvil, fuera de VR y del menú): abre el pergamino por el
 mapa y, abierto, pone "Cerrar" (js/mapa.js). En el ordenador se pulsa con el ratón libre (Alt, Esc o con el pergamino abierto);
 con el ratón capturado sigue la tecla **N**.
