@@ -165,7 +165,8 @@ cámara como el stick derecho del mando. Se pueden usar las dos a la vez, y arra
 mapa y, abierto, pone "Cerrar" (js/mapa.js). En el ordenador se pulsa con el ratón libre (Alt, Esc o con el pergamino abierto);
 con el ratón capturado sigue la tecla **N**.
 **Tocar con el dedo** lo que se puede usar (la aldaba de una puerta, el posadero, una copa, los botones) es como el clic:
-un toque corto, sin arrastrar, lanza un rayo desde el dedo (4 m, como la mira) y le manda `mousedown`. Al cursor de la mira se le
+un toque corto, sin arrastrar, lanza un rayo desde el dedo (tan largo como el de la mira: 4 m, y en el menú `MENU_RAYO`) y le manda `mousedown`.
+El giroscopio del móvil no mueve la cámara (`magicWindowTrackingEnabled: false` en `look-controls`): se mira con la cruceta o arrastrando. Al cursor de la mira se le
 quita el toque, para que no haga clic a la vez en lo del centro.
 Se juega en **apaisado**: al primer toque pide pantalla completa y fija la orientación (`screen.orientation.lock`, que solo
 va así y en Android; el iPhone no lo deja), y en vertical un aviso tapa la escena ("Gira el móvil para jugar").

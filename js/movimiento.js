@@ -546,8 +546,8 @@ function crucetas() {
   };
   window.addEventListener('touchend', fijar, { once: true });
   // Tocar con el dedo: un toque corto (sin arrastrar, que es girar) lanza un rayo desde ese punto de la
-  // pantalla y hace lo mismo que el clic de la mira sobre lo primero .clicable que encuentra a menos de
-  // 4 m (la puerta por su aldaba, el posadero, una copa, los botones de una pregunta...).
+  // pantalla y hace lo mismo que el clic de la mira sobre lo primero .clicable que encuentra a su
+  // alcance (la puerta por su aldaba, el posadero, una copa, los botones de una pregunta...).
   // (el cursor de la mira también hace clic al tocar la pantalla, sobre lo que hay en el centro: se le quita
   // el toque, o una puerta centrada se abriría y cerraría a la vez)
   const cursor = camara.components.cursor;
@@ -567,7 +567,7 @@ function crucetas() {
     const r = s.canvas.getBoundingClientRect();
     punto.set((p.clientX - r.left) / r.width * 2 - 1, -(p.clientY - r.top) / r.height * 2 + 1);
     rayo.setFromCamera(punto, s.camera);
-    rayo.far = 4;
+    rayo.far = camara.getAttribute('raycaster').far;   // (el de la mira: 4 m, y más en el menú, MENU_RAYO)
     const objetos = [...document.querySelectorAll('.clicable')].filter(el => el.object3D && el.object3D.visible).map(el => el.object3D);
     const golpe = rayo.intersectObjects(objetos, true)[0];
     let el = golpe && golpe.object;
