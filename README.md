@@ -161,6 +161,9 @@ la cama y el posadero salen rectas, de frente a la cámara aunque mire arriba o 
 derecha para mirar (`crucetas`, al final de movimiento.js; se detecta con `pointer: coarse` (el puntero principal es el dedo; un portátil táctil con ratón no cuenta), y no
 sale en el navegador de las Quest). La de andar se suma al joystick (`cx`, `cy` en `andar-joystick`); la de mirar gira la
 cámara como el stick derecho del mando. Se pueden usar las dos a la vez, y arrastrar por la escena también gira.
+**Botón Pergamino** (arriba a la derecha, en el ordenador y en el móvil, fuera de VR y del menú): abre el pergamino por el
+mapa y, abierto, pone "Cerrar" (js/mapa.js). En el ordenador se pulsa con el ratón libre (Alt, Esc o con el pergamino abierto);
+con el ratón capturado sigue la tecla **N**.
 **Tocar con el dedo** lo que se puede usar (la aldaba de una puerta, el posadero, una copa, los botones) es como el clic:
 un toque corto, sin arrastrar, lanza un rayo desde el dedo (4 m, como la mira) y le manda `mousedown`. Al cursor de la mira se le
 quita el toque, para que no haga clic a la vez en lo del centro.

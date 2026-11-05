@@ -159,6 +159,27 @@ AFRAME.registerComponent('mapa', {
       this.colocarMarcaMapa();
     };
     this.el.addEventListener('mapa-alternar', alternar);   // (la Y del mando de Xbox, js/movimiento.js)
+    // Botón arriba a la derecha (ordenador y móvil, fuera de VR): abre y cierra el pergamino, con el ratón libre
+    // o con el dedo. No sale en el menú ni en VR.
+    const estilo = document.createElement('style');
+    estilo.textContent = '.boton-pergamino{position:fixed;top:14px;right:14px;z-index:25;display:none;align-items:center;gap:8px;padding:8px 14px 8px 10px;'
+      + 'border-radius:22px;border:none;cursor:pointer;font:600 17px Georgia,serif;color:#e8d9b0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;'
+      + 'background:radial-gradient(circle at 50% 35%,#4a3826,#2a1f14 70%,#1c140c);'
+      + 'box-shadow:0 0 0 2px #3a3a3a,0 0 0 3px #1a1a1a,0 0 0 4px #5a5a5a,0 4px 10px rgba(0,0,0,.5)}'
+      + '.boton-pergamino:active{color:#f0c878;transform:scale(.96)}'
+      + '.boton-pergamino i{width:22px;height:16px;border-radius:3px;background:linear-gradient(90deg,#8a6b3f 0 4px,#d9c49a 4px calc(100% - 4px),#8a6b3f calc(100% - 4px))}';
+    document.head.appendChild(estilo);
+    const boton = document.createElement('button');
+    boton.className = 'boton-pergamino';
+    boton.innerHTML = '<i></i><span>Pergamino</span>';
+    // (que el clic no llegue a la escena ni al pergamino de debajo)
+    for (const ev of ['mousedown', 'touchstart', 'touchend']) boton.addEventListener(ev, e => e.stopPropagation());
+    boton.addEventListener('click', e => { e.stopPropagation(); abrirCerrar(); });
+    document.body.appendChild(boton);
+    this.botonPergamino = setInterval(() => {
+      boton.style.display = partida.ranura && !this.el.is('vr-mode') ? 'flex' : 'none';
+      boton.querySelector('span').textContent = this.hoja >= 0 ? 'Cerrar' : 'Pergamino';
+    }, 300);
     window.addEventListener('keydown', e => {
       if (e.code === 'KeyN') alternar();
       // en el ordenador la mira no puede apuntar al pergamino, que va con ella: con la hoja abierta, teclas
