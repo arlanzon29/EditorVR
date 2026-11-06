@@ -39,7 +39,7 @@ const partida = {
   estado: null,   // sin partida abierta (en el menú), uno vacío que no se guarda
   ranura: null,   // el número de la partida abierta
   charlaAbierta: false,   // hablando con el tabernero: el tutorial espera a que acabe (comprobarPaso)
-  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, estrellas: null, visitadas: [], sitio: null, fecha: null }; },
+  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, estrellas: null, noche: false, visitadas: [], sitio: null, fecha: null }; },
   cargar() {
     this.estado = this.nuevo();
     this.traerPartidaVieja();
@@ -172,8 +172,14 @@ const partida = {
   aprender(texto) { if (!this.estado.aprendido.includes(texto)) this.estado.aprendido.push(texto); },
   misionActiva() { return MISIONES[this.estado.mision] || null; },
   precio(nombre) { return PRECIOS_ZONA[nombre] ?? 0; },
-  // ¿Es de noche en la zona que se carga? Por ahora, solo el poblado y solo con ?noche en la dirección; luego, lo que diga la partida.
-  deNoche(nombre = zonaCargada.nombre) { return nombre === 'poblado' && /[?&]noche/.test(location.search); },
+  // ¿Es de noche en la zona? Solo el poblado, y desde que se pisa el lago (anochecer) hasta que se duerme (empezarDia).
+  // Para mirarlo sin jugar: en la consola, partida.estado.noche = true y volver a entrar al poblado.
+  deNoche(nombre = zonaCargada.nombre) { return nombre === 'poblado' && !!this.estado.noche; },
+  anochecer() {
+    if (!this.ranura || this.estado.noche) return;
+    this.estado.noche = true;
+    this.guardar();
+  },
   // Al principio solo se puede ir al poblado, el bosque y el lago (ZONAS_ABIERTAS); la de depuración las tiene todas.
   // Las partidas de antes conservan las zonas que ya habían visitado.
   abierta(nombre) {
@@ -215,6 +221,7 @@ const partida = {
   // Lo aprendido y las monedas se quedan.
   empezarDia() {
     this.estado.dia++;
+    this.estado.noche = false;   // al despertar, de día
     this.prepararDia();
   },
   // Presupuesto entero y sin nada de lo pescado

@@ -167,6 +167,7 @@ AFRAME.registerComponent('zonas', {
       SUPERFICIES.length = 0;
     }
     zonaCargada = MUNDO[nombre];
+    if (nombre === 'lago') partida.anochecer();   // al volver al poblado, ya es de noche
     mallaTerreno = null;
     if (destino) {
       const rig = document.getElementById('rig').object3D, y = destino.y ?? alturaTerreno(destino.x, destino.z);
