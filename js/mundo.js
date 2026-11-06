@@ -53,6 +53,8 @@ const MUNDO = {
     arbolesCerca: 40,   // (de prueba) hasta dónde se ven los árboles con su detalle; si no lo dice, DIST_CERCA (js/arboles.js)
     sitio: { x0: 90, x1: 230, z0: -200, z1: -40 }, andar: { x0: 92, x1: 228, z0: -190, z1: -50 },
     cielo: 'mediodia', niebla: '#d3cfc4', fondo: '#a9cfe8', ambiente: { intensity: 2.2, color: '#ffffff' }, sol: { intensity: 1.6, color: '#fff2dc' },
+    // de noche (partida.deNoche): lo mismo que la abadía
+    noche: { cielo: 'noche', niebla: '#1c2436', fondo: '#111a30', ambiente: { intensity: 0.7, color: '#7f94c8' }, sol: { intensity: 0.8, color: '#a9bce8' } },
     altura(x, z) {
       // llano en el pueblo, y lomas alrededor
       return (1.8 * Math.sin(x * 0.07) + 1.4 * Math.sin(z * 0.09 + 1) + 2) * rampa(48, 72, Math.hypot(x - 160, z + 120));

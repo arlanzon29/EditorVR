@@ -62,6 +62,9 @@ Sin decidir: si se puede abandonar una misión (ahora no se puede).
 - **Entrar en una zona cuesta puntos**, y cada zona tiene su precio (bosque 1, montaña 3). Andar dentro es gratis.
 - Sin puntos suficientes no se entra en esa zona y no pasa nada más: con 1 punto se puede ir al bosque y no a la montaña.
 - Con cero puntos se puede seguir andando por la zona en la que estás.
+- **Zonas abiertas al empezar:** solo el poblado, el bosque y el lago (`ZONAS_ABIERTAS`, `js/partida.js`). Las demás dicen "está cerrado por ahora" y se irán abriendo más adelante. El lago no tiene barca por ahora. La partida de depuración las tiene todas.
+- **Estrellas escondidas:** al aceptar la misión aparecen 5 estrellas azules, siempre en los mismos sitios en cada misión (2 en el poblado, 2 en el bosque, 1 en el lago). Se cogen apuntando y con el gatillo, de cerca, y un marcador ("★ 2 de 5") sale en el indicador. La moza del poblado, al acercarte con la misión empezada y la estrella de detrás de la iglesia sin coger, dice "Vi algo brillante detrás de la iglesia". Sin premio por ahora. Ideas para favorecer la exploración, sin decidir: premio al juntar las 5; un pequeño brillo o sonido al acercarse; cofres o cartas escondidas; vistas con un cartel al llegar (el mapa las marca como visitadas); pistas del tabernero o los vecinos; una carta de oficio nueva en un rincón.
+- **Idea sin decidir: poblado de noche al volver del lago.** Versión barata: cielo y niebla de noche y la luz horneada atenuada y teñida de azul (sin hornear otra vez), con un indicador en la partida de que ya es de noche; versión buena: hornear el poblado también de noche (`campo-poblado`, `poblado`, `taberna`, `posada`), con luces en las ventanas.
 - Los sitios a los que se baja, como las mazmorras o una cala al pie del acantilado, son zonas con su precio.
 
 ### Fin del día

@@ -9,7 +9,7 @@
 //    como está. Las piezas fundidas se ocultan, pero siguen en su sitio (y su HTML, igual).
 //  - luces-cercanas: solo 6 luces puntuales, siempre las mismas, que copian a las más cercanas.
 
-const NO_FUNDIR = '[barca], [agua], [camino], [claro], [ciervo], [peces], [portal], [puerta-portal], [salida], [pozo], [pinos], [cartel-madera], [puerta], [agarrable], [antorcha], [criado], [camarero], [cofre], [cama-dormir], [postigos], [tala], [cantera], [mercader], [moza], [persona-animada], [muestra], [marca-paso], [posadero], [boda], [guardia], [cliente], [hoguera], [lampara-rueda], [barrera], [gltf-model], [text], [menu-partidas], [candelabro], [oculo], [mosaico], .clicable, .cartel';
+const NO_FUNDIR = '[barca], [agua], [camino], [claro], [ciervo], [peces], [portal], [puerta-portal], [salida], [pozo], [pinos], [cartel-madera], [puerta], [agarrable], [antorcha], [criado], [camarero], [cofre], [cama-dormir], [postigos], [tala], [cantera], [mercader], [moza], [persona-animada], [muestra], [marca-paso], [posadero], [estrella], [boda], [guardia], [cliente], [hoguera], [lampara-rueda], [barrera], [gltf-model], [text], [menu-partidas], [candelabro], [oculo], [mosaico], .clicable, .cartel';
 
 function fundirEstancia(el) {
   el.object3D.updateMatrixWorld(true);
@@ -98,6 +98,8 @@ function liberarEstancia(el) {
 const SALAS_HORNEADAS = ['sala1', 'pasillo', 'sala2', 'pasillo2', 'sala3', 'comedor', 'patio', 'exterior', 'bosque', 'lago', 'poblado', 'taberna', 'posada', 'montana', 'acantilado', 'abadia', 'puerto', 'capilla', 'cueva', 'mazmorras', 'menu'];
 // el suelo de cada zona de campo va aparte, en su propia imagen de luz: { estancia: su suelo }
 const SUELOS_HORNEADOS = { exterior: 'campo', bosque: 'campo-bosque', lago: 'campo-lago', poblado: 'campo-poblado', montana: 'campo-montana', acantilado: 'campo-acantilado', abadia: 'campo-abadia', puerto: 'campo-puerto', cueva: 'campo-cueva' };
+// las que tienen luz horneada de noche (<sala>-noche-luz.jpg; README, "Horneado")
+const SALAS_CON_NOCHE = ['campo-poblado', 'poblado', 'posada', 'taberna'];
 const ESCALA_LUZ = 2;   // la imagen guarda la luz dividida por esto: lo que pasa de 1 también cabe
 // Donde hay fuego, la luz horneada tiembla un poco, como las llamas: basta cambiar un número del material,
 // no cuesta nada. Va por estancia entera, así que tiene que ser muy suave.
@@ -135,7 +137,8 @@ function hornearEstancia(el, sala) {
     const ent = document.createElement('a-entity');
     // (configurada ya: si un material se dibujara antes de que llegue la imagen, se quedaría con
     // las coordenadas equivocadas y saldría negro)
-    const luz = new THREE.TextureLoader().load(`modelos/horneado/${sala}-luz.jpg`);
+    // (de noche, la imagen de luz de noche: solo el poblado la tiene, y los modelos son los mismos)
+    const luz = new THREE.TextureLoader().load(`modelos/horneado/${sala}${partida.deNoche() && SALAS_CON_NOCHE.includes(sala) ? '-noche' : ''}-luz.jpg`);
     luz.colorSpace = THREE.SRGBColorSpace; luz.flipY = false; luz.channel = 1;
     ent.addEventListener('model-error', () => { ent.remove(); luz.dispose(); console.error('Sin horneado: ' + sala); listo(); });
     ent.addEventListener('model-loaded', e => {

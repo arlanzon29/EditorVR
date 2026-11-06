@@ -147,7 +147,7 @@ AFRAME.registerComponent('zonas', {
       this.ir(nombre, destino);
       return true;
     };
-    if (!partida.ranura || nombre === zonaCargada.nombre || partida.estado.puntos < precio) return ir();
+    if (!partida.ranura || nombre === zonaCargada.nombre || partida.estado.puntos < precio || !partida.abierta(nombre)) return ir();
     this.pregunta = preguntarGasto({ que: viaje ? 'viaje' : 'andar', de: this.actual, a: nombre, precio, alResponder: si => {
       this.pregunta = null;
       // si no, un momento sin volver a preguntar, aunque se siga empujando hacia el paso
@@ -175,7 +175,7 @@ AFRAME.registerComponent('zonas', {
       const andar = document.querySelector('[andar-joystick]').components['andar-joystick'];
       if (andar) andar.altura = y;
     }
-    this.ponerAtmosfera(MUNDO[nombre]);
+    this.ponerAtmosfera(partida.deNoche(nombre) ? MUNDO[nombre].noche : MUNDO[nombre]);
     const raiz = this.raiz = document.createElement('a-entity');
     const cargadas = MUNDO[nombre].salas.map(sala => {
       const e = document.createElement('a-entity');

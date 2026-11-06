@@ -239,7 +239,11 @@ AFRAME.registerComponent('posadero', {
     cajaDeRayo(this.el, 0, 0.95, 0, 0.9, 1.9, 0.9, () => {
       if (this.quitar) return this.cerrar();
       this.el.components.criado.charlando = true;
-      const charla = { texto: 'La taberna está aquí al lado: saliendo por la puerta, a la izquierda. Allí el tabernero anda buscando quien le haga un encargo.', opciones: [{ texto: 'Gracias' }] };
+      // con el encargo ya aceptado (o cumplido), ya no hace falta que lo repita
+      const e = partida.estado, conEncargo = e.mision || e.hechas.includes('boda');
+      const charla = conEncargo
+        ? { texto: 'Buen viaje. Y ten cuidado con los puntos del día.', opciones: [{ texto: 'Gracias' }] }
+        : { texto: 'La taberna está aquí al lado: saliendo por la puerta, a la izquierda. Allí el tabernero anda buscando quien le haga un encargo.', opciones: [{ texto: 'Gracias' }] };
       this.quitar = tablaDeOpciones(this.el.sceneEl, sitioDeLectura(this.el.sceneEl), charla, () => this.cerrar());
     });
   },

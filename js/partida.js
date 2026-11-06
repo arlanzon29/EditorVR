@@ -7,9 +7,12 @@
 const PRECIOS_ZONA = { castillo: 1, bosque: 1, lago: 1, poblado: 1, montana: 3, acantilado: 2, puerto: 2, abadia: 3, cueva: 2, mazmorras: 2 };
 // Zonas a las que se llega por una puerta o una boca, no por los PASOS: para el camino del viaje rápido
 const ENTRADAS_ZONA = [['bosque', 'cueva'], ['castillo', 'mazmorras']];
+// Las únicas zonas a las que se puede ir al empezar (decidido por el usuario); las demás se abrirán más adelante
+const ZONAS_ABIERTAS = ['poblado', 'bosque', 'lago'];
 const MISIONES = {
   boda: { titulo: 'El pescado de la boda', presupuesto: 9, pago: 5 },   // (el pago es provisional)
 };
+const ESTRELLAS_TOTAL = 5;   // las estrellas escondidas que trae la misión (js/estrellas.js)
 const PUNTOS_LIBRE = 30;   // los puntos de acción de cada día sin misión (decidido por el usuario)
 const PUNTOS_PESCAR = 3;   // lo que cuesta pescar con misión
 // y los demás oficios (pedidos por el usuario): cazar el ciervo, talar en el bosque y picar piedra en la cueva
@@ -36,7 +39,7 @@ const partida = {
   estado: null,   // sin partida abierta (en el menú), uno vacío que no se guarda
   ranura: null,   // el número de la partida abierta
   charlaAbierta: false,   // hablando con el tabernero: el tutorial espera a que acabe (comprobarPaso)
-  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, visitadas: [], sitio: null, fecha: null }; },
+  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, estrellas: null, visitadas: [], sitio: null, fecha: null }; },
   cargar() {
     this.estado = this.nuevo();
     this.traerPartidaVieja();
@@ -169,7 +172,14 @@ const partida = {
   aprender(texto) { if (!this.estado.aprendido.includes(texto)) this.estado.aprendido.push(texto); },
   misionActiva() { return MISIONES[this.estado.mision] || null; },
   precio(nombre) { return PRECIOS_ZONA[nombre] ?? 0; },
-  puedeEntrar(nombre) { return nombre === zonaCargada.nombre || this.estado.puntos >= this.precio(nombre); },
+  // ¿Es de noche en la zona que se carga? Por ahora, solo el poblado y solo con ?noche en la dirección; luego, lo que diga la partida.
+  deNoche(nombre = zonaCargada.nombre) { return nombre === 'poblado' && /[?&]noche/.test(location.search); },
+  // Al principio solo se puede ir al poblado, el bosque y el lago (ZONAS_ABIERTAS); la de depuración las tiene todas.
+  // Las partidas de antes conservan las zonas que ya habían visitado.
+  abierta(nombre) {
+    return nombre === zonaCargada.nombre || this.depuracion() || ZONAS_ABIERTAS.includes(nombre) || this.estado.visitadas.includes(nombre);
+  },
+  puedeEntrar(nombre) { return nombre === zonaCargada.nombre || (this.abierta(nombre) && this.estado.puntos >= this.precio(nombre)); },
 
   // Lo que cuesta el viaje rápido: las entradas de todas las zonas del camino más barato hasta "nombre"
   precioViaje(nombre) {
@@ -190,6 +200,7 @@ const partida = {
     const e = this.estado;
     if (nombre === zonaCargada.nombre || !precio) return true;
     const titulo = MUNDO[nombre].titulo;
+    if (!this.abierta(nombre)) { this.avisar(`${titulo} está cerrado por ahora.`); return false; }
     if (e.puntos >= precio) {
       e.puntos -= precio;
       this.guardar();
@@ -298,10 +309,21 @@ const partida = {
     this.avisar(`Vendes ${CARTAS[tipo].una} por ${PRECIO_CARTA} monedas de plata. Tienes ${e.monedas}.`);
   },
 
+  // --- Las estrellas escondidas: estado.estrellas son las ya cogidas (null, sin misión empezada) ---
+  estrellaActiva(id) { const l = this.estado.estrellas; return l !== null && !l.includes(id); },
+  cogerEstrella(id) {
+    const l = this.estado.estrellas;
+    if (!this.estrellaActiva(id)) return;
+    l.push(id);
+    this.guardar();
+    this.avisar(l.length === ESTRELLAS_TOTAL ? `¡Has encontrado las ${ESTRELLAS_TOTAL} estrellas!` : `Estrella encontrada: ${l.length} de ${ESTRELLAS_TOTAL}.`);
+  },
+
   // --- La misión del tutorial ---
   aceptarBoda() {
     this.estado.mision = 'boda';
     this.prepararDia();   // sin cambiar de día, pero nada de llevar el pescado preparado (idea de JUEGO.md)
+    this.estado.estrellas = [];   // las estrellas, otra vez todas, en los mismos sitios
     this.aprender('El tabernero se casa y quiere pescado para el banquete.');
     this.guardar();
     this.avisar(`Misión: ${MISIONES.boda.titulo}. Tienes ${MISIONES.boda.presupuesto} puntos.`);
@@ -463,7 +485,7 @@ function iconoTutorial(g, x, y, r) {
 // El indicador (abajo a la izquierda, solo con misión) y los avisos (delante, unos segundos)
 AFRAME.registerComponent('partida', {
   init() {
-    this.indicador = tablaEnCamara(0.42, 0.11, -0.5, -0.42, -1.3);
+    this.indicador = tablaEnCamara(0.42, 0.15, -0.5, -0.42, -1.3);
     this.aviso = tablaEnCamara(1.5, 0.34, 0, -0.1, -2);
     this.avisoMs = 0;
     this.pintarIndicador = this.pintarIndicador.bind(this);
@@ -483,8 +505,11 @@ AFRAME.registerComponent('partida', {
     const g = lienzo.getContext('2d'), W = lienzo.width, H = lienzo.height;
     fondoDeTabla(g, W, H);
     g.font = '600 26px Georgia, serif';
-    g.fillText(`Día ${e.dia}  ·  ${e.puntos} ${e.puntos === 1 ? 'punto' : 'puntos'}`, W / 2, e.pescado ? H * 0.34 : H / 2);
-    if (e.pescado) { g.font = '20px Georgia, serif'; g.fillText(`Llevas pescado ${e.pescado}`, W / 2, H * 0.7); }
+    // filas repartidas a partes iguales: día y puntos, el pescado si lo llevas y las estrellas si hay misión
+    const filas = [[`Día ${e.dia}  ·  ${e.puntos} ${e.puntos === 1 ? 'punto' : 'puntos'}`, '600 26px']];
+    if (e.pescado) filas.push([`Llevas pescado ${e.pescado}`, '20px']);
+    if (e.estrellas) filas.push([`★ ${e.estrellas.length} de ${ESTRELLAS_TOTAL}`, '600 22px']);
+    filas.forEach(([texto, letra], i) => { g.font = `${letra} Georgia, serif`; g.fillText(texto, W / 2, H * (i + 0.5) / filas.length); });
     tex.needsUpdate = true;
   },
   mostrarAviso(texto, tutorial) {

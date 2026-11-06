@@ -1,13 +1,18 @@
 # Editor VR: hornea la luz de todo el castillo a partir de lo que saca exportarCastillo (js/rendimiento.js).
 # Se calcula todo junto, para que la luz pase de unas estancias a otras, y cada estancia queda con su modelo.
-# Uso: blender --background --python herramientas/hornear-castillo.py -- <castillo.json o bosque.json> <carpeta de salida> [muestras]
+# Uso: blender --background --python herramientas/hornear-castillo.py -- <castillo.json o bosque.json> <carpeta de salida> [muestras] [--noche]
 # Deja <sala>.glb (dos capas de coordenadas: textura y luz), <sala>-luz.jpg y castillo.blend.
+# Con --noche hornea la misma geometría con luna y cielo de noche (CIELOS.noche, js/texturas.js) y las luces puntuales
+# de siempre: solo deja <sala>-noche-luz.jpg y <zona>-noche.blend, sin .glb (los de día valen: las coordenadas de luz son las mismas).
 import base64, json, os, sys
 import bpy
 import numpy as np
 from mathutils import Vector
 
 args = sys.argv[sys.argv.index('--') + 1:]
+NOCHE = '--noche' in args
+args = [a for a in args if a != '--noche']
+SUFIJO = '-noche' if NOCHE else ''
 ENTRADA, SALIDA = args[0], args[1]
 MUESTRAS = int(args[2]) if len(args) > 2 else 256
 ZONA = os.path.splitext(os.path.basename(ENTRADA))[0]
@@ -25,6 +30,9 @@ os.makedirs(SALIDA, exist_ok=True)
 datos = json.load(open(ENTRADA, encoding='utf-8'))
 # la hora, como en CIELOS (js/texturas.js); sin ella, el atardecer del castillo
 HORA = datos.get('horneado') or {'energia': 5, 'color': [1, 0.5, 0.22], 'abajo': [1, 0.42, 0.18], 'medio': [0.62, 0.3, 0.38], 'arriba': [0.1, 0.14, 0.38], 'fuerza': 0.8, 'sol': [-1, 0.2, 0.25]}
+if NOCHE:
+    # copia de CIELOS.noche.horneado y su sol (js/texturas.js): luna fría y baja, cielo casi negro
+    HORA = {'energia': 0.5, 'color': [0.6, 0.72, 1], 'abajo': [0.1, 0.13, 0.25], 'medio': [0.05, 0.08, 0.2], 'arriba': [0.02, 0.03, 0.1], 'fuerza': 0.5, 'sol': [-0.45, 0.65, 0.5]}
 escena = bpy.context.scene
 
 imagenes = {}
@@ -255,11 +263,15 @@ for sala, s in salas.items():
     salida = bpy.data.images.new(f'Final-{sala}', lado, lado, alpha=False)
     salida.colorspace_settings.name = 'Non-Color'
     salida.pixels.foreach_set(rgb.ravel())
-    salida.filepath_raw = os.path.join(SALIDA, f'{sala}-luz.jpg')
+    salida.filepath_raw = os.path.join(SALIDA, f'{sala}{SUFIJO}-luz.jpg')
     salida.file_format = 'JPEG'
     salida.save(quality=95)
 
-bpy.ops.wm.save_as_mainfile(filepath=os.path.join(SALIDA, ZONA + '.blend'), compress=True)
+bpy.ops.wm.save_as_mainfile(filepath=os.path.join(SALIDA, ZONA + SUFIJO + '.blend'), compress=True)
+
+if NOCHE:
+    print('Horneado de noche terminado')
+    sys.exit(0)
 
 # para exportar: solo textura en el color base (el color de vértice va aparte)
 for sala, s in salas.items():

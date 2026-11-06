@@ -202,6 +202,8 @@ AFRAME.registerComponent('moza', {
     this.i = 0; this.espera = 0; this.fase = 0; this.ojo = new THREE.Vector3();
     this.y = this.el.object3D.position.y;
     this.cartel = cartelDeTexto(this.el, this.data.saludo, '0 2 0');
+    // con la misión empezada y la estrella de detrás de la iglesia sin coger (la 1, salas/poblado.html), da la pista
+    this.pista = cartelDeTexto(this.el, 'Vi algo brillante detrás de la iglesia.', '0 2 0');
     this.saludado = false; this.ocultar = 0;
   },
   tick(t, dt) {
@@ -211,11 +213,15 @@ AFRAME.registerComponent('moza', {
     this.el.sceneEl.camera.getWorldPosition(this.ojo);
     const aMi = Math.hypot(this.ojo.x - o.position.x, this.ojo.z - o.position.z);
     // saludo
-    if (aMi < 2 && !this.saludado) { this.saludado = true; this.cartel.object3D.visible = true; this.ocultar = t + 3500; }
+    if (aMi < 2 && !this.saludado) {
+      this.saludado = true;
+      this.dice = partida.estrellaActiva(1) ? this.pista : this.cartel;
+      this.dice.object3D.visible = true; this.ocultar = t + 3500;
+    }
     if (aMi > 3) this.saludado = false;
-    if (this.cartel.object3D.visible) {
-      if (t > this.ocultar) this.cartel.object3D.visible = false;
-      else this.cartel.object3D.lookAt(this.ojo.x, this.cartel.object3D.getWorldPosition(new THREE.Vector3()).y, this.ojo.z);
+    if (this.dice && this.dice.object3D.visible) {
+      if (t > this.ocultar) this.dice.object3D.visible = false;
+      else this.dice.object3D.lookAt(this.ojo.x, this.dice.object3D.getWorldPosition(new THREE.Vector3()).y, this.ojo.z);
     }
     this.espera -= dt;
     const [x, z, pausa = 0] = this.ruta[this.i], dx = x - o.position.x, dz = z - o.position.z, falta = Math.hypot(dx, dz);
@@ -241,5 +247,15 @@ AFRAME.registerComponent('moza', {
     this.fase += dt / 1000 * MOZA_PASOS_POR_S * Math.PI;
     o.position.y = this.y + 0.012 * Math.abs(Math.sin(this.fase));
   },
-  remove() { this.cartel = null; }
+  remove() { this.cartel = this.pista = this.dice = null; }
+});
+
+// Lo que no está de noche (partida.deNoche): la moza y el mercader. Se quita al cargar la zona, con su caja del rayo y todo;
+// al día siguiente, al volver a cargar el poblado, vuelve.
+AFRAME.registerComponent('solo-de-dia', {
+  init() {
+    if (!partida.deNoche()) return;
+    const el = this.el;
+    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); });   // (después de que acaben de arrancar sus componentes)
+  }
 });

@@ -82,6 +82,7 @@ cambiar la escena (`index.html`, `salas/`, `js/`, `modelos/`) no, la página se 
   que copian a las más cercanas. Medir con el medidor (botón X, solo en la partida 1, la de depuración) antes y después de algo grande.
 - Luz horneada: lo fijo del castillo se dibuja desde `modelos/horneado/`. Un cambio en algo fijo no se ve con
   ella hasta regenerarlo (pasos en "Horneado", en el README): para mirarlo antes, `?sinhornear`.
+- Los `camino` y `claro` van en el archivo de la sala del suelo de la zona (`poblado.html`, `bosque.html`…, `SUELOS_HORNEADOS`): solo esos reciben la luz horneada con las sombras de los árboles; en otra sala (la posada) salen sin sombra.
 - Parpadeos: `buscarSolapes()` en la consola, con la escena cargada con `?sinfundir`.
 - La vista previa del navegador integrado es la misma pestaña que puede estar usando el usuario:
   no mover la cámara si la está usando; y mientras está abierta manda su posición a `/__posicion`
