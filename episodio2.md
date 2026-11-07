@@ -69,13 +69,17 @@ La misión empieza al acabar la conversación. Hay que localizar los puntos dond
 farmeado, no se puede volver a farmear ese punto. Por tanto, cada punto da **una sola carga**, y el total de la misión sale de los puntos
 que encuentres: 3 de madera y 3 de piedra como máximo.
 
-Consecuencias a resolver (Propuesta): como el juego ahora sólo deja llevar **una carta de cada tipo** (`puedeOficio`), hay que
-llevar varias cargas a la vez (un contador de madera y de piedra para la misión) o entregar cada una antes de la siguiente. Los puntos
-usados se guardan en la partida (como las estrellas). Y si la casa necesita 3 y 3, hay que encontrarlos **todos**, así que conviene
-un aviso o pista de cuántos faltan sin decir dónde, para que explorar sea el reto.
+**Decidido:**
+- **El diario de la misión** lista los materiales que hacen falta: **3 de madera y 3 de piedra** (la casa pide todos los puntos).
+- Se llevan **de uno en uno**: se mantiene la regla de una carta de cada tipo (`puedeOficio`). Hay que llevar la carga a la
+  casa antes de farmear la siguiente. No hace falta un contador de cargas a la vez, sólo contar las entregadas («Madera 1 de 3»).
+- Los puntos están **algo escondidos**, como ya lo están los de piedra (la cantera de la cueva y los de la montaña).
 
-Por decidir: cuánta madera y piedra necesita la casa, qué da cada zona por vez, cuánto cuesta en puntos, y si el bosque, la isla,
-la mina y la montaña ya tienen las zonas dibujadas (comprobarlo en la escena).
+**Propuesta:** los puntos usados y las cargas entregadas se guardan en la partida (como las estrellas). Como la casa pide 3 y 3,
+hay que encontrarlos **todos**: el diario dice cuántos faltan, no dónde.
+
+Por decidir: cuánto cuesta cada punto de farmeo en puntos de acción, dónde está exactamente cada uno (escondido), dónde se entrega
+la carga en la casa en ruinas, y cómo se hace la reparación por fases.
 
 ## Después (por definir)
 
