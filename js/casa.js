@@ -608,11 +608,39 @@ AFRAME.registerComponent('leonor', {
   remove() { if (this.quitar) { this.quitar(); partida.charlaAbierta = false; } this.quitar = null; this.sigueme = this.espera = null; }
 });
 
-// El gato de tu casa, tu mascota: siempre está en la casa, desde la abandonada, sentado en el rincón del hogar. Mueve
-// la cola por el suelo, parpadea y, si te acercas, vuelve la cabeza hacia ti. Al apuntarle y apretar el gatillo, lo
-// acaricias: cierra los ojos y ronronea. Hecho con piezas de THREE (luego, con Blender: herramientas/modelar-gato.py).
-// Mira hacia +z local; origen en el suelo, entre las patas.
+// El gato de tu casa, tu mascota: siempre está en la casa, desde la abandonada. Anda por ella de un sitio a otro
+// (GATO_RUTA) y en cada uno se sienta un rato; en el rincón del hogar, más. Sentado mueve la cola por el suelo,
+// parpadea y, si te acercas, vuelve la cabeza hacia ti. Al apuntarle y apretar el gatillo, lo acaricias: se para,
+// cierra los ojos y ronronea. Hecho con piezas de THREE (luego, con Blender: herramientas/modelar-gato.py): uno
+// sentado y otro de pie, andando, y se ve el que toca. Mira hacia +z local; origen en el suelo.
 const GATO_MIRA = 4;   // a cuántos metros de ti vuelve la cabeza
+// Por dónde anda, en coordenadas de la casa (su centro, 150, -146): los tramos van en línea recta y no cruzan nada de
+// ninguna fase (chimenea, mesa, cama, arcón, banco de obra ni las puertas abiertas); "s", los segundos que se queda
+// sentado. El primero, el rincón del hogar, donde empieza. A la habitación solo pasa con su puerta abierta
+// (GATO_ENTRA, GATO_SALE: los tramos que cruzan el vano); si se la cierras dentro, espera.
+const GATO_CASA = { x: 150, z: -146 };
+const GATO_RUTA = [
+  { x: -2.75, z: 1.75, s: 25 },   // 0, el rincón del hogar
+  { x: -2.1, z: 1.0, s: 0 },      // 1, de paso (por delante de la puerta de la calle abierta)
+  { x: -1.2, z: 0.8, s: 6 },      // 2, en medio del salón
+  { x: 0.2, z: 0.05, s: 4 },      // 3, delante del vano del tabique
+  { x: 1.2, z: 0, s: 3 },         // 4, ya en la habitación
+  { x: 1.4, z: -0.9, s: 12 },     // 5, al pie del arcón
+  { x: 1.2, z: 0, s: 2 },         // 6
+  { x: 0.2, z: 0.05, s: 2 },      // 7
+  { x: -1.2, z: 0.8, s: 2 },      // 8
+  { x: -0.3, z: 1.5, s: 8 },      // 9, junto a la entrada
+  { x: -1.2, z: 0.8, s: 3 },      // 10
+  { x: -2.1, z: 1.0, s: 0 },      // 11
+];
+const GATO_ENTRA = 3, GATO_SALE = 6, GATO_SIN_ENTRAR = 7;   // desde dónde se cruza el vano, y adónde salta si está cerrado
+// Si la puerta de la habitación está abierta (la segunda de casa-obra.puertas; sin casa cargada, como abierta)
+function puertaHabitacionAbierta() {
+  const p = document.querySelector('[casa-obra]')?.components['casa-obra']?.puertasCasa?.[1];
+  const hoja = p && p.giro.querySelector('[puerta]');
+  return !hoja || !hoja.components.puerta || !!hoja.components.puerta.abierta;
+}
+const GATO_VELOCIDAD = 0.35;   // m/s, andando
 const GATO_RONRONEO_S = 2.5;
 let sonidoGato = null;
 // El ronroneo, hecho con el navegador (como el lobo, js/enemigos.js): ruido grave que late unas 25 veces por segundo
@@ -640,49 +668,81 @@ AFRAME.registerComponent('gato', {
   init() {
     this.materiales = [];
     const mat = color => { const m = new THREE.MeshStandardMaterial({ color, roughness: 0.95 }); this.materiales.push(m); return m; };
-    const pelo = mat('#5a4e42'), claro = mat('#8a7a64'), ojo = new THREE.MeshStandardMaterial({ color: '#8a8a2a', emissive: '#2a2a08', roughness: 0.4 });
+    const pelo = mat('#5a4e42'), claro = mat('#8a7a64'), nariz = mat('#4a2a26');
+    const ojo = new THREE.MeshStandardMaterial({ color: '#8a8a2a', emissive: '#2a2a08', roughness: 0.4 });
     this.materiales.push(ojo);
     const pieza = (padre, geo, m, x, y, z, sx = 1, sy = 1, sz = 1) => { const p = new THREE.Mesh(geo, m); p.position.set(x, y, z); p.scale.set(sx, sy, sz); padre.add(p); return p; };
-    const g = new THREE.Group();
-    // las ancas, el pecho (algo echado hacia atrás), las patas de delante y sus manos
-    pieza(g, new THREE.SphereGeometry(0.09, 12, 8), pelo, 0, 0.08, -0.04, 1, 0.85, 1.2);
-    pieza(g, new THREE.SphereGeometry(0.07, 12, 8), pelo, 0, 0.16, 0.03, 0.9, 1.5, 0.9).rotation.x = -0.25;
-    pieza(g, new THREE.SphereGeometry(0.04, 10, 6), claro, 0, 0.17, 0.08, 1, 1.4, 0.6);   // la pechera, más clara
+    this.ojos = [];
+    // una cabeza, en su pivote (el cuello): hocico claro, nariz, orejas y ojos (que parpadean: se aplastan)
+    const hacerCabeza = (padre, x, y, z) => {
+      const c = new THREE.Group();
+      c.position.set(x, y, z);
+      padre.add(c);
+      pieza(c, new THREE.SphereGeometry(0.055, 14, 10), pelo, 0, 0, 0, 1.05, 0.92, 0.95);
+      pieza(c, new THREE.SphereGeometry(0.026, 10, 6), claro, 0, -0.018, 0.044, 1.2, 0.8, 0.9);
+      pieza(c, new THREE.SphereGeometry(0.008, 6, 4), nariz, 0, -0.008, 0.066);
+      for (const s of [-1, 1]) pieza(c, new THREE.ConeGeometry(0.022, 0.05, 4), pelo, s * 0.032, 0.05, -0.005).rotation.z = -s * 0.3;
+      for (const s of [-1, 1]) this.ojos.push(pieza(c, new THREE.SphereGeometry(0.009, 8, 6), ojo, s * 0.021, 0.008, 0.047));
+      return c;
+    };
+    // una cola de seis trozos, cada uno colgado del anterior; "alza", cuánto se levanta cada junta
+    const hacerCola = (padre, y, z, alza) => {
+      const juntas = [];
+      let p = padre;
+      for (let i = 0; i < 6; i++) {
+        const j = new THREE.Group();
+        j.position.set(0, i ? 0 : y, i ? -0.04 : z);
+        j.rotation.x = alza;
+        p.add(j);
+        pieza(j, new THREE.CylinderGeometry(0.013 - i * 0.001, 0.014 - i * 0.001, 0.045, 6), pelo, 0, 0, -0.02).rotation.x = Math.PI / 2;
+        juntas.push(j); p = j;
+      }
+      return juntas;
+    };
+    // sentado: las ancas, el pecho (algo echado hacia atrás), las patas de delante y sus manos, y la cola en el suelo
+    const sentado = this.sentado = new THREE.Group();
+    pieza(sentado, new THREE.SphereGeometry(0.09, 12, 8), pelo, 0, 0.08, -0.04, 1, 0.85, 1.2);
+    pieza(sentado, new THREE.SphereGeometry(0.07, 12, 8), pelo, 0, 0.16, 0.03, 0.9, 1.5, 0.9).rotation.x = -0.25;
+    pieza(sentado, new THREE.SphereGeometry(0.04, 10, 6), claro, 0, 0.17, 0.08, 1, 1.4, 0.6);   // la pechera, más clara
     for (const x of [-0.03, 0.03]) {
-      pieza(g, new THREE.CylinderGeometry(0.016, 0.018, 0.14, 8), pelo, x, 0.07, 0.08);
-      pieza(g, new THREE.SphereGeometry(0.02, 8, 6), claro, x, 0.012, 0.095, 1, 0.6, 1.3);
+      pieza(sentado, new THREE.CylinderGeometry(0.016, 0.018, 0.14, 8), pelo, x, 0.07, 0.08);
+      pieza(sentado, new THREE.SphereGeometry(0.02, 8, 6), claro, x, 0.012, 0.095, 1, 0.6, 1.3);
     }
-    // la cabeza, en su pivote (el cuello): hocico claro, nariz, orejas y ojos (que parpadean: se aplastan)
-    const cabeza = this.cabeza = new THREE.Group();
-    cabeza.position.set(0, 0.27, 0.05);
-    g.add(cabeza);
-    pieza(cabeza, new THREE.SphereGeometry(0.055, 14, 10), pelo, 0, 0, 0, 1.05, 0.92, 0.95);
-    pieza(cabeza, new THREE.SphereGeometry(0.026, 10, 6), claro, 0, -0.018, 0.044, 1.2, 0.8, 0.9);
-    pieza(cabeza, new THREE.SphereGeometry(0.008, 6, 4), mat('#4a2a26'), 0, -0.008, 0.066);
-    for (const s of [-1, 1]) {
-      const oreja = pieza(cabeza, new THREE.ConeGeometry(0.022, 0.05, 4), pelo, s * 0.032, 0.05, -0.005);
-      oreja.rotation.z = -s * 0.3;
+    this.cabeza = hacerCabeza(sentado, 0, 0.27, 0.05);
+    this.cola = hacerCola(sentado, 0.02, -0.13, 0);
+    // de pie: el cuerpo a lo largo, cuatro patas que se mueven desde la cadera y el hombro, la cabeza al frente y la
+    // cola alta, curvada hacia atrás
+    const dePie = this.dePie = new THREE.Group();
+    pieza(dePie, new THREE.SphereGeometry(0.1, 12, 8), pelo, 0, 0.17, 0, 0.72, 0.68, 1.6);
+    this.patas = [];
+    for (const [x, z] of [[-0.035, 0.1], [0.035, 0.1], [-0.035, -0.1], [0.035, -0.1]]) {
+      const cadera = new THREE.Group();
+      cadera.position.set(x, 0.16, z);
+      dePie.add(cadera);
+      pieza(cadera, new THREE.CylinderGeometry(0.015, 0.017, 0.15, 8), pelo, 0, -0.075, 0);
+      pieza(cadera, new THREE.SphereGeometry(0.018, 8, 6), claro, 0, -0.152, 0.008, 1, 0.6, 1.3);
+      this.patas.push(cadera);
     }
-    this.ojos = [-1, 1].map(s => pieza(cabeza, new THREE.SphereGeometry(0.009, 8, 6), ojo, s * 0.021, 0.008, 0.047));
-    // la cola, tumbada en el suelo hacia atrás: seis trozos, cada uno colgado del anterior, que se mecen de lado
-    this.cola = [];
-    let padre = g, z = -0.13;
-    for (let i = 0; i < 6; i++) {
-      const junta = new THREE.Group();
-      junta.position.set(0, i ? 0 : 0.02, i ? -0.04 : z);
-      padre.add(junta);
-      pieza(junta, new THREE.CylinderGeometry(0.013 - i * 0.001, 0.014 - i * 0.001, 0.045, 6), pelo, 0, 0, -0.02).rotation.x = Math.PI / 2;
-      this.cola.push(junta);
-      padre = junta;
-    }
+    this.cabezaPie = hacerCabeza(dePie, 0, 0.26, 0.19);
+    this.colaPie = hacerCola(dePie, 0.2, -0.15, -0.35);
+    dePie.visible = false;
+    const g = new THREE.Group();
+    g.add(sentado, dePie);
     this.el.setObject3D('mesh', g);
-    // para apuntarle: una caja que lo abarca
+    // para apuntarle: una caja que lo abarca (va con él)
     cajaDeRayo(this.el, 0, 0.17, 0, 0.3, 0.36, 0.45, () => this.acariciar());
     this.el.querySelector('.clicable').addEventListener('mouseenter', () => partida.avisar('Aprieta el gatillo para acariciar al gato.'));
     this.ojo = new THREE.Vector3();
     this.giro = 0;              // hacia dónde mira la cabeza (radianes, en su eje y)
     this.parpadeo = 3;          // segundos hasta el próximo parpadeo
     this.ronronea = 0;          // segundos de ronroneo que quedan (con los ojos cerrados)
+    this.paso = 0;              // la fase de las patas, andando
+    // dónde está de la ruta: en el rincón del hogar, sentado; "quieto", los segundos que le quedan allí
+    this.sitio = 0;
+    this.quieto = GATO_RUTA[0].s * (0.3 + Math.random() * 0.7);
+    const o = this.el.object3D;
+    o.position.set(GATO_CASA.x + GATO_RUTA[0].x, 0.02, GATO_CASA.z + GATO_RUTA[0].z);
+    o.rotation.y = 1.75;   // mirando al salón
   },
   acariciar() {
     if (this.ronronea > 0) return;
@@ -692,33 +752,68 @@ AFRAME.registerComponent('gato', {
     partida.avisar('Acaricias al gato: cierra los ojos y ronronea.');
   },
   tick(t, dt) {
-    const s = Math.min(dt, 100) / 1000;
-    // la cola, de lado a lado, más deprisa la punta
-    this.cola.forEach((j, i) => { j.rotation.y = Math.sin(t / 700 + i * 0.6) * (0.15 + i * 0.04); });
-    // la cabeza: hacia ti si estás cerca (sin pasar de 60°), si no, al frente
-    const c = this.el.sceneEl.camera;
-    let quiere = 0, inclina = 0;
-    if (c) {
-      c.getWorldPosition(this.ojo);
-      this.el.object3D.worldToLocal(this.ojo);
-      const lejos = Math.hypot(this.ojo.x, this.ojo.z);
-      if (lejos < GATO_MIRA) {
-        quiere = Math.max(-1, Math.min(1, Math.atan2(this.ojo.x, this.ojo.z)));
-        inclina = -Math.max(-0.5, Math.min(0.2, Math.atan2(this.ojo.y - 0.27, lejos)));
+    const s = Math.min(dt, 100) / 1000, o = this.el.object3D;
+    // andar: hacia el siguiente sitio de la ruta, girando hacia allí; al llegar, se sienta. Acariciándolo, se para.
+    let anda = false;
+    if (this.ronronea <= 0) {
+      if (this.quieto > 0) this.quieto -= s;
+      else if ((this.sitio === GATO_ENTRA || this.sitio === GATO_SALE) && !puertaHabitacionAbierta()) {
+        // la puerta de la habitación, cerrada: desde el salón, sigue sin entrar; desde dentro, espera
+        if (this.sitio === GATO_ENTRA) this.sitio = GATO_SIN_ENTRAR; else this.quieto = 2;
+      } else {
+        const sig = GATO_RUTA[(this.sitio + 1) % GATO_RUTA.length];
+        const dx = GATO_CASA.x + sig.x - o.position.x, dz = GATO_CASA.z + sig.z - o.position.z, falta = Math.hypot(dx, dz);
+        // girar por el lado corto, y no echar a andar hasta mirar más o menos hacia allí
+        const quiere = Math.atan2(dx, dz);
+        let d = quiere - o.rotation.y;
+        d = Math.atan2(Math.sin(d), Math.cos(d));
+        o.rotation.y += d * Math.min(1, s * 4);
+        if (Math.abs(d) < 0.6) {
+          const avance = Math.min(falta, GATO_VELOCIDAD * s);
+          o.position.x += dx / falta * avance; o.position.z += dz / falta * avance;
+          anda = true;
+        }
+        if (falta < 0.02) {
+          this.sitio = (this.sitio + 1) % GATO_RUTA.length;
+          this.quieto = sig.s * (0.6 + Math.random() * 0.8);
+          anda = false;
+        }
       }
     }
-    this.giro += (quiere - this.giro) * Math.min(1, s * 3);
-    this.cabeza.rotation.y = this.giro;
-    this.cabeza.rotation.x += (inclina - this.cabeza.rotation.x) * Math.min(1, s * 3);
+    if (this.dePie.visible !== anda) { this.dePie.visible = anda; this.sentado.visible = !anda; }
+    if (anda) {
+      // las patas, en diagonal (la de delante de un lado con la de detrás del otro), y la cola que se balancea
+      this.paso += s * GATO_VELOCIDAD * 28;
+      this.patas.forEach((p, i) => { p.rotation.x = Math.sin(this.paso + (i === 0 || i === 3 ? 0 : Math.PI)) * 0.45; });
+      this.colaPie.forEach((j, i) => { j.rotation.y = Math.sin(t / 400 + i * 0.5) * 0.12; });
+    } else {
+      // sentado: la cola, de lado a lado por el suelo, más deprisa la punta
+      this.cola.forEach((j, i) => { j.rotation.y = Math.sin(t / 700 + i * 0.6) * (0.15 + i * 0.04); });
+      // la cabeza: hacia ti si estás cerca (sin pasar de 60°), si no, al frente
+      const c = this.el.sceneEl.camera;
+      let quiere = 0, inclina = 0;
+      if (c) {
+        c.getWorldPosition(this.ojo);
+        o.worldToLocal(this.ojo);
+        const lejos = Math.hypot(this.ojo.x, this.ojo.z);
+        if (lejos < GATO_MIRA) {
+          quiere = Math.max(-1, Math.min(1, Math.atan2(this.ojo.x, this.ojo.z)));
+          inclina = -Math.max(-0.5, Math.min(0.2, Math.atan2(this.ojo.y - 0.27, lejos)));
+        }
+      }
+      this.giro += (quiere - this.giro) * Math.min(1, s * 3);
+      this.cabeza.rotation.y = this.giro;
+      this.cabeza.rotation.x += (inclina - this.cabeza.rotation.x) * Math.min(1, s * 3);
+    }
     // los ojos: cerrados mientras ronronea; si no, un parpadeo cada pocos segundos
     this.parpadeo -= s;
     if (this.ronronea > 0) this.ronronea -= s;
     const cerrados = this.ronronea > 0 || this.parpadeo < 0;
     if (this.parpadeo < -0.15) this.parpadeo = 2 + Math.random() * 4;
-    for (const o of this.ojos) o.scale.y = cerrados ? 0.15 : 1;
+    for (const ojo of this.ojos) ojo.scale.y = cerrados ? 0.15 : 1;
   },
   remove() {
-    this.el.getObject3D('mesh').traverse(o => { if (o.isMesh) o.geometry.dispose(); });
+    this.el.getObject3D('mesh').traverse(m => { if (m.isMesh) m.geometry.dispose(); });
     for (const m of this.materiales) m.dispose();
     this.el.removeObject3D('mesh');
   }
