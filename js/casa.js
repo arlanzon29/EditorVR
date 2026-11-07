@@ -158,7 +158,8 @@ AFRAME.registerComponent('casa-obra', {
     this.O = { x: p.x, z: p.z };
     // el banco de obra, en la habitación: al apuntarlo y apretar el gatillo, se habla de la obra
     cajaDeRayo(this.el, CASA_BANCO.x, 0.6, CASA_BANCO.z, 2.2, 1.2, 1.2, () => { if (this.quitar) this.cerrar(); else this.hablar(); });
-    this.el.querySelector('.clicable').addEventListener('mouseenter', () => partida.avisar(this.fase() < CASA_OBRAS ? 'Aprieta el gatillo para ver la obra.' : 'Tu casa está terminada.'));
+    // (con la casa terminada ya no hay banco: el sitio no dice nada, que al pasar por la habitación repetía el aviso)
+    this.el.querySelector('.clicable').addEventListener('mouseenter', () => { if (this.fase() < CASA_OBRAS) partida.avisar('Aprieta el gatillo para ver la obra.'); });
     this.puertas();
     this.montar();
   },
@@ -380,7 +381,7 @@ AFRAME.registerComponent('casa-obra', {
   // --- la obra: hablar con el banco, y reparar con una carga de madera y otra de piedra ---
   hablar() {
     const fase = this.fase();
-    if (fase >= CASA_OBRAS) { partida.avisar('Tu casa está terminada.'); return; }
+    if (fase >= CASA_OBRAS) return;
     // (en la partida de depuración no hacen falta las cargas: para ver cómo avanza la casa)
     const gratis = partida.depuracion(), tiene = gratis || partida.llevaCarta('madera'), tienePiedra = gratis || partida.llevaCarta('piedra');
     partida.charlaAbierta = true;
