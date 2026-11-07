@@ -22,6 +22,8 @@
      lados y encima tapan el encuentro del arco con la ladera -->
 <a-entity camino="puntos: 9 -150, 11.5 -150, 13.6 -150; y: 0.08"></a-entity>
 <a-entity arco-ciego="ancho: 2.8; alto: 2.4; dovela: 0.4" position="16 6.3 -150" rotation="0 -90 0"></a-entity>
+<!-- los ojos del lobo de la cueva, mientras siga vivo (episodio 2, js/enemigos.js) -->
+<a-entity lobo-ojos position="15.85 6.95 -150" rotation="0 -90 0"></a-entity>
 <a-entity portal="texto: Entrar en la cueva; zona: cueva; x: 1010; z: -100; giro: -90" position="15.9 7.9 -150" rotation="0 -90 0"></a-entity>
 <a-dodecahedron position="16.9 6.9 -152.5" radius="1.5" color="#77756c" material="roughness: 1; flatShading: true"></a-dodecahedron>
 <a-dodecahedron position="16.9 6.9 -147.5" radius="1.6" color="#6d6b62" material="roughness: 1; flatShading: true"></a-dodecahedron>
@@ -34,8 +36,12 @@
 <a-entity ciervo="puntos: -42 -136, -49 -135, -51 -143, -44 -146; astas: false; color: #8a6a48; velocidad: 0.9"></a-entity>
 
 <!-- la tala, en el borde del claro: tocón con el hacha y troncos apilados (js/oficios.js) -->
-<a-entity tala position="1 0 -87"></a-entity>
+<a-entity tala="id: bosque-claro" position="1 0 -87"></a-entity>
 <a-entity macizo="ancho: 2.2; fondo: 2.2; alto: 0.8" position="1.6 0 -86.9"></a-entity>
+
+<!-- la otra tala del bosque, escondida al noreste, lejos de los caminos (sitio de farmeo de la misión de la casa) -->
+<a-entity tala="id: bosque-norte" position="62 3.34 -182" rotation="0 30 0"></a-entity>
+<a-entity macizo="ancho: 2.4; fondo: 2.4; alto: 4.14" position="62.6 0 -182.3"></a-entity>
 
 <!-- árboles -->
 <a-entity>

@@ -55,7 +55,7 @@ AFRAME.registerComponent('mapa', {
     this.lienzoInventario = document.createElement('canvas');
     this.lienzoInventario.width = W; this.lienzoInventario.height = H;
     this.hojas = [tex, lienzo(this.lienzoMision), lienzo(this.lienzoDiario), lienzo(this.lienzoInventario), lienzo(c2)];
-    this.botones = { [HOJA_DIARIO]: [], [HOJA_INVENTARIO]: [] };   // { x, y, w, h (en el lienzo), hacer }
+    this.botones = { [HOJA_MISION]: [], [HOJA_DIARIO]: [], [HOJA_INVENTARIO]: [] };   // { x, y, w, h (en el lienzo), hacer }
     this.confirmando = false;
     this.pintarMision();
     this.pintarDiario();
@@ -278,6 +278,15 @@ AFRAME.registerComponent('mapa', {
     }
     fila('Lo siguiente', '600 30px');
     fila(r.siguiente, '600 27px');
+    // en la partida de depuración, saltar a cualquier momento de las misiones (partida.saltar)
+    this.botones[HOJA_MISION] = [];
+    if (partida.depuracion()) {
+      const i = partida.estado.depura || 0, n = SALTOS_DEPURACION.length, siguiente = SALTOS_DEPURACION[(i + 1) % n].nombre;
+      g.font = 'italic 22px Georgia, serif';
+      g.fillText(`Depuración, ${i + 1} de ${n}: ${SALTOS_DEPURACION[i].nombre}`, 50, H - 112, W - 100);
+      this.boton(g, H, HOJA_MISION, 50, 260, '◀ Anterior', () => partida.saltar(i - 1));
+      this.boton(g, H, HOJA_MISION, 330, W - 380, `${siguiente} ▶`, () => partida.saltar(i + 1));
+    }
     this.hojas[HOJA_MISION].needsUpdate = true;
   },
   // La hoja del inventario: las cartas que llevas, en fila (el pescado, el primero), las monedas y los botones de comer

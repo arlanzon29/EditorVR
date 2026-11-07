@@ -143,3 +143,26 @@ Propuesta (a ajustar):
 ## Por decidir
 
 - Nada de momento sobre el inicio. Lo siguiente: el texto de la conversación.
+
+## Hecho (noviembre de 2026)
+
+Construido entero; se puede probar en la partida 1 saltando a cada momento desde la hoja de la misión. Cómo está hecho:
+[README.md](README.md), «Episodio 2: tu casa».
+
+- Leonor en la entrada de la posada al día siguiente de la boda, con la conversación del borrador.
+- La misión **Tu casa en el poblado**, con el diario de materiales (madera y piedra puestas de 3) y las marcas del tutorial.
+- La casa de 7 × 5 m de `150, -146` (frente a la posada): ruina, dos avances y la casa terminada, con salón comedor y
+  habitación. Cada obra, una carga de madera y otra de piedra en el banco de obra.
+- Los seis sitios de farmeo (tres de madera y tres de piedra), de una carga cada uno en la misión. La barca del lago, otra vez.
+- La cueva y la montaña se abren con la misión. El lobo de la cueva, con una cabeza de lobo en la pregunta.
+- La cena final con Leonor y Garcés, y la noticia del niño.
+
+Decisiones provisionales de Claude, para revisar:
+- **Presupuesto de la misión: 20 puntos al día** (el de la boda era 9; sin misión, 30). Un día da para unas dos cargas.
+- **Reparar no cuesta puntos**, solo la madera y la piedra.
+- **«Pierdes todo»** con el lobo es lo que llevas encima: las cartas, el pescado y los puntos del día (se acaba el día).
+  No se pierden las monedas ni lo ya puesto en la obra. La carga perdida vuelve a su sitio de farmeo, para que la casa
+  se pueda acabar.
+- En la misión, el mercader no compra la madera ni la piedra: si las vendieras, te quedarías sin sitios donde farmear.
+- En la cena, Leonor y Garcés están **de pie** al otro lado de la mesa (no hay modelo de la novia sentada).
+- La casa no tiene horneado propio: las piezas de la obra no se hornean (cambian), y lo fijo se ve con la luz general.

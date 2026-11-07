@@ -28,14 +28,14 @@ const PREGUNTA_OFICIOS = {
 
 // "que": 'andar', 'viaje' o un oficio (PREGUNTA_OFICIOS); "de" y "a", las zonas (al andar y al viajar); "precio", los puntos.
 // "alResponder" recibe true si se dice que sí.
-function preguntarGasto({ que, de, a, precio, alResponder }) {
+function preguntarGasto({ que, de, a, precio, enemigo, alResponder }) {
   if (preguntaAbierta) preguntaAbierta.responder(false);
   const escena = document.querySelector('a-scene');
   const [W, H] = PREGUNTA_PX, lienzo = document.createElement('canvas');
   lienzo.width = W; lienzo.height = H;
   // con la foto del destino; si aún no ha llegado, se vuelve a pintar cuando llegue
   const foto = PREGUNTA_OFICIOS[que] ? null : fotoZona(a);
-  const pintar = () => dibujarPregunta(lienzo.getContext('2d'), W, H, { que, de, a, precio, foto: foto && foto.complete && foto.naturalWidth ? foto : null });
+  const pintar = () => dibujarPregunta(lienzo.getContext('2d'), W, H, { que, de, a, precio, enemigo, foto: foto && foto.complete && foto.naturalWidth ? foto : null });
   pintar();
   const tex = new THREE.CanvasTexture(lienzo);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -111,7 +111,8 @@ function preguntarGasto({ que, de, a, precio, alResponder }) {
 }
 
 // El cartel: título, el dibujo a la izquierda y, a la derecha, lo que cuesta y lo que quedará
-function dibujarPregunta(g, W, H, { que, de, a, precio, foto }) {
+// "enemigo" (ENEMIGOS, js/enemigos.js): el que hay dentro, con sus cabezas de lobo y lo que cuesta de más ("extra")
+function dibujarPregunta(g, W, H, { que, de, a, precio, enemigo, foto }) {
   // marco de madera y pergamino, con manchas siempre iguales
   g.fillStyle = '#2e2116'; g.fillRect(0, 0, W, H);
   g.fillStyle = '#d7c49a'; g.fillRect(16, 16, W - 32, H - 32);
@@ -138,7 +139,11 @@ function dibujarPregunta(g, W, H, { que, de, a, precio, foto }) {
 
   // lo que cuesta y lo que quedará
   const tienes = partida.estado.puntos, punto = n => `${n} ${n === 1 ? 'punto' : 'puntos'}`;
-  const parrafos = !precio ? [
+  const parrafos = enemigo ? [
+    `Dentro hay ${enemigo.nombre}: entrar cuesta ${punto(precio)}, ${punto(enemigo.extra)} más para matarlo.`,
+    tienes >= precio ? `Tienes ${punto(tienes)}; te ${tienes - precio === 1 ? 'quedará' : 'quedarán'} ${tienes - precio}.`
+      : `Tienes ${punto(tienes)} y no te llegan: si entras, huirás a la posada y perderás lo que llevas.`,
+  ] : !precio ? [
     oficio ? oficio.gana : que === 'viaje' ? `El mapa te lleva a ${destino}.` : `Vas a entrar en ${destino}.`,
     'Sin misión no cuesta nada: se pasea libre.',
   ] : [
@@ -147,8 +152,10 @@ function dibujarPregunta(g, W, H, { que, de, a, precio, foto }) {
       : `Entrar en ${destino} cuesta ${punto(precio)}.`,
     `Tienes ${punto(tienes)}; te ${tienes - precio === 1 ? 'quedará' : 'quedarán'} ${tienes - precio}.`,
   ];
+  // el nivel del enemigo: sus cabezas de lobo, encima de lo que cuesta
+  if (enemigo) for (let i = 0; i < enemigo.cabezas; i++) dibujoCabezaLobo(g, 620 + i * 70, 150, 26);
   g.textAlign = 'left'; g.font = '34px Georgia, serif';
-  let y = 190;
+  let y = enemigo ? 215 : 190;
   for (const p of parrafos) {
     for (const l of partirTexto(g, p, 400)) { g.fillText(l, 590, y); y += 46; }
     y += 24;

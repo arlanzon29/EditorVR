@@ -27,6 +27,17 @@ const CASA_RESULTADOS = [
   'Colocas los últimos muebles y enciendes el fuego. Tu casa está terminada.',
 ];
 
+// La cena del final (episodio2.md): sentado en tu salón, con Leonor y Garcés de pie al otro lado de la mesa. Las frases
+// van saliendo solas, como en la boda (js/boda.js); en la tercera, la noticia.
+const CENA_SILLA = { x: -1.2, z: 1.6 };   // en coordenadas de la casa: el extremo de la mesa que da a la puerta
+const CENA_FRASE_MS = 7000, CENA_NOTICIA = 2;
+const FRASES_CENA = [
+  'Garcés alza la jarra: «Por la casa nueva, y por quien la ha levantado con sus manos».',
+  'Leonor sonríe: «Te dije que te quedarías. Y nosotros tenemos algo que contarte».',
+  'Leonor le coge la mano a Garcés: «Estoy esperando un niño». Garcés: «Queremos que lo veas crecer».',
+  'Por primera vez en mucho tiempo, sientes que tienes un sitio. Es un momento de felicidad.',
+];
+
 const matCasa = {};
 const colorCasa = c => matCasa[c] || (matCasa[c] = new THREE.MeshStandardMaterial({ color: c, roughness: 1, flatShading: true }));
 function semillaCasa(s) { return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
@@ -92,6 +103,7 @@ AFRAME.registerComponent('casa-obra', {
     if (fase < 3) this.banco();
     if (fase === 2) this.vacia();
     if (fase === 3) this.amueblada();
+    if (fase === 3 && partida.estado.mision === 'casa') this.prepararCena();
   },
 
   // El tejado a dos aguas, con el caballete a lo largo de z, y los hastiales de delante y de atrás
@@ -124,7 +136,7 @@ AFRAME.registerComponent('casa-obra', {
     for (const z of [F / 2 - 0.15, -(F / 2 - 0.15)]) {
       const forma = new THREE.Shape();
       forma.moveTo(-A / 2, 0); forma.lineTo(A / 2, 0); forma.lineTo(A / 2, 0.17); forma.lineTo(0, P); forma.lineTo(-A / 2, 0.17);
-      const geo = new THREE.ExtrudeGeometry(forma, { depth: 0.3, bevelEnabled: false }).toNonIndexed();
+      const geo = new THREE.ExtrudeGeometry(forma, { depth: 0.3, bevelEnabled: false });
       geo.translate(0, H, z - 0.15);
       geo.computeVertexNormals();
       const m = new THREE.Mesh(geo, colorCasa('#a6937a'));
@@ -244,6 +256,90 @@ AFRAME.registerComponent('casa-obra', {
     for (const [dz, dy] of [[-0.45, 0.16], [-0.1, 0.16], [0.25, 0.16], [-0.27, 0.46], [0.08, 0.46]]) this.cilindro(0.16, 1.1, A / 2 + 0.6, dy, dz - 0.5, '#6e4a2c', Math.PI / 2);
   },
 
+  // --- la cena del final: Leonor y Garcés esperan junto a la mesa; al apuntarla y apretar el gatillo, te sientas ---
+  prepararCena() {
+    this.garces = this.entidad({ 'persona-animada': 'modelo: novio; macizo: false' }, -1.55, 0, -1.75);
+    this.leonor = this.entidad({ 'persona-animada': 'modelo: novia; macizo: false' }, -0.85, 0, -1.75);
+    this.entidad({ 'marca-paso': 'quien: cena; y: 1.3' }, CENA_SILLA.x, 0, CENA_SILLA.z - 0.4);
+    cajaDeRayo(this.el, -1.2, 0.8, 0, 1.0, 0.3, 2.4, () => { if (!enLaMesa && !cambiandoDeZona) this.sentarse(); });
+    const rayo = this.el.lastElementChild;
+    this.extras.push(rayo);
+    rayo.addEventListener('mouseenter', () => { if (!enLaMesa) partida.avisar('Aprieta el gatillo para sentarte a cenar.'); });
+  },
+  // la cabeza a (x, z) de la casa, mirando hacia rumbo (radianes; 0 es -z), y los ojos a la altura de sentado
+  llevarCabeza(x, z, rumbo, sentado) {
+    const rig = document.getElementById('rig').object3D, cam = this.el.sceneEl.camera, d = new THREE.Vector3(), p = new THREE.Vector3();
+    if (rumbo !== undefined) {
+      cam.getWorldDirection(d);
+      rig.rotation.y += rumbo - Math.atan2(-d.x, -d.z);
+      rig.updateMatrixWorld(true);
+    }
+    cam.getWorldPosition(p);
+    rig.position.x += this.O.x + x - p.x;
+    rig.position.z += this.O.z + z - p.z;
+    if (sentado) rig.position.y += ALTURA_SENTADO - p.y;
+  },
+  sentarse() {
+    enLaMesa = true;
+    this.llevarCabeza(CENA_SILLA.x, CENA_SILLA.z, 0, true);
+    this.cena = { frase: 0, ms: 0, acabada: false, tex: [] };
+    this.garces.components['persona-animada']?.poner('brindis', true);
+    this.ponerFrase();
+  },
+  levantarse() {
+    this.quitarFrase();
+    this.cena = null;
+    enLaMesa = false;   // (la altura la recupera andar-joystick)
+    this.llevarCabeza(CENA_SILLA.x + 0.9, CENA_SILLA.z);
+    partida.cenarCasa();
+  },
+  // La frase que toca, encima de la mesa, y al final el botón de levantarse
+  ponerFrase() {
+    this.quitarFrase();
+    const c = this.cena, tabla = this.tablaCena = document.createElement('a-entity');
+    tabla.classList.add('cartel');
+    tabla.object3D.position.set(this.O.x + CENA_SILLA.x, 0, this.O.z - 0.3);
+    const { malla, tex } = fraseEnTabla(FRASES_CENA[c.frase], 1.3);
+    malla.position.y = 1.62 + malla.geometry.parameters.height / 2;
+    c.tex = [tex];
+    tabla.setObject3D('mesh', malla);
+    if (c.acabada) {
+      const t = tablaDeTexto('Levantarte', 512, 96), boton = document.createElement('a-entity');
+      c.tex.push(t);
+      boton.classList.add('clicable', 'cartel');
+      boton.setAttribute('position', '0 1.46 0.01');
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.12), new THREE.MeshBasicMaterial({ map: t, depthTest: false, transparent: true, fog: false }));
+      m.renderOrder = 995;
+      boton.setObject3D('mesh', m);
+      boton.addEventListener('mouseenter', () => m.material.color.set('#ffcc33'));
+      boton.addEventListener('mouseleave', () => m.material.color.set('#ffffff'));
+      let ultimo = performance.now();
+      boton.addEventListener('mousedown', () => { if (performance.now() - ultimo > 500) this.levantarse(); ultimo = performance.now(); });
+      tabla.appendChild(boton);
+    }
+    this.el.sceneEl.appendChild(tabla);
+  },
+  quitarFrase() {
+    if (!this.tablaCena) return;
+    this.tablaCena.parentNode.removeChild(this.tablaCena);
+    this.tablaCena = null;
+    for (const t of this.cena?.tex || []) t.dispose();
+  },
+  pasarFrase(dt) {
+    const c = this.cena;
+    if (c.acabada) return;
+    c.ms += Math.min(dt, 100);
+    if (c.ms < CENA_FRASE_MS) return;
+    c.ms = 0; c.frase++;
+    if (c.frase === CENA_NOTICIA) {
+      gritoDeBrindis();
+      this.garces.components['persona-animada']?.poner('brindis', true);
+      partida.avisar('¡Un niño! Leonor y Garcés van a tener un hijo.');
+    }
+    if (c.frase === FRASES_CENA.length - 1) c.acabada = true;
+    this.ponerFrase();
+  },
+
   // --- la obra: hablar con el banco, y reparar con una carga de madera y otra de piedra ---
   hablar() {
     const fase = this.fase();
@@ -267,6 +363,7 @@ AFRAME.registerComponent('casa-obra', {
     const e = partida.estado, fase = this.fase();
     if (fase >= CASA_OBRAS || !partida.llevaCarta('madera') || !partida.llevaCarta('piedra')) return;
     delete e.cartas.madera; delete e.cartas.piedra;
+    e.cargas = {};   // (ya puestas en la obra: si luego te ataca el lobo, no vuelven a su sitio)
     e.obra = fase + 1;
     partida.guardar();
     this.montar();
@@ -278,11 +375,44 @@ AFRAME.registerComponent('casa-obra', {
     partida.charlaAbierta = false;
     setTimeout(() => partida.comprobarPaso());
   },
-  tick() { if (this.quitar && seHaAlejado(this.el, this.ojo)) this.cerrar(); },
+  tick(t, dt) {
+    if (this.quitar && seHaAlejado(this.el, this.ojo)) this.cerrar();
+    if (this.cena && dt) this.pasarFrase(dt);
+  },
   remove() {
     if (this.quitar) { this.quitar(); partida.charlaAbierta = false; this.quitar = null; }
+    if (this.cena) { this.quitarFrase(); this.cena = null; enLaMesa = false; }
     this.limpiar();
     const i = SUPERFICIES.indexOf(this.cierre); if (i >= 0) SUPERFICIES.splice(i, 1);
     this.el.removeObject3D('mesh');
   }
+});
+
+// Leonor, la novia de la boda, en la entrada de la posada: el día siguiente a la boda te sale al paso y te convence
+// de quedarte (partida.charlaLeonor). Ese día se queda allí; los demás, no está.
+AFRAME.registerComponent('leonor', {
+  init() {
+    this.quitar = null; this.ojo = new THREE.Vector3();
+    const e = partida.estado;
+    const hoy = !e.hechas.includes('casa') && e.bodaVista !== null && e.dia > e.bodaVista && (e.mision !== 'casa' || e.casaDia === e.dia);
+    if (!hoy) return;
+    this.el.setAttribute('persona-animada', 'modelo: novia');
+    cajaDeRayo(this.el, 0, 0.95, 0, 0.9, 1.9, 0.9, () => { if (this.quitar) this.cerrar(); else this.hablar(0); });
+    this.el.querySelector('.clicable').addEventListener('mouseenter', () => { if (!this.quitar) partida.avisar('Aprieta el gatillo para hablar con Leonor.'); });
+  },
+  hablar(paso) {
+    partida.charlaAbierta = true;
+    this.quitar = tablaDeOpciones(this.el.sceneEl, sitioDeLectura(this.el.sceneEl), partida.charlaLeonor(paso), op => {
+      this.quitar(); this.quitar = null;
+      if (op.hacer) op.hacer();
+      if (op.sigue !== undefined) this.hablar(op.sigue); else this.cerrar();
+    });
+  },
+  cerrar() {
+    if (this.quitar) { this.quitar(); this.quitar = null; }
+    partida.charlaAbierta = false;
+    setTimeout(() => partida.comprobarPaso());
+  },
+  tick() { if (this.quitar && seHaAlejado(this.el, this.ojo)) this.cerrar(); },
+  remove() { if (this.quitar) { this.quitar(); partida.charlaAbierta = false; } this.quitar = null; }
 });
