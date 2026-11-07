@@ -406,6 +406,7 @@ Con **`?sinhornear`** en la dirección se empieza sin ella.
   (`hornearEstancia`, en rendimiento.js), con materiales que no calculan luces. Personajes y puertas
   siguen usando las 6 luces. Estatuas y marcos de piedra también van horneados (`MODELOS_HORNEADOS`): su original se esconde, pero solo en las estancias de `SALAS_HORNEADAS` (si una estancia sale de esa lista, sus estatuas se ven tal cual).
 - **Quitar algo de lo horneado sin hornear otra vez:** `HUECOS_HORNEADOS` (rendimiento.js) quita, al cargar, los triángulos de lo horneado que caen dentro de una caja. Así se quitó la casa vieja de 150, -146 cuando pasó a ser `salas/casa.html`. Al hornear el poblado de nuevo, sobra.
+- **Hornear solo se puede en local:** necesita Blender, `recibir-estancia.js` y la página abierta en el ordenador del usuario; las sesiones de la nube no pueden.
 - **Lo horneado no se actualiza solo:** después de cambiar algo fijo de una estancia, hay que regenerarlo
   (no retocar los modelos a mano):
   1. `node herramientas/recibir-estancia.js <carpeta>`.
