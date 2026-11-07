@@ -20,7 +20,7 @@ const DESTINOS_MAPA = [
   { zona: 'puerto', x: 285, z: -349, a: 285, b: -349, giro: -90 },
   { zona: 'poblado', x: 160, z: -108, a: 160, b: -108, giro: 0 },
   { zona: 'acantilado', x: 300, z: -120, a: 300, b: -120, giro: -90 },
-  { zona: 'montana', x: -115, z: -123, a: -115, b: -123, giro: 90 },
+  { zona: 'montana', x: -115, z: -123, a: -109, b: -123, giro: 90 },   // (llegas 6 m al este del cartel de la cumbre, mirándolo)
   { zona: 'abadia', x: -180, z: -300, a: -180, b: -300, giro: 0 },
 ];
 // Los sitios de oficio, para marcar en el mapa los que ya has usado (partida.marcarSitio): su id, su icono y dónde
