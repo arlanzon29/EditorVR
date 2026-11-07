@@ -107,7 +107,7 @@ AFRAME.registerComponent('agarrable', {
   },
   apunta(m) {
     const r = m.components.raycaster;
-    return !!r && r.intersectedEls.some(e => this.el.contains(e));
+    return !!r && rayoToca(r, this.el);
   },
   alAlcance(m) {
     const a = m.object3D.getWorldPosition(new THREE.Vector3()), b = this.el.object3D.getWorldPosition(new THREE.Vector3());

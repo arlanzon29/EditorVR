@@ -66,7 +66,8 @@ AFRAME.registerComponent('rayo-verde', {
   tick() {
     const r = this.el.components.raycaster;
     if (!r) return;
-    const acciona = r.intersectedEls.length > 0;
+    // verde si lo primero que toca se puede usar (un cartel, que solo frena el rayo, no)
+    const primero = r.intersectedEls[0], acciona = !!primero && !primero.classList.contains('tapa-rayo');
     const color = acciona ? RAYO_ACCION : RAYO;
     if (r.data.lineColor !== color) this.el.setAttribute('raycaster', 'lineColor', color);
     // la mira del monitor (la cámara no tiene rayo visible): el anillo se pone verde y más grueso
@@ -125,7 +126,7 @@ AFRAME.registerComponent('puerta', {
     for (const el of this.el.sceneEl.querySelectorAll('[raycaster]')) {
       const r = el.components.raycaster;
       if (!r || !r.data.enabled) continue;
-      const toca = r.intersectedEls.some(e => this.el.contains(e));
+      const toca = rayoToca(r, this.el);
       apuntada = apuntada || toca;
     }
     if (apuntada === this.apuntada) return;

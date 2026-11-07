@@ -32,6 +32,7 @@ AFRAME.registerComponent('cartel-madera', {
     poste.position.set(0, 0.7, -0.03);
     g.add(tabla, detras, poste);
     this.el.setObject3D('mesh', g);
+    this.el.classList.add('tapa-rayo');   // el rayo se para en él (RAYO_OBJETOS, js/movimiento.js)
   },
   remove() { this.el.removeObject3D('mesh'); }
 });
@@ -84,7 +85,7 @@ AFRAME.registerComponent('puerta-portal', {
     let apuntada = false;
     for (const el of this.el.sceneEl.querySelectorAll('[raycaster]')) {
       const r = el.components.raycaster;
-      if (r && r.data.enabled && r.intersectedEls.some(e => this.el.contains(e))) apuntada = true;
+      if (r && r.data.enabled && rayoToca(r, this.el)) apuntada = true;
     }
     if (apuntada === this.apuntada) return;
     this.apuntada = apuntada;
@@ -190,7 +191,7 @@ AFRAME.registerComponent('pozo', {
     let apuntado = false;
     for (const el of this.el.sceneEl.querySelectorAll('[raycaster]')) {
       const r = el.components.raycaster;
-      if (r && r.data.enabled && r.intersectedEls.some(e => this.el.contains(e))) apuntado = true;
+      if (r && r.data.enabled && rayoToca(r, this.el)) apuntado = true;
     }
     if (apuntado === this.apuntado) return;
     this.apuntado = apuntado;

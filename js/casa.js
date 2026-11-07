@@ -620,16 +620,16 @@ const GATO_MIRA = 4;   // a cuántos metros de ti vuelve la cabeza
 // (GATO_ENTRA, GATO_SALE: los tramos que cruzan el vano); si se la cierras dentro, espera.
 const GATO_CASA = { x: 150, z: -146 };
 const GATO_RUTA = [
-  { x: -2.75, z: 1.75, s: 25 },   // 0, el rincón del hogar
+  { x: -2.75, z: 1.75, s: 12 },   // 0, el rincón del hogar
   { x: -2.1, z: 1.0, s: 0 },      // 1, de paso (por delante de la puerta de la calle abierta)
-  { x: -1.2, z: 0.8, s: 6 },      // 2, en medio del salón
+  { x: -1.2, z: 0.8, s: 4 },      // 2, en medio del salón
   { x: 0.2, z: 0.05, s: 4 },      // 3, delante del vano del tabique
   { x: 1.2, z: 0, s: 3 },         // 4, ya en la habitación
-  { x: 1.4, z: -0.9, s: 12 },     // 5, al pie del arcón
+  { x: 1.4, z: -0.9, s: 6 },     // 5, al pie del arcón
   { x: 1.2, z: 0, s: 2 },         // 6
   { x: 0.2, z: 0.05, s: 2 },      // 7
   { x: -1.2, z: 0.8, s: 2 },      // 8
-  { x: -0.3, z: 1.5, s: 8 },      // 9, junto a la entrada
+  { x: -0.3, z: 1.5, s: 5 },      // 9, junto a la entrada
   { x: -1.2, z: 0.8, s: 3 },      // 10
   { x: -2.1, z: 1.0, s: 0 },      // 11
 ];
@@ -641,6 +641,7 @@ function puertaHabitacionAbierta() {
   return !hoja || !hoja.components.puerta || !!hoja.components.puerta.abierta;
 }
 const GATO_VELOCIDAD = 0.35;   // m/s, andando
+const GATO_CERCA = 0.7;   // si estás a menos de esto, no anda: se queda sentado mirándote (si no, pasaba por debajo de la vista)
 const GATO_RONRONEO_S = 2.5;
 let sonidoGato = null;
 // El ronroneo, hecho con el navegador (como el lobo, js/enemigos.js): ruido grave que late unas 25 veces por segundo
@@ -668,7 +669,7 @@ AFRAME.registerComponent('gato', {
   init() {
     this.materiales = [];
     const mat = color => { const m = new THREE.MeshStandardMaterial({ color, roughness: 0.95 }); this.materiales.push(m); return m; };
-    const pelo = mat('#5a4e42'), claro = mat('#8a7a64'), nariz = mat('#4a2a26');
+    const pelo = mat('#6e6050'), claro = mat('#9a8a72'), nariz = mat('#4a2a26');
     const ojo = new THREE.MeshStandardMaterial({ color: '#8a8a2a', emissive: '#2a2a08', roughness: 0.4 });
     this.materiales.push(ojo);
     const pieza = (padre, geo, m, x, y, z, sx = 1, sy = 1, sz = 1) => { const p = new THREE.Mesh(geo, m); p.position.set(x, y, z); p.scale.set(sx, sy, sz); padre.add(p); return p; };
@@ -755,7 +756,10 @@ AFRAME.registerComponent('gato', {
     const s = Math.min(dt, 100) / 1000, o = this.el.object3D;
     // andar: hacia el siguiente sitio de la ruta, girando hacia allí; al llegar, se sienta. Acariciándolo, se para.
     let anda = false;
-    if (this.ronronea <= 0) {
+    const c = this.el.sceneEl.camera;
+    if (c) c.getWorldPosition(this.ojo);
+    const cerca = !!c && Math.hypot(this.ojo.x - o.position.x, this.ojo.z - o.position.z) < GATO_CERCA;
+    if (this.ronronea <= 0 && !cerca) {
       if (this.quieto > 0) this.quieto -= s;
       else if ((this.sitio === GATO_ENTRA || this.sitio === GATO_SALE) && !puertaHabitacionAbierta()) {
         // la puerta de la habitación, cerrada: desde el salón, sigue sin entrar; desde dentro, espera
@@ -790,10 +794,8 @@ AFRAME.registerComponent('gato', {
       // sentado: la cola, de lado a lado por el suelo, más deprisa la punta
       this.cola.forEach((j, i) => { j.rotation.y = Math.sin(t / 700 + i * 0.6) * (0.15 + i * 0.04); });
       // la cabeza: hacia ti si estás cerca (sin pasar de 60°), si no, al frente
-      const c = this.el.sceneEl.camera;
       let quiere = 0, inclina = 0;
       if (c) {
-        c.getWorldPosition(this.ojo);
         o.worldToLocal(this.ojo);
         const lejos = Math.hypot(this.ojo.x, this.ojo.z);
         if (lejos < GATO_MIRA) {
