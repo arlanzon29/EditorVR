@@ -123,9 +123,11 @@ function esHorneable(o, raiz, sala) {
 
 // Los modelos de Blender que no se mueven también van horneados: su original no se llega a ver. Solo en las
 // estancias que se hornean: en las demás (el menú) no los sustituye nada
-const MODELOS_HORNEADOS = /marco-|caballero/;
+const MODELOS_HORNEADOS = /marco-|caballero|mueble-/;
 document.addEventListener('model-loaded', e => {
   if (!luzHorneada || !MODELOS_HORNEADOS.test(e.target.getAttribute('gltf-model'))) return;
+  // (lo que sale después de cargar la sala, como los muebles al acabar la obra, aún no está en lo horneado: se ve tal cual)
+  if (e.target.closest('.sin-hornear')) return;
   const estancia = e.target.closest('[incluir]'), sala = estancia && estancia.getAttribute('incluir').replace(/^salas\/|\.html$/g, '');
   if (SALAS_HORNEADAS.includes(sala)) e.detail.model.visible = false;
 });
@@ -145,13 +147,18 @@ function quitarDeLoHorneado(geo, cajas) {
 
 // Pone el modelo horneado de una estancia y oculta lo que sustituye. Si no se puede cargar, se queda
 // como estaba (y luego se funde como siempre).
+// La versión horneada de cada sala: la suya, salvo tu casa terminada (con sus muebles, js/casa.js), que tiene otra
+function archivoHorneado(sala) {
+  return sala === 'casa' && partida.estado && (partida.estado.obra || 0) >= CASA_OBRAS ? 'casa-terminada' : sala;
+}
 function hornearEstancia(el, sala) {
+  const archivo = archivoHorneado(sala);
   return new Promise(listo => {
     const ent = document.createElement('a-entity');
     // (configurada ya: si un material se dibujara antes de que llegue la imagen, se quedaría con
     // las coordenadas equivocadas y saldría negro)
     // (de noche, la imagen de luz de noche: solo el poblado la tiene, y los modelos son los mismos)
-    const luz = new THREE.TextureLoader().load(`modelos/horneado/${sala}${partida.deNoche() && SALAS_CON_NOCHE.includes(sala) ? '-noche' : ''}-luz.jpg`);
+    const luz = new THREE.TextureLoader().load(`modelos/horneado/${archivo}${partida.deNoche() && SALAS_CON_NOCHE.includes(sala) ? '-noche' : ''}-luz.jpg`);
     luz.colorSpace = THREE.SRGBColorSpace; luz.flipY = false; luz.channel = 1;
     ent.addEventListener('model-error', () => { ent.remove(); luz.dispose(); console.error('Sin horneado: ' + sala); listo(); });
     ent.addEventListener('model-loaded', e => {
@@ -172,13 +179,14 @@ function hornearEstancia(el, sala) {
         }
         // sin cálculo de luces, lo más barato que hay: las 6 luces solo afectan a lo que se mueve
         o.material = new THREE.MeshBasicMaterial({ map: mapa, vertexColors: true, lightMap: llama ? null : luz, lightMapIntensity: Math.PI * ESCALA_LUZ });
-        if (!llama && SALAS_CON_FUEGO.includes(sala)) luzTemblando.push({ m: o.material, fase: luzTemblando.length * 1.9 });
+        // (tu casa, solo terminada: es cuando tiene el fuego y la antorcha)
+        if (!llama && (SALAS_CON_FUEGO.includes(sala) || archivo === 'casa-terminada')) luzTemblando.push({ m: o.material, fase: luzTemblando.length * 1.9 });
         v.dispose();
       });
       if (Object.values(SUELOS_HORNEADOS).includes(sala)) luzEnCaminos(el, e.detail.model, luz);
       listo();
     });
-    ent.setAttribute('gltf-model', `url(modelos/horneado/${sala}.glb)`);
+    ent.setAttribute('gltf-model', `url(modelos/horneado/${archivo}.glb)`);
     el.appendChild(ent);
   });
 }

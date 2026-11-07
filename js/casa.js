@@ -12,6 +12,7 @@ const CASA_OBRAS = 3;
 const CASA_ESCOMBROS = [16, 7, 2, 0], CASA_MALEZA = [10, 4, 0, 0];   // dentro
 const CASA_BANCO = { x: 1.9, z: 1.3 };
 const CASA_FUNDIDO_MS = 2500;
+const CASA_MESA = { x: -1.3, z: -1.2 };   // la mesa del salón, al fondo, a lo largo de la pared de atrás
 const CASA_SENTADO_BAJA = 0.4;   // lo que se bajan Leonor y Garcés sentados a la mesa de la cena   // al pasar de una obra a otra, lo de antes se desvanece mientras aparece lo nuevo   // el banco de obra, en la habitación (hasta la última obra)
 const CASA_TEXTOS = [
   'La casa lleva años abandonada: por fuera aguanta, pero por dentro hay vigas caídas, agujeros y escombros. Para empezar a repararla hace falta una carga de madera y otra de piedra.',
@@ -66,6 +67,61 @@ AFRAME.registerComponent('casa-fuera', {
     this.el.setObject3D('mesh', g);
   },
   remove() { this.el.removeObject3D('mesh'); }
+});
+
+// Los muebles de la casa terminada, fijos: la chimenea, la alfombra, la mesa con sus bancos y lo que hay encima, y en la
+// habitación la cama, el arcón y el estante (herramientas/modelar-muebles.py, modelos/mueble-*.glb). No está en
+// NO_FUNDIR: se funden y se hornean, con la casa terminada en su propia versión (archivoHorneado, js/rendimiento.js). Si
+// la obra se acaba con la sala ya cargada, salen sin hornear (.sin-hornear) hasta volver a cargarla.
+AFRAME.registerComponent('casa-muebles', {
+  init() {
+    this.hecho = false;
+    this.poner = () => {
+      if (this.hecho || Math.min(CASA_OBRAS, partida.estado.obra || 0) < CASA_OBRAS) return;
+      this.hecho = true;
+      if (this.el.closest('[incluir]')?.hasLoaded && this.cargada) this.el.classList.add('sin-hornear');
+      this.montar();
+    };
+    this.poner();
+    this.cargada = true;
+    document.addEventListener('partida-cambia', this.poner);
+  },
+  montar() {
+    const g = new THREE.Group(), piedra = '#5a5248';
+    const caja = (w, h, d, x, y, z, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), colorCasa(color)); m.position.set(x, y, z); g.add(m); };
+    const cilindro = (r, h, x, y, z, color, seg) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), colorCasa(color)); m.position.set(x, y, z); g.add(m); };
+    // la chimenea en la pared del oeste (el fuego, en casa-obra)
+    for (const z of [-0.85, 0.85]) caja(0.6, 1.6, 0.5, -2.9, 0.8, z, piedra);
+    caja(0.7, 0.35, 2.2, -2.85, 1.775, 0, piedra);
+    caja(0.55, 0.85, 1.9, -2.92, 2.4, 0, '#4e473f');
+    caja(0.08, 1.6, 1.2, -3.15, 0.8, 0, '#1e1813');
+    caja(1.0, 0.06, 2.2, -2.7, 0.03, 0, '#5e574d');
+    // la alfombra y, en la mesa, platos, jarra y una vela
+    const { x: MX, z: MZ } = CASA_MESA;
+    caja(2.4, 0.02, 2.0, MX, 0.035, MZ + 0.1, '#6e2f2a');
+    for (const [dx, dz] of [[-0.5, 0.2], [0, 0.2], [0.5, 0.2], [-0.25, -0.22], [0.25, -0.22]]) cilindro(0.11, 0.015, MX + dx, 0.79, MZ + dz, '#a89e8b', 14);
+    cilindro(0.07, 0.2, MX + 0.15, 0.88, MZ, '#5c3a22', 10);
+    cilindro(0.025, 0.14, MX - 0.2, 0.85, MZ, '#d8cdb4', 8);
+    this.el.setObject3D('mesh', g);
+    // los muebles de Blender
+    const mueble = (nombre, x, y, z) => {
+      const e = document.createElement('a-entity');
+      e.setAttribute('gltf-model', `url(modelos/mueble-${nombre}.glb)`);
+      e.setAttribute('position', `${x} ${y} ${z}`);
+      this.el.appendChild(e);
+    };
+    mueble('mesa', MX, 0, MZ);
+    mueble('banco', MX, 0, MZ - 0.75);
+    mueble('banco', MX, 0, MZ + 0.75);
+    mueble('cama', 2.675, 0, -1.15);
+    mueble('arcon', 1.4, 0, -1.95);
+    mueble('estante', 1.9, 1.25, -2.065);
+  },
+  remove() {
+    document.removeEventListener('partida-cambia', this.poner);
+    const g = this.el.getObject3D('mesh');
+    if (g) { g.traverse(o => { if (o.isMesh) o.geometry.dispose(); }); this.el.removeObject3D('mesh'); }
+  }
 });
 
 AFRAME.registerComponent('casa-obra', {
@@ -239,44 +295,15 @@ AFRAME.registerComponent('casa-obra', {
 
   // Tercera fase: el salón comedor (chimenea, mesa con bancos, alfombra, lámpara) y la habitación (cama, cofre, estante)
   amueblada() {
-    const piedra = '#5a5248', madera = '#5e4630', oscuro = '#3a281a';
-    // chimenea en la pared del oeste, con su fuego
-    for (const z of [-0.85, 0.85]) this.caja(0.6, 1.6, 0.5, -2.9, 0.8, z, piedra);
-    this.caja(0.7, 0.35, 2.2, -2.85, 1.775, 0, piedra);
-    this.caja(0.55, 0.85, 1.9, -2.92, 2.4, 0, '#4e473f');
-    this.caja(0.08, 1.6, 1.2, -3.15, 0.8, 0, '#1e1813');
-    this.caja(1.0, 0.06, 2.2, -2.7, 0.03, 0, '#5e574d');
+    // lo que se mueve o alumbra (lo fijo, chimenea, mesa, bancos, cama, arcón y estante, está en casa-muebles)
     this.entidad({ hoguera: 'intensidad: 1.2' }, -2.85, 0.06, 0);
-    this.macizo(-3.2, -2.35, -1.2, 1.2, 3);
-    // alfombra, y la mesa al fondo del salón, a lo largo de la pared de atrás, con un banco a cada lado: así queda libre
-    // el paso de la puerta (antes, en medio, dejaba la entrada encerrada entre la mesa, la chimenea y la hoja)
-    const MX = -1.3, MZ = -1.2;
-    this.caja(2.4, 0.02, 2.0, MX, 0.035, MZ + 0.1, '#6e2f2a');
-    this.caja(1.6, 0.07, 0.9, MX, 0.76, MZ, madera);
-    for (const dx of [-0.65, 0.65]) for (const dz of [-0.33, 0.33]) this.caja(0.1, 0.74, 0.1, MX + dx, 0.37, MZ + dz, oscuro);
-    for (const dz of [-0.75, 0.75]) {
-      this.caja(1.4, 0.06, 0.3, MX, 0.45, MZ + dz, '#4a3424');
-      for (const dx of [-0.55, 0.55]) this.caja(0.08, 0.44, 0.08, MX + dx, 0.22, MZ + dz, oscuro);
-    }
-    this.macizo(MX - 0.85, MX + 0.85, -2.25, MZ + 0.92, 0.9);
-    // en la mesa: platos, jarra y una vela
-    for (const [dx, dz] of [[-0.5, 0.2], [0, 0.2], [0.5, 0.2], [-0.25, -0.22], [0.25, -0.22]]) this.cilindro(0.11, 0.015, MX + dx, 0.8, MZ + dz, '#a89e8b', 0, 14);
-    this.cilindro(0.07, 0.2, MX + 0.15, 0.9, MZ, '#5c3a22', 0, 10);
-    this.cilindro(0.025, 0.14, MX - 0.2, 0.84, MZ, '#d8cdb4', 0, 8);
-    this.entidad({ 'lampara-rueda': 'radio: 0.45; velas: 6; techo: 0.8' }, MX, 2.0, MZ);
+    this.entidad({ 'lampara-rueda': 'radio: 0.45; velas: 6; techo: 0.8' }, CASA_MESA.x, 2.0, CASA_MESA.z);
     this.entidad({ antorcha: 'intensidad: 1' }, -0.4, 1.9, 2.2, 180);
-    // la habitación: cama contra la pared del este, cofre a los pies, estante al fondo
-    this.caja(0.95, 0.35, 2.0, 2.675, 0.18, -1.15, '#4a3424');
-    this.caja(0.85, 0.12, 1.9, 2.675, 0.41, -1.15, '#b7a98a');
-    this.caja(0.85, 0.06, 1.2, 2.675, 0.5, -0.85, '#7a3f35');
-    this.caja(0.5, 0.1, 0.3, 2.675, 0.52, -1.95, '#d8cdb4');
-    this.caja(0.95, 0.5, 0.06, 2.675, 0.55, -2.17, '#3a281a');
+    // lo que no se atraviesa: la chimenea, la mesa con sus bancos, la cama y el arcón
+    this.macizo(-3.2, -2.35, -1.2, 1.2, 3);
+    this.macizo(CASA_MESA.x - 0.85, CASA_MESA.x + 0.85, -2.25, CASA_MESA.z + 0.92, 0.9);
     this.macizo(2.15, 3.2, -2.2, -0.1, 0.6);
-    this.caja(0.9, 0.45, 0.5, 1.4, 0.225, -1.95, '#4a3424');
-    this.caja(0.92, 0.05, 0.52, 1.4, 0.47, -1.95, '#3a281a');
     this.macizo(0.95, 1.85, -2.2, -1.7, 0.5);
-    this.caja(1.2, 0.05, 0.25, 1.9, 1.3, -2.05, oscuro);
-    for (const [dx, c] of [[-0.4, '#7a5a4a'], [-0.2, '#5a6a4a'], [0.1, '#6a5a3a']]) this.caja(0.14, 0.24, 0.18, 1.9 + dx, 1.45, -2.05, c);
   },
 
   // --- la cena del final: Leonor y Garcés esperan junto a la mesa; al apuntarla y apretar el gatillo, te sientas ---
