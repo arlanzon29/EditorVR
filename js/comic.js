@@ -99,20 +99,22 @@ function globoDeComic(g, v, texto, arriba, a, tuyo) {
   const lineas = partirTexto(g, texto.toUpperCase(), v.w * 0.72), alto = lineas.length * 36;
   const ancho = Math.max(...lineas.map(l => g.measureText(l).width));
   const cx = tuyo ? v.x + v.w * 0.58 : v.x + v.w * 0.5, cy = v.y + arriba + alto / 2 + 22;
-  // (el óvalo, holgado: en sus extremos la letra no cabe)
-  const rx = ancho / 2 * 1.16 + 28, ry = alto / 2 + 26;
+  // un rectángulo de esquinas redondeadas, con doble reborde (el óvalo de antes quedaba regular)
+  const rx = ancho / 2 + 26, ry = alto / 2 + 18, R = 18;
+  const caja = (m) => { g.beginPath(); g.roundRect(cx - rx + m, cy - ry + m, 2 * (rx - m), 2 * (ry - m), Math.max(2, R - m)); };
   // la cola, primero (el globo la tapa por arriba): hacia la cabeza de quien habla, sin llegar a ella; la tuya, corta,
   // hacia abajo a la derecha, como si vinieras de fuera de la viñeta
   const destino = a ? [v.x + a[0], v.y + Math.min(Math.max(a[1] - 50, arriba + alto + 70), arriba + alto + 220)] : [cx + rx * 0.7, cy + ry + 70];
   g.fillStyle = '#ffffff'; g.strokeStyle = COMIC_TINTA; g.lineWidth = 4;
   const bx = a ? cx : cx + rx * 0.45;
   g.beginPath(); g.moveTo(bx - 22, cy + ry * 0.6); g.lineTo(...destino); g.lineTo(bx + 22, cy + ry * 0.6); g.closePath(); g.fill(); g.stroke();
-  g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.fill(); g.stroke();
-  // (tapa el arranque de la cola dentro del globo)
-  g.beginPath(); g.ellipse(cx, cy, rx - 3, ry - 3, 0, 0, Math.PI * 2); g.fill();
+  caja(0); g.fill(); g.stroke();
+  // (tapa el arranque de la cola dentro del globo, y el reborde fino de dentro)
+  caja(3); g.fill();
+  g.lineWidth = 1.5; caja(8); g.stroke();
   g.fillStyle = COMIC_TINTA; g.textAlign = 'center'; g.textBaseline = 'middle';
   lineas.forEach((l, k) => g.fillText(l, cx, cy - alto / 2 + 18 + k * 36));
-  return arriba + alto + 2 * 26 + (a ? 16 : 70);
+  return arriba + alto + 2 * 18 + (a ? 24 : 70);
 }
 
 // La cartela del narrador, arriba a la izquierda de la viñeta
