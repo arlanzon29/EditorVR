@@ -2,6 +2,15 @@
 // Giro por pasos, andar con el joystick o el teclado, zonas por las que se puede ir (unidas por
 // puertas), superficies que se pisan (escalones, galería) y la mira del monitor.
 
+// Lo que mira el rayo (de los mandos y de la mira): lo que se usa (.clicable) y lo que solo lo frena (.tapa-rayo: los
+// carteles, para no pescar o abrir algo a través de ellos). Lo que cuenta es lo primero que toca: rayoToca.
+const RAYO_OBJETOS = '.clicable, .tapa-rayo';
+// Si lo primero que toca el rayo "r" (su raycaster) es parte de "el" (y no algo que solo frena el rayo)
+function rayoToca(r, el) {
+  const primero = r.intersectedEls[0];
+  return !!primero && !primero.classList.contains('tapa-rayo') && el.contains(primero);
+}
+
 // Giro por pasos con el joystick derecho: a un lado gira 30°.
 // Hay que volver el joystick al centro para girar otra vez.
 const PASO_GIRO = 30;
@@ -389,7 +398,7 @@ AFRAME.registerComponent('andar-joystick', {
       if (ventana) this.pulsarCursor();   // (con una ventana abierta, sobre lo que hay bajo el cursor)
       else {
         const el = camara.components.raycaster && camara.components.raycaster.intersectedEls[0];
-        if (el) el.emit('mousedown');
+        if (el && !el.classList.contains('tapa-rayo')) el.emit('mousedown');
       }
     }
     if (pulsa(3)) this.el.sceneEl.emit('mapa-alternar');   // Y: el pergamino, como la N (mapa → misión → diario → inventario → ayuda → cerrado)
@@ -436,7 +445,7 @@ function aplicarRaton() {
   camara.setAttribute('look-controls', { pointerLockEnabled: !libre && !sinCaptura, mouseEnabled: !libre });
   const flecha = sinCaptura && !usandoMando;   // (la flecha del ratón apunta, en vez de la mira del centro)
   camara.setAttribute('cursor', 'rayOrigin', pregunta || (flecha && !libre) ? 'mouse' : 'entity');
-  camara.setAttribute('raycaster', { enabled: !libre || pregunta, objects: pregunta ? '.pregunta' : '.clicable' });
+  camara.setAttribute('raycaster', { enabled: !libre || pregunta, objects: pregunta ? '.pregunta' : RAYO_OBJETOS });
   if (mira) mira.setAttribute('visible', !libre && !flecha);
   if (libre) { if (document.pointerLockElement) document.exitPointerLock(); return; }
   if (s.canvas) s.canvas.style.cursor = '';
@@ -582,11 +591,11 @@ function crucetas() {
     punto.set((p.clientX - r.left) / r.width * 2 - 1, -(p.clientY - r.top) / r.height * 2 + 1);
     rayo.setFromCamera(punto, s.camera);
     rayo.far = camara.getAttribute('raycaster').far;   // (el de la mira: 4 m, y más en el menú, MENU_RAYO)
-    const objetos = [...document.querySelectorAll('.clicable')].filter(el => el.object3D && el.object3D.visible).map(el => el.object3D);
+    const objetos = [...document.querySelectorAll(RAYO_OBJETOS)].filter(el => el.object3D && el.object3D.visible).map(el => el.object3D);
     const golpe = rayo.intersectObjects(objetos, true)[0];
     let el = golpe && golpe.object;
-    while (el && !(el.el && el.el.classList.contains('clicable'))) el = el.parent;
-    if (!el) return;
+    while (el && !(el.el && el.el.matches(RAYO_OBJETOS))) el = el.parent;
+    if (!el || el.el.classList.contains('tapa-rayo')) return;   // (un cartel delante: no se toca lo de detrás)
     el = el.el;
     el.emit('mousedown'); el.emit('mouseup'); el.emit('click');
   });
