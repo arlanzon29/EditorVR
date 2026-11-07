@@ -203,7 +203,8 @@ AFRAME.registerComponent('casa-obra', {
     if (fase < 3) this.banco();
     if (fase === 2) this.vacia();
     if (fase === 3) this.amueblada();
-    if (fase === 3 && partida.estado.mision === 'casa') this.prepararCena();
+    // (solo hasta la cena: después, Leonor y Garcés están en su casa)
+    if (fase === 3 && partida.estado.mision === 'casa' && !partida.estado.hechas.includes('casa')) this.prepararCena();
   },
 
   // Lo roto de dentro, que va desapareciendo: escombros y maleza por el suelo, una viga caída y tablas colgando del
