@@ -65,6 +65,15 @@ La misión empieza al acabar la conversación. Hay que localizar los puntos dond
 - **El bote** tiene que estar ya en la zona del lago, para llegar a la isla.
 - **La montaña** se habilita (hasta ahora cerrada) en este episodio: es la zona que se abre.
 
+**Decidido:** la exploración es un punto importante del juego. **Cada punto de farmeo se agota al usarlo en la misión**: una vez
+farmeado, no se puede volver a farmear ese punto. Por tanto, cada punto da **una sola carga**, y el total de la misión sale de los puntos
+que encuentres: 3 de madera y 3 de piedra como máximo.
+
+Consecuencias a resolver (Propuesta): como el juego ahora sólo deja llevar **una carta de cada tipo** (`puedeOficio`), hay que
+llevar varias cargas a la vez (un contador de madera y de piedra para la misión) o entregar cada una antes de la siguiente. Los puntos
+usados se guardan en la partida (como las estrellas). Y si la casa necesita 3 y 3, hay que encontrarlos **todos**, así que conviene
+un aviso o pista de cuántos faltan sin decir dónde, para que explorar sea el reto.
+
 Por decidir: cuánta madera y piedra necesita la casa, qué da cada zona por vez, cuánto cuesta en puntos, y si el bosque, la isla,
 la mina y la montaña ya tienen las zonas dibujadas (comprobarlo en la escena).
 
