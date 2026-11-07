@@ -284,6 +284,7 @@ AFRAME.registerComponent('ciervo', {
         this.quieto = false;
         if (!si || !partida.puedeOficio('carne', PUNTOS_CAZAR)) return;
         this.cazado = 0;
+        partida.marcarSitio(sitioDeCaza(this.el.object3D.position.x, this.el.object3D.position.z));   // (en el mapa, js/mapa.js)
         partida.conseguir('carne', 'cruda', PUNTOS_CAZAR, 'Has cazado un ciervo: te llevas su carne.');
       } });
     });
