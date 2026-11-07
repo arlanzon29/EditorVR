@@ -513,7 +513,7 @@ const COMIC_LEONOR = {
 // borde de la plaza (por donde anda la moza, sin el pozo ni los puestos) y se para delante de la puerta de la casa.
 // Puntos x z; si te quedas atrás, te espera.
 const LEONOR_GUIA = [[178.1, -102.9], [178.1, -106], [171, -113], [171, -125], [156, -136.5], [150.9, -140.6]];
-const LEONOR_VELOCIDAD = 1.0, LEONOR_ESPERA = 5;   // m/s, y a cuántos metros de ti se para a esperarte
+const LEONOR_VELOCIDAD = 1.0, LEONOR_ESPERA = 5, LEONOR_LLEGAS = 6;   // (LLEGAS: a cuánto de la puerta de la casa cuenta que ya has llegado tú solo)   // m/s, y a cuántos metros de ti se para a esperarte
 const LEONOR_PASOS_POR_S = 2.2;
 
 // Leonor, la novia de la boda, en la entrada de la posada: el día siguiente a la boda te sale al paso y te convence
@@ -565,6 +565,17 @@ AFRAME.registerComponent('leonor', {
     const o = this.el.object3D, persona = this.el.components['persona-animada'];
     this.el.sceneEl.camera.getWorldPosition(this.ojo);
     const aMi = Math.hypot(this.ojo.x - o.position.x, this.ojo.z - o.position.z);
+    // si llegas a la casa por tu cuenta, sin esperarla, ya la has visto: Leonor aparece delante de la puerta
+    const [fx, fz] = LEONOR_GUIA[LEONOR_GUIA.length - 1];
+    if (Math.hypot(this.ojo.x - fx, this.ojo.z - fz) < LEONOR_LLEGAS && aMi > LEONOR_ESPERA) {
+      o.position.set(fx, 0, fz);
+      this.guia = -1;
+      this.sigueme.object3D.visible = this.espera.object3D.visible = false;
+      if (persona) persona.poner('reposo');
+      o.rotation.y = Math.atan2(this.ojo.x - fx, this.ojo.z - fz);
+      partida.verCasa();
+      return;
+    }
     for (const c of [this.sigueme, this.espera]) if (c.object3D.visible) c.object3D.lookAt(this.ojo.x, c.object3D.getWorldPosition(new THREE.Vector3()).y, this.ojo.z);
     const [x, z] = LEONOR_GUIA[this.guia], dx = x - o.position.x, dz = z - o.position.z, falta = Math.hypot(dx, dz);
     // te espera si te quedas atrás (mirándote) o si estás justo delante
