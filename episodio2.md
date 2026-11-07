@@ -4,6 +4,12 @@ Zona: poblado (la posada). Sigue a [la boda](historia.md) del tutorial. Reglas d
 
 **Decidido** = lo dijo el usuario. **Propuesta** = para completar, sin decidir.
 
+## Los novios
+
+**Decidido:** los nombres los elige Claude. **Propuesta de nombres** (castellanos medievales, de Burgos):
+- **Leonor**, la novia, ahora la mujer.
+- **Garcés**, el marido.
+
 ## El inicio
 
 **Decidido:**
@@ -13,6 +19,8 @@ Zona: poblado (la posada). Sigue a [la boda](historia.md) del tutorial. Reglas d
 - Allí se encuentra con **la novia, ahora la mujer** (la de la boda).
 - Ella **se ha enterado de que se va a marchar**, lo **convence de quedarse** y le propone **reparar una casa abandonada**.
 - Los novios piden que te quedes (ya decidido en [historia.md](historia.md)).
+- **No te puedes marchar.** Tienes que quedarte y continuar la historia: es tu destino. El juego no deja salir del poblado
+  hasta acabar el episodio; la conversación con ella es lo que lo justifica.
 
 **Propuesta (para ajustar):**
 - Al despertar, el objetivo del juego no marca ninguna misión: el jugador cree que el camino sigue, y el cartel de objetivo
@@ -33,5 +41,4 @@ Zona: poblado (la posada). Sigue a [la boda](historia.md) del tutorial. Reglas d
 
 ## Por decidir
 
-- Nombre de la mujer (y del marido): en historia.md, «Nombres» está por decidir.
-- Si el personaje puede marcharse de verdad (y qué pasa), o el juego se lo impide con la conversación.
+- Nada de momento sobre el inicio. Lo siguiente: el texto de la conversación.
