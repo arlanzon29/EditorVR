@@ -18,14 +18,14 @@ function sitioDeLectura(escena) {
 
 // En el monitor, una tabla de "ancho" × "alto" metros (con sus botones) sale recta, de frente a la cámara aunque
 // mire arriba o abajo, y a una escala con la que cabe en la vista. Devuelve dónde ponerla, o null en VR.
-function tablaEnMonitor(escena, ancho, alto) {
+function tablaEnMonitor(escena, ancho, alto, llenar = [0.72, 0.8]) {   // llenar: qué parte del alto y del ancho de la vista ocupa, como mucho
   if (escena.is('vr-mode')) return null;
   const c = escena.camera, ojo = new THREE.Vector3(), d = new THREE.Vector3(), q = new THREE.Quaternion();
   c.getWorldPosition(ojo); c.getWorldDirection(d); c.getWorldQuaternion(q);
   const visAlto = 2 * TABLA_DISTANCIA * Math.tan(c.fov * Math.PI / 360), visAncho = visAlto * c.aspect;
   return {
     centro: ojo.addScaledVector(d, TABLA_DISTANCIA), q, arriba: new THREE.Vector3(0, 1, 0).applyQuaternion(q),
-    k: Math.min(0.72 * visAlto / alto, 0.8 * visAncho / ancho),
+    k: Math.min(llenar[0] * visAlto / alto, llenar[1] * visAncho / ancho),
   };
 }
 

@@ -205,7 +205,8 @@ const partida = {
     if (e.obra >= CASA_OBRAS) return { id: 'cena', quien: enLaMesa ? '' : 'cena', zona: 'poblado', texto: 'Tu casa está terminada. Leonor y Garcés te esperan para cenar en tu salón: apunta a la mesa y aprieta el gatillo para sentarte.' };
     // el día que aceptas, Leonor te lleva a la casa (js/casa.js); los demás días ya no está
     if (!e.casaVista && e.obra === 0 && e.casaDia === e.dia) return { id: 'seguir-leonor', quien: 'leonor', zona: 'poblado', texto: 'Sigue a Leonor: te lleva a la casa abandonada, al otro lado de la plaza.' };
-    const madera = this.llevaCarta('madera'), piedra = this.llevaCarta('piedra');
+    // (en la de depuración la obra no pide cargas, js/casa.js: el rombo va al banco de obra sin llevarlas)
+    const gratis = this.depuracion(), madera = gratis || this.llevaCarta('madera'), piedra = gratis || this.llevaCarta('piedra');
     if (madera && piedra) return { id: `reparar-${e.obra}`, quien: 'obra', zona: 'poblado', texto: 'Llevas madera y piedra. Ve a tu casa, frente a la posada al otro lado de la plaza, apunta al banco de obra y aprieta el gatillo.' };
     const falta = !madera && !piedra ? 'una carga de madera y otra de piedra' : !madera ? 'una carga de madera' : 'una carga de piedra';
     return { id: `buscar-${e.obra}-${madera}-${piedra}`, texto: `Para la obra ${e.obra + 1} de ${CASA_OBRAS} te falta ${falta}. ${PISTA_MATERIALES}` };
@@ -708,7 +709,7 @@ AFRAME.registerComponent('partida', {
     else { this.aviso.malla.position.set(0, 2 * Math.tan(this.el.camera.fov * Math.PI / 360) * 0.6, -2); this.aviso.malla.scale.setScalar(1.6); }
     if (!this.aviso.malla.visible) return;
     // (con una pregunta de si se gastan puntos delante, el aviso se quita: la taparía. js/pregunta.js)
-    if (preguntaAbierta) this.avisoMs = 0;
+    if (preguntaAbierta || comicAbierto) this.avisoMs = 0;   // (y con una página de cómic, js/comic.js: solo el cómic)
     this.avisoMs -= Math.min(dt || 0, 100);
     if (this.avisoMs <= 0) this.aviso.malla.visible = false;
     else this.aviso.malla.material.opacity = Math.min(1, this.avisoMs / 800);

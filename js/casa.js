@@ -11,7 +11,8 @@ const CASA = { A: 7, F: 5, H: 2.8, V: 0.35, P: 1.9 };   // ancho, fondo, alto de
 const CASA_OBRAS = 3;
 const CASA_ESCOMBROS = [16, 7, 2, 0], CASA_MALEZA = [10, 4, 0, 0];   // dentro
 const CASA_BANCO = { x: 1.9, z: 1.3 };
-const CASA_FUNDIDO_MS = 2500;   // al pasar de una obra a otra, lo de antes se desvanece mientras aparece lo nuevo   // el banco de obra, en la habitación (hasta la última obra)
+const CASA_FUNDIDO_MS = 2500;
+const CASA_SENTADO_BAJA = 0.4;   // lo que se bajan Leonor y Garcés sentados a la mesa de la cena   // al pasar de una obra a otra, lo de antes se desvanece mientras aparece lo nuevo   // el banco de obra, en la habitación (hasta la última obra)
 const CASA_TEXTOS = [
   'La casa lleva años abandonada: por fuera aguanta, pero por dentro hay vigas caídas, agujeros y escombros. Para empezar a repararla hace falta una carga de madera y otra de piedra.',
   'El techo y las paredes ya están arreglados. Para seguir hace falta otra carga de madera y otra de piedra.',
@@ -25,7 +26,7 @@ const CASA_RESULTADOS = [
 
 // La cena del final (episodio2.md): sentado en tu salón, con Leonor y Garcés de pie al otro lado de la mesa. Las frases
 // van saliendo solas, como en la boda (js/boda.js); en la tercera, la noticia.
-const CENA_SILLA = { x: -1.2, z: 1.2 };   // en coordenadas de la casa: el extremo de la mesa que da a la puerta
+const CENA_SILLA = { x: -1.3, z: -0.25 };   // en coordenadas de la casa: en el banco, de cara a la mesa (y al fondo)
 const CENA_FRASE_MS = 7000, CENA_NOTICIA = 2;
 const FRASES_CENA = [
   'Garcés alza la jarra: «Por la casa nueva, y por quien la ha levantado con sus manos».',
@@ -79,6 +80,7 @@ AFRAME.registerComponent('casa-obra', {
     // el banco de obra, en la habitación: al apuntarlo y apretar el gatillo, se habla de la obra
     cajaDeRayo(this.el, CASA_BANCO.x, 0.6, CASA_BANCO.z, 2.2, 1.2, 1.2, () => { if (this.quitar) this.cerrar(); else this.hablar(); });
     this.el.querySelector('.clicable').addEventListener('mouseenter', () => partida.avisar(this.fase() < CASA_OBRAS ? 'Aprieta el gatillo para ver la obra.' : 'Tu casa está terminada.'));
+    this.puertas();
     this.montar();
   },
   fase() { return Math.min(CASA_OBRAS, partida.estado.obra || 0); },
@@ -118,7 +120,6 @@ AFRAME.registerComponent('casa-obra', {
   montar() {
     const fase = this.fase();
     this.limpiar();
-    this.puerta();
     this.ruina(fase);
     if (fase < 3) this.banco();
     if (fase === 2) this.vacia();
@@ -131,7 +132,7 @@ AFRAME.registerComponent('casa-obra', {
   ruina(fase) {
     const { H } = CASA, azar = semillaCasa(77), techo = H - 0.04;
     // por el suelo, sin tapar la entrada, el vano del tabique ni el banco
-    const libre = (x, z) => !(x > -2.3 && x < -0.5 && z > 0.9) && !(x > 0.1 && x < 1.1 && Math.abs(z) < 0.8) && !(x > 0.6 && x < 3.1 && z > 0.05 && z < 2.0) && Math.abs(x - 0.6) > 0.3;
+    const libre = (x, z) => !(x > -2.1 && x < -0.6 && z > 0.9) && !(x > 0.1 && x < 1.1 && Math.abs(z) < 0.8) && !(x > 0.6 && x < 3.1 && z > 0.05 && z < 2.0) && Math.abs(x - 0.6) > 0.3;
     const dentro = () => { for (;;) { const x = (azar() - 0.5) * 6.0, z = (azar() - 0.5) * 4.0; if (libre(x, z)) return [x, z]; } };
     for (let i = 0; i < CASA_ESCOMBROS[fase]; i++) {
       const [x, z] = dentro(), tipo = i % 3;
@@ -166,11 +167,50 @@ AFRAME.registerComponent('casa-obra', {
     }
   },
 
-  // La puerta, siempre abierta hacia dentro: como la de la taberna, girada media vuelta, contra el lado de la bisagra
-  puerta() {
-    const x = -1.4, zc = CASA.F / 2;
-    this.entidad({ 'gltf-model': 'url(modelos/puerta-ancha.glb)' }, x + 0.78, 0.02, zc - 0.4, 80);
-    this.macizo(x + 0.82, x + 1.12, zc - 1.45, zc - 0.35, 2);
+  // Las puertas, que se abren y se cierran con el gatillo (el componente puerta, js/objetos.js): la de la calle, hacia
+  // dentro, y la de la habitación, en el vano del tabique, hacia el salón. Las hojas (modelos/puerta.glb, como la de tu
+  // habitación de la posada) van a lo largo de su +x desde la bisagra. Empiezan cerradas.
+  // Se hacen una vez (no con cada fase: si no, al reparar se cerrarían contigo dentro).
+  puertas() {
+    const zc = CASA.F / 2;
+    this.puertasCasa = [
+      // la de la calle: bisagra en la jamba de la izquierda (mirando desde fuera), en medio del muro, sin girar: así la
+      // cara de la aldaba da a la calle
+      this.puerta({ x: -1.9, z: zc - 0.15, giro: 0, abre: 100, ancho: 1.0,
+        cerrada: [-1.9, -0.9, zc - 0.5, zc + 0.3], abierta: [-2.2, -1.8, zc - 1.2, zc - 0.15] }),
+      // la de la habitación: bisagra al sur del vano, la hoja hacia el norte; abierta, contra el tabique del salón
+      this.puerta({ x: 0.6, z: 0.45, giro: 90, abre: 100, ancho: 0.9,
+        cerrada: [0.4, 0.8, -0.45, 0.45], abierta: [-0.35, 0.5, 0.4, 0.75] }),
+    ];
+  },
+  puerta({ x, z, giro: g, abre, ancho, cerrada: c, abierta: a }) {
+    const O = this.O;
+    const giro = document.createElement('a-entity');
+    giro.setAttribute('position', `${x} 0.02 ${z}`);
+    giro.setAttribute('rotation', `0 ${g} 0`);
+    const hoja = document.createElement('a-entity');
+    hoja.setAttribute('puerta', `abierta: ${abre}`);
+    const modelo = document.createElement('a-entity');
+    // la misma hoja que la de tu habitación de la posada (modelos/puerta.glb, de 0,9 × 2,05), escalada igual que allí;
+    // los huecos se hicieron a su medida (estirar la ancha deformaba la aldaba y la tapaba con las tablas)
+    modelo.setAttribute('gltf-model', 'url(modelos/puerta.glb)');
+    modelo.setAttribute('scale', `${(ancho / 0.9).toFixed(3)} 1.024 1`);
+    hoja.appendChild(modelo);
+    const caja = document.createElement('a-box');
+    caja.classList.add('clicable');
+    caja.setAttribute('position', `${ancho / 2} 1.04 0`); caja.setAttribute('width', ancho); caja.setAttribute('height', 2.08); caja.setAttribute('depth', 0.1);
+    caja.setAttribute('material', 'visible: false');
+    hoja.appendChild(caja);
+    giro.appendChild(hoja); this.el.appendChild(giro);
+    const sup = ([x0, x1, z0, z1], y) => ({ x0: O.x + x0, x1: O.x + x1, z0: O.z + z0, z1: O.z + z1, y, macizo: true });
+    const cerrada = sup(c, 4), abierta = sup(a, 2);
+    SUPERFICIES.push(cerrada);
+    // (después del de puerta, que ya ha cambiado "abierta")
+    hoja.addEventListener('mousedown', () => setTimeout(() => {
+      for (const k of [cerrada, abierta]) { const n = SUPERFICIES.indexOf(k); if (n >= 0) SUPERFICIES.splice(n, 1); }
+      SUPERFICIES.push(hoja.components.puerta?.abierta ? abierta : cerrada);
+    }));
+    return { giro, cerrada, abierta };
   },
 
   // El banco de obra, con sus herramientas y las cargas que quedan por poner, y el rombo del tutorial
@@ -199,29 +239,31 @@ AFRAME.registerComponent('casa-obra', {
 
   // Tercera fase: el salón comedor (chimenea, mesa con bancos, alfombra, lámpara) y la habitación (cama, cofre, estante)
   amueblada() {
-    const piedra = '#7a7064', madera = '#5e4630', oscuro = '#3a281a';
+    const piedra = '#5a5248', madera = '#5e4630', oscuro = '#3a281a';
     // chimenea en la pared del oeste, con su fuego
     for (const z of [-0.85, 0.85]) this.caja(0.6, 1.6, 0.5, -2.9, 0.8, z, piedra);
     this.caja(0.7, 0.35, 2.2, -2.85, 1.775, 0, piedra);
-    this.caja(0.55, 0.85, 1.9, -2.92, 2.4, 0, '#6a6258');
+    this.caja(0.55, 0.85, 1.9, -2.92, 2.4, 0, '#4e473f');
     this.caja(0.08, 1.6, 1.2, -3.15, 0.8, 0, '#1e1813');
     this.caja(1.0, 0.06, 2.2, -2.7, 0.03, 0, '#5e574d');
     this.entidad({ hoguera: 'intensidad: 1.2' }, -2.85, 0.06, 0);
     this.macizo(-3.2, -2.35, -1.2, 1.2, 3);
-    // alfombra, mesa larga y dos bancos
-    this.caja(2.2, 0.02, 2.4, -1.2, 0.035, 0, '#6e2f2a');
-    this.caja(0.95, 0.07, 1.6, -1.2, 0.76, 0, madera);
-    for (const dz of [-1, 1]) for (const dx of [-0.35, 0.35]) this.caja(0.1, 0.74, 0.1, -1.2 + dx, 0.37, dz * 0.65, oscuro);
-    for (const dx of [-0.75, 0.75]) {
-      this.caja(0.3, 0.06, 1.4, -1.2 + dx, 0.45, 0, '#4a3424');
-      for (const dz of [-0.55, 0.55]) this.caja(0.08, 0.44, 0.08, -1.2 + dx, 0.22, dz, oscuro);
+    // alfombra, y la mesa al fondo del salón, a lo largo de la pared de atrás, con un banco a cada lado: así queda libre
+    // el paso de la puerta (antes, en medio, dejaba la entrada encerrada entre la mesa, la chimenea y la hoja)
+    const MX = -1.3, MZ = -1.2;
+    this.caja(2.4, 0.02, 2.0, MX, 0.035, MZ + 0.1, '#6e2f2a');
+    this.caja(1.6, 0.07, 0.9, MX, 0.76, MZ, madera);
+    for (const dx of [-0.65, 0.65]) for (const dz of [-0.33, 0.33]) this.caja(0.1, 0.74, 0.1, MX + dx, 0.37, MZ + dz, oscuro);
+    for (const dz of [-0.75, 0.75]) {
+      this.caja(1.4, 0.06, 0.3, MX, 0.45, MZ + dz, '#4a3424');
+      for (const dx of [-0.55, 0.55]) this.caja(0.08, 0.44, 0.08, MX + dx, 0.22, MZ + dz, oscuro);
     }
-    this.macizo(-2.2, -0.2, -0.85, 0.85, 0.9);
+    this.macizo(MX - 0.85, MX + 0.85, -2.25, MZ + 0.92, 0.9);
     // en la mesa: platos, jarra y una vela
-    for (const [dx, dz] of [[-0.25, -0.45], [0.25, -0.45], [-0.25, 0.45], [0.25, 0.45]]) this.cilindro(0.11, 0.015, -1.2 + dx, 0.8, dz, '#a89e8b', 0, 14);
-    this.cilindro(0.07, 0.2, -1.2, 0.9, 0.1, '#5c3a22', 0, 10);
-    this.cilindro(0.025, 0.14, -1.2, 0.84, -0.15, '#d8cdb4', 0, 8);
-    this.entidad({ 'lampara-rueda': 'radio: 0.45; velas: 6; techo: 0.8' }, -1.2, 2.0, 0);
+    for (const [dx, dz] of [[-0.5, 0.2], [0, 0.2], [0.5, 0.2], [-0.25, -0.22], [0.25, -0.22]]) this.cilindro(0.11, 0.015, MX + dx, 0.8, MZ + dz, '#a89e8b', 0, 14);
+    this.cilindro(0.07, 0.2, MX + 0.15, 0.9, MZ, '#5c3a22', 0, 10);
+    this.cilindro(0.025, 0.14, MX - 0.2, 0.84, MZ, '#d8cdb4', 0, 8);
+    this.entidad({ 'lampara-rueda': 'radio: 0.45; velas: 6; techo: 0.8' }, MX, 2.0, MZ);
     this.entidad({ antorcha: 'intensidad: 1' }, -0.4, 1.9, 2.2, 180);
     // la habitación: cama contra la pared del este, cofre a los pies, estante al fondo
     this.caja(0.95, 0.35, 2.0, 2.675, 0.18, -1.15, '#4a3424');
@@ -239,10 +281,12 @@ AFRAME.registerComponent('casa-obra', {
 
   // --- la cena del final: Leonor y Garcés esperan junto a la mesa; al apuntarla y apretar el gatillo, te sientas ---
   prepararCena() {
-    this.garces = this.entidad({ 'persona-animada': 'modelo: novio; macizo: false' }, -1.55, 0, -1.35);
-    this.leonor = this.entidad({ 'persona-animada': 'modelo: leonor; macizo: false' }, -0.85, 0, -1.35);
+    // sentados en el banco del fondo, de cara a ti (que te sientas en el de delante). Los modelos sentados no bajan: se
+    // ponen CASA_SENTADO_BAJA más abajo, con la cadera a la altura del banco (herramientas/modelar-leonor.py y -novio.py)
+    this.garces = this.entidad({ 'persona-animada': 'modelo: novio; macizo: false; reposo: sentado' }, -1.65, -CASA_SENTADO_BAJA, -1.95);
+    this.leonor = this.entidad({ 'persona-animada': 'modelo: leonor; macizo: false; reposo: sentado' }, -0.95, -CASA_SENTADO_BAJA, -1.95);
     this.entidad({ 'marca-paso': 'quien: cena; y: 1.3' }, CENA_SILLA.x, 0, CENA_SILLA.z - 0.4);
-    cajaDeRayo(this.el, -1.2, 0.8, 0, 1.0, 0.3, 1.6, () => { if (!enLaMesa && !cambiandoDeZona) this.sentarse(); });
+    cajaDeRayo(this.el, -1.3, 0.8, -1.2, 1.6, 0.3, 0.95, () => { if (!enLaMesa && !cambiandoDeZona) this.sentarse(); });
     const rayo = this.el.lastElementChild;
     this.extras.push(rayo);
     rayo.addEventListener('mouseenter', () => { if (!enLaMesa) partida.avisar('Aprieta el gatillo para sentarte a cenar.'); });
@@ -264,7 +308,7 @@ AFRAME.registerComponent('casa-obra', {
     enLaMesa = true;
     this.llevarCabeza(CENA_SILLA.x, CENA_SILLA.z, 0, true);
     this.cena = { frase: 0, ms: 0, acabada: false, tex: [] };
-    this.garces.components['persona-animada']?.poner('brindis', true);
+    this.garces.components['persona-animada']?.poner('brindis-sentado', true);
     this.ponerFrase();
   },
   levantarse() {
@@ -314,7 +358,7 @@ AFRAME.registerComponent('casa-obra', {
     c.ms = 0; c.frase++;
     if (c.frase === CENA_NOTICIA) {
       gritoDeBrindis();
-      this.garces.components['persona-animada']?.poner('brindis', true);
+      this.garces.components['persona-animada']?.poner('brindis-sentado', true);
       partida.avisar('¡Un niño! Leonor y Garcés van a tener un hijo.');
     }
     if (c.frase === FRASES_CENA.length - 1) c.acabada = true;
@@ -397,6 +441,10 @@ AFRAME.registerComponent('casa-obra', {
     if (this.cena) { this.quitarFrase(); this.cena = null; enLaMesa = false; }
     this.acabarFundido();
     this.limpiar();
+    for (const p of this.puertasCasa || []) {
+      for (const sup of [p.cerrada, p.abierta]) { const i = SUPERFICIES.indexOf(sup); if (i >= 0) SUPERFICIES.splice(i, 1); }
+      p.giro.remove();
+    }
     this.el.removeObject3D('mesh');
   }
 });

@@ -193,7 +193,8 @@ function abrirComic(escena, guion, alAcabar) {
   sitio.y = ojo.y - alto / 2 - 0.12;
   pagina.position.copy(sitio);
   pagina.lookAt(ojo.x, sitio.y, ojo.z);
-  const vista = tablaEnMonitor(escena, COMIC_ANCHO, alto + 0.35);
+  // (en la pantalla, casi entera: en un móvil, a la medida de siempre, las letras de los globos no se leían)
+  const vista = tablaEnMonitor(escena, COMIC_ANCHO, alto + 0.35, [0.94, 0.96]);
   if (vista) { pagina.position.copy(vista.centro).addScaledVector(vista.arriba, -(alto / 2 + 0.05) * vista.k); pagina.quaternion.copy(vista.q); pagina.scale.setScalar(vista.k); }
   escena.object3D.add(pagina);
   pagina.updateMatrixWorld(true);

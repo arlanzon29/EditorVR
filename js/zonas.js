@@ -81,7 +81,8 @@ AFRAME.registerComponent('zonas', {
   pasarLetrero(dt) {
     if (!this.letrero.visible) return;
     this.letreroMs -= dt;
-    if (this.letreroMs <= 0) { this.letrero.visible = false; return; }
+    // (con una página de cómic abierta no se ve nada más: js/comic.js)
+    if (this.letreroMs <= 0 || comicAbierto) { this.letrero.visible = false; return; }
     const pasado = LETRERO_APARECE_MS + LETRERO_DURA_MS + LETRERO_SE_VA_MS - this.letreroMs;
     this.letrero.material.opacity = Math.min(1, pasado / LETRERO_APARECE_MS, this.letreroMs / LETRERO_SE_VA_MS);
   },

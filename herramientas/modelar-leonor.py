@@ -123,8 +123,14 @@ def tiempo(delante, cruce=False):
 
 
 animar(arma, 'andar', [(1, tiempo('I')), (7, tiempo('I', True)), (13, tiempo('D')), (19, tiempo('D', True)), (25, tiempo('I'))])
+# Sentada a la mesa de la cena (js/casa.js): los muslos adelante, las rodillas dobladas y las manos sobre la mesa. El
+# modelo no baja: en la escena se pone 0,4 m más abajo (CASA_SENTADO_BAJA), con la cadera a la altura del banco.
+SENTADA_PIERNAS = {'musloI': (-88, 0, 0), 'musloD': (-88, 0, 0), 'espinillaI': (88, 0, 0), 'espinillaD': (88, 0, 0), 'pieI': (0, 0, 0), 'pieD': (0, 0, 0)}
+EN_LA_MESA = {**brazos('I', (0.12, -0.45, -0.88), (-0.08, -0.99, 0.05)), **brazos('D', (-0.12, -0.45, -0.88), (0.08, -0.99, 0.05))}
+SENTADA = {**SENTADA_PIERNAS, **EN_LA_MESA, 'espalda': (4, 0, 0)}
+animar(arma, 'sentado', [(1, {**SENTADA, 'pecho': (0, 0, 0)}), (48, {**SENTADA, 'pecho': (1.5, 0, 0)}), (96, {**SENTADA, 'pecho': (0, 0, 0)})])
 exportar(CARPETA, 'leonor', arma, malla)
 print('Leonor terminada')
 
 if FOTOS:
-    fotos_animadas(FOTOS, arma, [('reposo', 20), ('andar', 1), ('andar', 13)])
+    fotos_animadas(FOTOS, arma, [('reposo', 20), ('andar', 1), ('andar', 13), ('sentado', 20)])

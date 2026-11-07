@@ -177,7 +177,7 @@ AFRAME.registerComponent('mapa', {
     boton.addEventListener('click', e => { e.stopPropagation(); abrirCerrar(); });
     document.body.appendChild(boton);
     this.botonPergamino = setInterval(() => {
-      boton.style.display = partida.ranura && !this.el.is('vr-mode') ? 'flex' : 'none';
+      boton.style.display = partida.ranura && !this.el.is('vr-mode') && !comicAbierto ? 'flex' : 'none';   // (con el cómic abierto, solo el cómic)
       boton.querySelector('span').textContent = this.hoja >= 0 ? 'Cerrar' : 'Pergamino';
     }, 300);
     window.addEventListener('keydown', e => {

@@ -88,7 +88,8 @@ function gritoDeBrindis() {
 // Persona con esqueleto y animaciones (herramientas/modelar-novio.py, modelar-novia.py). poner() cambia de animación con
 // un fundido; con "unaVez", al acabar vuelve sola al reposo. En reposo, la cabeza se gira hacia quien se acerca.
 AFRAME.registerComponent('persona-animada', {
-  schema: { modelo: { default: '' }, macizo: { default: true } },
+  // reposo: la animación a la que vuelve (y en la que gira la cabeza hacia ti): 'sentado' en la cena de js/casa.js
+  schema: { modelo: { default: '' }, macizo: { default: true }, reposo: { default: 'reposo' } },
   init() {
     this.el.setAttribute('gltf-model', `url(modelos/${this.data.modelo}.glb)`);
     this.mezcla = null; this.nombre = null; this.accion = null; this.mira = 0; this.ojo = new THREE.Vector3();
@@ -99,8 +100,8 @@ AFRAME.registerComponent('persona-animada', {
       this.cabeza = modelo.getObjectByName('cabeza');
       this.clips = modelo.animations;
       this.mezcla = new THREE.AnimationMixer(modelo);
-      this.mezcla.addEventListener('finished', () => this.poner('reposo'));
-      this.poner('reposo');
+      this.mezcla.addEventListener('finished', () => this.poner(this.data.reposo));
+      this.poner(this.data.reposo);
     });
     const p = this.el.object3D.position;
     if (this.data.macizo) SUPERFICIES.push({ x0: p.x - 0.4, x1: p.x + 0.4, z0: p.z - 0.4, z1: p.z + 0.4, y: 1.8, macizo: true });
@@ -125,7 +126,7 @@ AFRAME.registerComponent('persona-animada', {
     const o = this.el.object3D;
     this.el.sceneEl.camera.getWorldPosition(this.ojo);
     const dx = this.ojo.x - o.position.x, dz = this.ojo.z - o.position.z, rel = Math.atan2(dx, dz) - o.rotation.y, ang = Math.atan2(Math.sin(rel), Math.cos(rel));
-    const quiere = this.nombre === 'reposo' && Math.hypot(dx, dz) < 5 && Math.abs(ang) < 1.6 ? THREE.MathUtils.clamp(ang, -0.9, 0.9) : 0;
+    const quiere = this.nombre === this.data.reposo && Math.hypot(dx, dz) < 5 && Math.abs(ang) < 1.6 ? THREE.MathUtils.clamp(ang, -0.9, 0.9) : 0;
     this.mira += (quiere - this.mira) * Math.min(1, dt / 300);
     if (this.cabeza) this.cabeza.rotateY(this.mira);
   },

@@ -126,8 +126,16 @@ ALZADA = {**IZQUIERDO_ABAJO, **brazos('D', (-0.55, -0.7, 0.35), (-0.1, -0.75, 0.
 animar(arma, 'brindis', [(1, reposo), (14, ALZADA), (48, ALZADA), (60, reposo)])
 BESO = {**brazos('D', (-0.3, 0.05, -0.95), (-0.45, -0.1, -0.88), 180), **brazos('I', (0.35, -0.75, -0.55), (-0.3, -0.9, 0)), 'espalda': (4, 0, 0), 'pecho': (5, 0, 0), 'cuello': (5, 0, 0), 'cabeza': (14, 0, 0)}
 animar(arma, 'beso', [(1, reposo), (14, BESO), (48, BESO), (60, reposo)])
+# Sentado a la mesa de la cena del episodio 2 (js/casa.js), con la jarra (la copa) en la mesa, y su brindis sentado. El
+# modelo no baja: en la escena se pone 0,4 m más abajo, con la cadera a la altura del banco.
+SENTADO_PIERNAS = {'musloI': (-88, 0, 0), 'musloD': (-88, 0, 0), 'espinillaI': (88, 0, 0), 'espinillaD': (88, 0, 0), 'pieI': (0, 0, 0), 'pieD': (0, 0, 0)}
+COPA_EN_LA_MESA = brazos('D', (-0.15, -0.45, -0.88), (0.05, -0.99, 0.1), 100)
+SENTADO = {**SENTADO_PIERNAS, **brazos('I', (0.12, -0.45, -0.88), (-0.08, -0.99, 0.05)), **COPA_EN_LA_MESA, 'espalda': (4, 0, 0)}
+animar(arma, 'sentado', [(1, {**SENTADO, 'pecho': (0, 0, 0)}), (48, {**SENTADO, 'pecho': (1.5, 0, 0)}), (96, {**SENTADO, 'pecho': (0, 0, 0)})])
+ALZADA_SENTADO = {**SENTADO, **brazos('D', (-0.55, -0.7, 0.35), (-0.1, -0.75, 0.65), 90)}
+animar(arma, 'brindis-sentado', [(1, SENTADO), (14, ALZADA_SENTADO), (48, ALZADA_SENTADO), (60, SENTADO)])
 exportar(CARPETA, 'novio', arma, malla)
 print('Novio terminado')
 
 if FOTOS:
-    fotos_animadas(FOTOS, arma, [('reposo', 20), ('andar', 7), ('brindis', 30), ('beso', 30)])
+    fotos_animadas(FOTOS, arma, [('reposo', 20), ('andar', 7), ('brindis', 30), ('beso', 30), ('sentado', 20), ('brindis-sentado', 30)])
