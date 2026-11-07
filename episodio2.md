@@ -78,7 +78,8 @@ que encuentres: 3 de madera y 3 de piedra como máximo.
 **Propuesta:** los puntos usados y las cargas entregadas se guardan en la partida (como las estrellas). Como la casa pide 3 y 3,
 hay que encontrarlos **todos**: el diario dice cuántos faltan, no dónde.
 
-Por decidir: cuánto cuesta cada punto de farmeo en puntos de acción, dónde está exactamente cada uno (escondido), dónde se entrega
+Por decidir: qué es «todo lo que tienes» al perder (¿también las monedas de plata y los materiales ya entregados a la casa,
+o solo lo que llevas encima: puntos, cartas y pescado?), cuánto cuesta cada punto de farmeo en puntos de acción, dónde está exactamente cada uno (escondido), dónde se entrega
 la carga en la casa en ruinas, y cómo se hace la reparación por fases.
 
 ## La cueva y los enemigos: el lobo (Decidido)
@@ -96,6 +97,15 @@ cada enemigo.
 
 **Decidido:** en el **cartel que sale al ir a la cueva** aparece un **símbolo de enemigo que indica el nivel**: una **cabeza de lobo, o dos, o tres**, según la
 dificultad.
+
+**Decidido (materiales y enemigos):**
+- **Los puntos de madera y piedra** tienen el mismo aspecto que ahora (tocón con hacha, cantera), pero **en rincones**, lejos del
+  camino principal. Sin ayuda: hay que explorar.
+- **Matar al lobo:** pregunta de gasto y una escena corta, **sin pelea de acción**. Al aceptar, el lobo cae y se descuentan los puntos.
+- **El cartel con las cabezas de lobo** es la **pregunta de gasto**, la que dice «se van a consumir x puntos: ¿quieres entrar o no?».
+  Las cabezas salen ahí, junto al precio.
+- **Si no llegas a los puntos,** vuelves a la posada y **pierdes todo lo que tienes, incluidos los puntos** (el usuario dijo «creo»:
+  provisional). El lobo sigue ahí.
 
 Propuesta (a ajustar):
 - El símbolo sale en ese cartel, junto al precio, antes de cruzar.
