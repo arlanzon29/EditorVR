@@ -69,7 +69,7 @@ const partida = {
   estado: null,   // sin partida abierta (en el menú), uno vacío que no se guarda
   ranura: null,   // el número de la partida abierta
   charlaAbierta: false,   // hablando con el tabernero: el tutorial espera a que acabe (comprobarPaso)
-  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, estrellas: null, obra: 0, farmeados: [], cargas: {}, lobo: false, casaDia: null, casaVista: false, cenaVista: null, depura: 0, noche: false, visitadas: [], sitio: null, fecha: null }; },
+  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, estrellas: null, obra: 0, farmeados: [], cargas: {}, usados: [], lobo: false, casaDia: null, casaVista: false, cenaVista: null, depura: 0, noche: false, visitadas: [], sitio: null, fecha: null }; },
   cargar() {
     this.estado = this.nuevo();
     this.traerPartidaVieja();
@@ -215,7 +215,8 @@ const partida = {
     const gratis = this.depuracion(), madera = gratis || this.llevaCarta('madera'), piedra = gratis || this.llevaCarta('piedra');
     if (madera && piedra) return { id: `reparar-${e.obra}`, quien: 'obra', zona: 'poblado', texto: 'Llevas madera y piedra. Ve a tu casa, frente a la posada al otro lado de la plaza, apunta al banco de obra y aprieta el gatillo.' };
     const falta = !madera && !piedra ? 'una carga de madera y otra de piedra' : !madera ? 'una carga de madera' : 'una carga de piedra';
-    return { id: `buscar-${e.obra}-${madera}-${piedra}`, texto: `Para la obra ${e.obra + 1} de ${CASA_OBRAS} te falta ${falta}. ${PISTA_MATERIALES}` };
+    // (el rombo sigue en el banco de obra aunque falte material: allí dice lo que falta)
+    return { id: `buscar-${e.obra}-${madera}-${piedra}`, quien: 'obra', texto: `Para la obra ${e.obra + 1} de ${CASA_OBRAS} te falta ${falta}. ${PISTA_MATERIALES}` };
   },
   aceptarCasa() {
     const e = this.estado;
@@ -392,6 +393,7 @@ const partida = {
     this.estado.pescado = 'crudo';
     this.estado.pescadoHoy = true;
     this.aprender('Los peces del lago se pescan junto al embarcadero del sur.');
+    this.marcarSitio('pesca-lago');
     this.guardar();
     // (cómo se usa el mapa lo dice luego el tutorial: aquí, que se puede)
     const rapido = 'No hace falta volver andando: con el mapa viajas deprisa a cualquier sitio donde ya hayas estado.';
@@ -437,6 +439,9 @@ const partida = {
     this.guardar();
     this.avisar(`${texto} Te ${e.puntos === 1 ? 'queda 1 punto' : `quedan ${e.puntos} puntos`}. El mercader del poblado te la compra.`);
   },
+  // Los sitios de oficio ya usados (pesca, tala, cantera) se marcan en el mapa con su icono (SITIOS_MAPA, js/mapa.js).
+  // Solo es una marca: no se viaja a ellos.
+  marcarSitio(id) { const u = this.estado.usados; if (id && !u.includes(id)) u.push(id); },
   // --- Los sitios de farmeo de la misión de la casa (js/oficios.js): cada uno da una sola carga en la misión ---
   agotado(id) { const e = this.estado; return !!id && e.mision === 'casa' && e.farmeados.includes(id); },
   farmear(id, tipo) {

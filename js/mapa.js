@@ -23,6 +23,17 @@ const DESTINOS_MAPA = [
   { zona: 'montana', x: -115, z: -123, a: -115, b: -123, giro: 90 },
   { zona: 'abadia', x: -180, z: -300, a: -180, b: -300, giro: 0 },
 ];
+// Los sitios de oficio, para marcar en el mapa los que ya has usado (partida.marcarSitio): su id, su icono y dónde
+// van (x, z). No son sellos: no se puede viajar a ellos. La cantera de la cueva está fuera del mapa: va junto a su boca.
+const SITIOS_MAPA = [
+  { id: 'pesca-lago', icono: 'pesca', x: 26, z: -242 },   // (apartado del sello del lago)
+  { id: 'bosque-claro', icono: 'madera', x: 1, z: -87 },
+  { id: 'bosque-norte', icono: 'madera', x: 62, z: -182 },
+  { id: 'isla', icono: 'madera', x: 45, z: -308 },
+  { id: 'cueva', icono: 'piedra', x: 5, z: -168 },
+  { id: 'montana-norte', icono: 'piedra', x: -234, z: -30 },
+  { id: 'montana-sur', icono: 'piedra', x: -270, z: -202 },
+];
 // los caminos, trazados a mano sobre los de cada zona
 const CAMINOS_MAPA = [
   [[6, -7], [8, -15], [4, -25], [6, -35], [6, -45], [3, -54], [6, -66], [9, -76], [6, -84], [12, -92], [8, -110], [11, -150], [6, -200], [6, -231]],
@@ -60,7 +71,10 @@ AFRAME.registerComponent('mapa', {
     this.pintarMision();
     this.pintarDiario();
     this.pintarInventario();
-    document.addEventListener('partida-cambia', () => { this.pintarMision(); this.pintarDiario(); this.pintarInventario(); });
+    document.addEventListener('partida-cambia', () => {
+      this.pintarMision(); this.pintarDiario(); this.pintarInventario();
+      if (partida.estado.usados.length !== this.usadosPintados) this.pintarMapa();   // un sitio de oficio nuevo
+    });
     const ancho = 0.42, alto = ancho * H / W;
     this.ancho = ancho; this.alto = alto;
     this.panel = new THREE.Mesh(new THREE.PlaneGeometry(ancho, alto), new THREE.MeshBasicMaterial({ map: tex, fog: false, depthTest: false, transparent: true }));
@@ -534,9 +548,40 @@ AFRAME.registerComponent('mapa', {
         for (let k = Math.hypot(bx - ax, by - ay) / 14; k > 0; k--) { const u = azar(); bocanada(ax + (bx - ax) * u, ay + (by - ay) * u, 22 + azar() * 22, '185, 178, 163', 1); }
     }
     g.restore();
+    this.iconosSitios(g, X, Y);
     this.rotulos(g, W, H);
     this.pestanas(g, W, 0);
     this.hojas[HOJA_MAPA].needsUpdate = true;
+  },
+  // Los sitios de oficio que ya has usado: una chapa de pergamino con su dibujo a tinta (un pez, dos troncos, un sillar)
+  iconosSitios(g, X, Y) {
+    const usados = partida.estado ? partida.estado.usados : [];
+    this.usadosPintados = usados.length;
+    const TINTA = '#3a2616';
+    for (const s of SITIOS_MAPA) {
+      if (!usados.includes(s.id)) continue;
+      const x = X(s.x), y = Y(s.z), r = 15;
+      g.fillStyle = '#e4d3a8'; g.strokeStyle = TINTA; g.lineWidth = 2.5;
+      g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.fillStyle = TINTA; g.lineWidth = 2;
+      if (s.icono === 'pesca') {
+        // un pez: el cuerpo, la cola y el ojo
+        g.beginPath(); g.ellipse(x - 2, y, 8, 4.5, 0, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.moveTo(x + 5, y); g.lineTo(x + 11, y - 5); g.lineTo(x + 11, y + 5); g.closePath(); g.fill();
+        g.fillStyle = '#e4d3a8'; g.beginPath(); g.arc(x - 6, y - 1, 1.3, 0, Math.PI * 2); g.fill();
+      } else if (s.icono === 'madera') {
+        // dos troncos apilados, de lado, con el corte claro
+        for (const dy of [-4, 4]) {
+          g.fillStyle = '#6e4a2c'; g.fillRect(x - 9, y + dy - 3.5, 15, 7); g.strokeRect(x - 9, y + dy - 3.5, 15, 7);
+          g.fillStyle = '#c9a66b'; g.beginPath(); g.ellipse(x + 6, y + dy, 2.5, 3.5, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+        }
+      } else {
+        // un sillar: la cara y la de arriba
+        g.fillStyle = '#a8a196'; g.fillRect(x - 8, y - 2, 13, 9); g.strokeRect(x - 8, y - 2, 13, 9);
+        g.fillStyle = '#c4beb2'; g.beginPath(); g.moveTo(x - 8, y - 2); g.lineTo(x - 4, y - 7); g.lineTo(x + 9, y - 7); g.lineTo(x + 5, y - 2); g.closePath(); g.fill(); g.stroke();
+        g.fillStyle = '#8a8378'; g.beginPath(); g.moveTo(x + 5, y - 2); g.lineTo(x + 9, y - 7); g.lineTo(x + 9, y + 2); g.lineTo(x + 5, y + 7); g.closePath(); g.fill(); g.stroke();
+      }
+    }
   },
   viajar() {
     if (this.panel.visible && this.botonApuntado && !cambiandoDeZona && !enBarco && !enLaMesa) return this.botonApuntado.hacer();
