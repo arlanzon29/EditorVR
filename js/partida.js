@@ -40,7 +40,8 @@ const SALTOS_DEPURACION = [
 const PISTA_MATERIALES = 'La madera se tala en el bosque y en la isla del lago, y la piedra se pica en la cueva y en la montaña. Cada sitio da una sola carga, y algunos están escondidos.';
 const ESTRELLAS_TOTAL = 5;   // las estrellas escondidas que trae la misión (js/estrellas.js)
 const PUNTOS_NOCHE = 5;   // sin misión, con menos puntos que estos es de noche en el poblado (decidido por el usuario)
-const PUNTOS_LIBRE = 30;   // los puntos de acción de cada día sin misión (decidido por el usuario)
+const PUNTOS_LIBRE = 30;
+const PUNTOS_SIN_CENA = 5;   // los que se pierden al día siguiente si te acuestas sin cenar (después del episodio 1; decidido por el usuario)   // los puntos de acción de cada día sin misión (decidido por el usuario)
 const PUNTOS_PESCAR = 3;   // lo que cuesta pescar con misión
 // y los demás oficios (pedidos por el usuario): cazar el ciervo, talar en el bosque y picar piedra en la cueva
 const PUNTOS_CAZAR = 3, PUNTOS_TALAR = 5, PUNTOS_PICAR = 5;
@@ -70,7 +71,7 @@ const partida = {
   estado: null,   // sin partida abierta (en el menú), uno vacío que no se guarda
   ranura: null,   // el número de la partida abierta
   charlaAbierta: false,   // hablando con el tabernero: el tutorial espera a que acabe (comprobarPaso)
-  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, estrellas: null, obra: 0, farmeados: [], cargas: {}, usados: [], lobo: false, casaDia: null, casaVista: false, cenaVista: null, depura: 0, noche: false, visitadas: [], sitio: null, fecha: null }; },
+  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, estrellas: null, obra: 0, farmeados: [], cargas: {}, usados: [], alFuego: [], cenaDia: null, lobo: false, casaDia: null, casaVista: false, cenaVista: null, depura: 0, noche: false, visitadas: [], sitio: null, fecha: null }; },
   cargar() {
     this.estado = this.nuevo();
     this.traerPartidaVieja();
@@ -113,6 +114,13 @@ const partida = {
     if (cambiandoDeZona) return;
     const guardada = this.leer(r);
     this.estado = Object.assign(this.nuevo(), guardada);
+    // (se cerró con algo al fuego: vuelve crudo)
+    const ab = this.estado;
+    for (const tipo of [].concat(ab.alFuego || [])) {
+      if (tipo === 'pescado' && !ab.pescado) ab.pescado = 'crudo';
+      if (tipo === 'carne' && !ab.cartas.carne) ab.cartas.carne = 'cruda';
+    }
+    ab.alFuego = [];
     // (las partidas de cuando sin misión no había puntos empiezan con los de hoy)
     if (guardada && !guardada.puntosLibres && !this.estado.mision) this.estado.puntos = PUNTOS_LIBRE;
     if (this.estado.hechas.includes('boda') && this.estado.bodaDia === null) this.estado.bodaDia = this.estado.dia;   // (partidas de antes de la boda)
@@ -357,10 +365,16 @@ const partida = {
   },
   // Otro día, otro intento: presupuesto entero, se puede volver a pescar y lo pescado se ha estropeado.
   // Lo aprendido y las monedas se quedan.
+  // Cenar es comer en una mesa (mesa-cena, js/posada.js), o la cena de la boda o la de tu casa. Desde que acaba el
+  // episodio 1 (la boda), acostarse sin cenar quita PUNTOS_SIN_CENA del día siguiente (sinCena: para el aviso).
   empezarDia() {
-    this.estado.dia++;
-    this.estado.noche = false;   // al despertar, de día
+    const e = this.estado, cenado = e.cenaDia === e.dia || e.bodaVista === e.dia || e.cenaVista === e.dia;
+    const castigo = e.hechas.includes('boda') && !cenado;
+    e.dia++;
+    e.noche = false;   // al despertar, de día
     this.prepararDia();
+    if (castigo) e.puntos = Math.max(0, e.puntos - PUNTOS_SIN_CENA);
+    this.sinCena = castigo;
   },
   // Presupuesto entero y sin nada de lo pescado
   prepararDia() {
@@ -386,7 +400,8 @@ const partida = {
     this.guardar();
     const m = this.misionActiva();
     const boda = this.bodaHoy() ? ' Hoy es la boda, en la plaza.' : '';
-    this.avisar(`${motivo ? motivo + ' ' : ''}Día ${this.estado.dia}. Tienes ${this.estado.puntos} puntos.${boda}`);
+    const cena = this.sinCena ? ` Anoche no cenaste: hoy empiezas con ${PUNTOS_SIN_CENA} puntos menos.` : '';
+    this.avisar(`${motivo ? motivo + ' ' : ''}Día ${this.estado.dia}. Tienes ${this.estado.puntos} puntos.${cena}${boda}`);
     const { zona, x, y, z, giro } = inicioDelDia();
     document.querySelector('a-scene').components.zonas.ir(zona, { x, y, z, giro });
   },
@@ -406,27 +421,49 @@ const partida = {
     const rapido = 'No hace falta volver andando: con el mapa viajas deprisa a cualquier sitio donde ya hayas estado.';
     this.avisar(this.estado.mision === 'boda' ? `Has pescado uno por ${PUNTOS_PESCAR} puntos. Te ${this.estado.puntos === 1 ? 'queda 1' : `quedan ${this.estado.puntos}`}. Llévaselo al tabernero. ${rapido}` : `Has pescado uno. Se come desde el inventario. ${rapido}`);
   },
-  // En la hoguera se asa lo que haya crudo: el pescado y la carne
-  asar() {
-    const e = this.estado, asado = [];
-    if (e.pescado === 'crudo') { e.pescado = 'asado'; asado.push('el pescado'); }
-    if (e.cartas.carne === 'cruda') { e.cartas.carne = 'asada'; asado.push('la carne'); }
-    if (asado.length) {
-      this.aprender('Lo asado en una hoguera alimenta más que crudo.');
-      this.guardar();
-      this.avisar(`Asas ${asado.join(' y ')}.`);
-    } else this.avisar(e.pescado || e.cartas.carne ? 'Ya está asado.' : 'No llevas nada que asar.');
+  // --- El espeto (js/objetos.js, hoguera): lo crudo, al fuego (alFuego: los tipos que hay, 'pescado' o 'carne');
+  // mientras se asa, no está en el inventario ---
+  ponerAlFuego(tipo) {
+    const e = this.estado, crudo = tipo === 'pescado' ? e.pescado === 'crudo' : e.cartas.carne === 'cruda';
+    if (!crudo || e.alFuego.includes(tipo)) return false;
+    if (tipo === 'pescado') e.pescado = null; else delete e.cartas.carne;
+    e.alFuego.push(tipo);
+    this.guardar();
+    this.avisar(`Pones ${ESPETO_NOMBRE[tipo]} en el espeto, junto al fuego. En ${ESPETO_HECHO_S} segundos estará hech${tipo === 'carne' ? 'a' : 'o'}: cógel${tipo === 'carne' ? 'a' : 'o'} a tiempo, que si te pasas se quema.`);
+    return true;
   },
-  // Comer el pescado o la carne (sin decir cuál, lo que haya, el pescado antes)
-  comer(tipo = this.estado.pescado ? 'pescado' : 'carne') {
+  // Lo sacas del fuego: hecho (asado) o quemado (se pierde)
+  sacarDelFuego(tipo, hecho) {
+    const e = this.estado;
+    if (!e.alFuego.includes(tipo)) return;
+    e.alFuego = e.alFuego.filter(t => t !== tipo);
+    if (hecho) {
+      if (tipo === 'pescado') e.pescado = 'asado'; else e.cartas.carne = 'asada';
+      this.aprender('Lo asado en una hoguera alimenta más que crudo.');
+      this.avisar(`Coges ${ESPETO_NOMBRE[tipo]} del espeto: bien asad${tipo === 'carne' ? 'a' : 'o'}.`);
+    } else this.avisar(`¡Se te ha quemado ${ESPETO_NOMBRE[tipo]}! No queda nada que comer.`);
+    this.guardar();
+  },
+  // Te vas (o se recarga la partida) con algo al fuego: te lo llevas como estaba
+  devolverDelFuego(tipo, hecho = false) {
+    const e = this.estado;
+    if (!e.alFuego.includes(tipo)) return;
+    e.alFuego = e.alFuego.filter(t => t !== tipo);
+    if (tipo === 'pescado') { if (!e.pescado) e.pescado = hecho ? 'asado' : 'crudo'; }
+    else if (!e.cartas.carne) e.cartas.carne = hecho ? 'asada' : 'cruda';
+    this.guardar();
+  },
+  // (enLaMesa: cenando en una mesa, js/posada.js; cuenta como la cena del día)
+  comer(tipo = this.estado.pescado ? 'pescado' : 'carne', enLaMesa = false) {
     const e = this.estado, comida = tipo === 'pescado' ? e.pescado : e.cartas[tipo];
     if (!comida || !PUNTOS_COMIDA[comida]) return;
+    if (enLaMesa) e.cenaDia = e.dia;
     if (tipo === 'pescado') e.pescado = null; else delete e.cartas[tipo];
     const que = tipo === 'pescado' ? 'el pescado' : 'la carne';
     e.puntos += PUNTOS_COMIDA[comida];
     this.guardar();
     const sinEncargo = tipo === 'pescado' && e.mision === 'boda' ? ' Te quedas sin encargo: habrá que pescar otro día.' : '';
-    this.avisar(`Te comes ${que}: ${PUNTOS_COMIDA[comida]} ${PUNTOS_COMIDA[comida] === 1 ? 'punto' : 'puntos'}. Tienes ${e.puntos}.${sinEncargo}`);
+    this.avisar(`${enLaMesa ? `Cenas ${que} ${comida} en la mesa` : `Te comes ${que}`}: ${PUNTOS_COMIDA[comida]} ${PUNTOS_COMIDA[comida] === 1 ? 'punto' : 'puntos'}. Tienes ${e.puntos}.${sinEncargo}`);
   },
 
   // --- Las cartas de los oficios (js/oficios.js): cartas = { tipo: cómo está }. El pescado va aparte (pescado),
