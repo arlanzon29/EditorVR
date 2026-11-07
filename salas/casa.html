@@ -1,0 +1,67 @@
+<!-- Tu casa: en el poblado, frente a la posada, al otro lado de la plaza (x = 146,5…153,5, z = -148,5…-143,5; 2,8 m
+     de alto), con la puerta hacia la calle (+z). Dentro, el salón comedor (al oeste, con la puerta) y la habitación (al
+     este), separados por un tabique con su vano. Aquí solo lo fijo: muros, suelo, techo y tabique. La obra (tejado,
+     puerta, escombros, muebles) cambia con partida.estado.obra y la dibuja casa-obra (js/casa.js). -->
+
+<!-- suelo de tablas y techo de madera con vigas -->
+<a-plane rotation="-90 0 0" position="150 0.02 -146" width="6.4" height="4.4" color="#ffffff" suelo-madera></a-plane>
+<a-plane rotation="90 0 0" position="150 2.79 -146" width="6.4" height="4.4" color="#ffffff" suelo-madera></a-plane>
+<a-entity>
+  <a-box position="150 2.67 -144.6" width="6.4" height="0.22" depth="0.22" color="#4a3424"></a-box>
+  <a-box position="150 2.67 -146" width="6.4" height="0.22" depth="0.22" color="#4a3424"></a-box>
+  <a-box position="150 2.67 -147.4" width="6.4" height="0.22" depth="0.22" color="#4a3424"></a-box>
+</a-entity>
+
+<!-- muros de tablas de 30 cm, sobre un zócalo de piedra (empiezan encima); el de delante, con el hueco de la puerta
+     (x = 147,85…149,35) -->
+<a-box position="147.175 1.75 -143.65" width="1.35" height="2.1" depth="0.3" madera-mundo="tono: #b5a288"></a-box>
+<a-box position="151.425 1.75 -143.65" width="4.15" height="2.1" depth="0.3" madera-mundo="tono: #b5a288"></a-box>
+<a-box position="148.6 2.45 -143.65" width="1.5" height="0.7" depth="0.3" madera-mundo="tono: #b5a288"></a-box>
+<a-box position="150 1.75 -148.35" width="7" height="2.1" depth="0.3" madera-mundo="tono: #b5a288"></a-box>
+<a-box position="146.65 1.75 -146" width="0.3" height="2.1" depth="4.4" madera-mundo="tono: #b5a288"></a-box>
+<a-box position="153.35 1.75 -146" width="0.3" height="2.1" depth="4.4" madera-mundo="tono: #b5a288"></a-box>
+<a-box position="147.175 0.25 -143.65" width="1.39" height="0.9" depth="0.34" piedra-mundo="tono: #a89e8b"></a-box>
+<a-box position="151.425 0.25 -143.65" width="4.19" height="0.9" depth="0.34" piedra-mundo="tono: #a89e8b"></a-box>
+<a-box position="150 0.25 -148.35" width="7.04" height="0.9" depth="0.34" piedra-mundo="tono: #a89e8b"></a-box>
+<a-box position="146.65 0.25 -146" width="0.34" height="0.9" depth="4.36" piedra-mundo="tono: #a89e8b"></a-box>
+<a-box position="153.35 0.25 -146" width="0.34" height="0.9" depth="4.36" piedra-mundo="tono: #a89e8b"></a-box>
+<!-- entramado de vigas por fuera: esquinas y la de arriba -->
+<a-box position="146.45 1.4 -143.45" width="0.2" height="2.8" depth="0.2" color="#3a2a1b"></a-box>
+<a-box position="153.55 1.4 -143.45" width="0.2" height="2.8" depth="0.2" color="#3a2a1b"></a-box>
+<a-box position="146.45 1.4 -148.55" width="0.2" height="2.8" depth="0.2" color="#3a2a1b"></a-box>
+<a-box position="153.55 1.4 -148.55" width="0.2" height="2.8" depth="0.2" color="#3a2a1b"></a-box>
+<a-box position="150 2.74 -143.46" width="6.9" height="0.12" depth="0.08" color="#3a2a1b"></a-box>
+<a-box position="150 2.74 -148.54" width="6.9" height="0.12" depth="0.08" color="#3a2a1b"></a-box>
+<a-box position="146.46 2.74 -146" width="0.08" height="0.12" depth="4.9" color="#3a2a1b"></a-box>
+<a-box position="153.54 2.74 -146" width="0.08" height="0.12" depth="4.9" color="#3a2a1b"></a-box>
+
+<!-- marco de la puerta y el umbral -->
+<a-box position="147.75 1.05 -143.65" width="0.2" height="2.1" depth="0.42" color="#3a2a1b"></a-box>
+<a-box position="149.45 1.05 -143.65" width="0.2" height="2.1" depth="0.42" color="#3a2a1b"></a-box>
+<a-box position="148.6 2.19 -143.65" width="1.9" height="0.18" depth="0.42" color="#3a2a1b"></a-box>
+<a-box position="148.6 0.03 -143.65" width="1.5" height="0.06" depth="0.42" piedra-mundo="tono: #9a907f"></a-box>
+
+<!-- ventanas con los postigos cerrados: delante, y una a cada lado -->
+<a-box position="151.9 1.7 -143.475" width="1" height="0.8" depth="0.05" color="#4a3424"></a-box>
+<a-box position="151.9 1.7 -143.44" width="0.06" height="0.8" depth="0.04" color="#3a2a1b"></a-box>
+<a-box position="153.525 1.7 -146" width="0.05" height="0.8" depth="1" color="#4a3424"></a-box>
+<a-box position="146.475 1.7 -146" width="0.05" height="0.8" depth="1" color="#4a3424"></a-box>
+
+<!-- el tabique entre el salón y la habitación (x = 150,6), con el vano (z = -146,6…-145,4) -->
+<a-box position="150.6 1.4 -147.4" width="0.2" height="2.77" depth="1.6" madera-mundo="tono: #a6937a"></a-box>
+<a-box position="150.6 1.4 -144.6" width="0.2" height="2.77" depth="1.6" madera-mundo="tono: #a6937a"></a-box>
+<a-box position="150.6 2.45 -146" width="0.2" height="0.68" depth="1.2" madera-mundo="tono: #a6937a"></a-box>
+<a-box position="150.6 1.05 -146.63" width="0.26" height="2.1" depth="0.06" color="#3a2a1b"></a-box>
+<a-box position="150.6 1.05 -145.37" width="0.26" height="2.1" depth="0.06" color="#3a2a1b"></a-box>
+
+<!-- obstáculos de los muros: 20 cm de más, para no meter la cabeza en ellos; la puerta queda entre medias -->
+<a-entity macizo="ancho: 1.55; fondo: 0.7; alto: 4" position="147.075 0 -143.65"></a-entity>
+<a-entity macizo="ancho: 4.35; fondo: 0.7; alto: 4" position="151.525 0 -143.65"></a-entity>
+<a-entity macizo="ancho: 7.4; fondo: 0.7; alto: 4" position="150 0 -148.35"></a-entity>
+<a-entity macizo="ancho: 0.7; fondo: 5.4; alto: 4" position="146.65 0 -146"></a-entity>
+<a-entity macizo="ancho: 0.7; fondo: 5.4; alto: 4" position="153.35 0 -146"></a-entity>
+<a-entity macizo="ancho: 0.5; fondo: 1.6; alto: 4" position="150.6 0 -147.4"></a-entity>
+<a-entity macizo="ancho: 0.5; fondo: 1.6; alto: 4" position="150.6 0 -144.6"></a-entity>
+
+<!-- la obra: tejado, puerta, escombros, banco de obra y muebles, según la fase (js/casa.js) -->
+<a-entity casa-obra position="150 0 -146"></a-entity>

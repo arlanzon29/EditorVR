@@ -39,7 +39,7 @@ const partida = {
   estado: null,   // sin partida abierta (en el menú), uno vacío que no se guarda
   ranura: null,   // el número de la partida abierta
   charlaAbierta: false,   // hablando con el tabernero: el tutorial espera a que acabe (comprobarPaso)
-  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, estrellas: null, noche: false, visitadas: [], sitio: null, fecha: null }; },
+  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, estrellas: null, obra: 0, noche: false, visitadas: [], sitio: null, fecha: null }; },
   cargar() {
     this.estado = this.nuevo();
     this.traerPartidaVieja();

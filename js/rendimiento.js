@@ -9,7 +9,7 @@
 //    como está. Las piezas fundidas se ocultan, pero siguen en su sitio (y su HTML, igual).
 //  - luces-cercanas: solo 6 luces puntuales, siempre las mismas, que copian a las más cercanas.
 
-const NO_FUNDIR = '[barca], [agua], [camino], [claro], [ciervo], [peces], [portal], [puerta-portal], [salida], [pozo], [pinos], [cartel-madera], [puerta], [agarrable], [antorcha], [criado], [camarero], [cofre], [cama-dormir], [postigos], [tala], [cantera], [mercader], [moza], [persona-animada], [muestra], [marca-paso], [posadero], [estrella], [boda], [guardia], [cliente], [hoguera], [lampara-rueda], [barrera], [gltf-model], [text], [menu-partidas], [candelabro], [oculo], [mosaico], .clicable, .cartel';
+const NO_FUNDIR = '[barca], [agua], [camino], [claro], [ciervo], [peces], [portal], [puerta-portal], [salida], [pozo], [pinos], [cartel-madera], [puerta], [agarrable], [antorcha], [criado], [camarero], [cofre], [cama-dormir], [postigos], [tala], [cantera], [casa-obra], [mercader], [moza], [persona-animada], [muestra], [marca-paso], [posadero], [estrella], [boda], [guardia], [cliente], [hoguera], [lampara-rueda], [barrera], [gltf-model], [text], [menu-partidas], [candelabro], [oculo], [mosaico], .clicable, .cartel';
 
 function fundirEstancia(el) {
   el.object3D.updateMatrixWorld(true);
@@ -130,6 +130,19 @@ document.addEventListener('model-loaded', e => {
   if (SALAS_HORNEADAS.includes(sala)) e.detail.model.visible = false;
 });
 
+// Cajas del mundo de las que se quitan los triángulos de lo horneado, hasta que se hornee la sala otra vez sin ellos.
+// poblado: la casa de 150, -146 (7 × 5, con el vuelo del tejado), que ahora es salas/casa.html
+const HUECOS_HORNEADOS = { poblado: [{ x0: 146, x1: 154, z0: -148.9, z1: -143.1, y0: -3, y1: 5.2 }] };
+function quitarDeLoHorneado(geo, cajas) {
+  const P = geo.attributes.position, I = geo.index, n = I ? I.count : P.count, quedan = [];
+  const dentro = i => cajas.some(c => P.getX(i) >= c.x0 && P.getX(i) <= c.x1 && P.getZ(i) >= c.z0 && P.getZ(i) <= c.z1 && P.getY(i) >= c.y0 && P.getY(i) <= c.y1);
+  for (let k = 0; k < n; k += 3) {
+    const a = I ? I.getX(k) : k, b = I ? I.getX(k + 1) : k + 1, c = I ? I.getX(k + 2) : k + 2;
+    if (!(dentro(a) && dentro(b) && dentro(c))) quedan.push(a, b, c);
+  }
+  if (quedan.length < n) geo.setIndex(quedan);
+}
+
 // Pone el modelo horneado de una estancia y oculta lo que sustituye. Si no se puede cargar, se queda
 // como estaba (y luego se funde como siempre).
 function hornearEstancia(el, sala) {
@@ -147,6 +160,8 @@ function hornearEstancia(el, sala) {
         for (let p = o; p; p = p.parent) if (p === e.detail.model) return;
         o.visible = false; o.geometry.dispose();
       });
+      // lo que ya no está en la escena pero seguía en lo horneado (la casa que ahora es la tuya): se le quitan los triángulos
+      if (HUECOS_HORNEADOS[sala]) e.detail.model.traverse(o => { if (o.isMesh) quitarDeLoHorneado(o.geometry, HUECOS_HORNEADOS[sala]); });
       e.detail.model.traverse(o => {
         if (!o.isMesh) return;
         const v = o.material, llama = /^Llama/.test(v.name);   // las llamas brillan por sí solas: sin luz
