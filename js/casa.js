@@ -213,7 +213,7 @@ AFRAME.registerComponent('casa-obra', {
   ruina(fase) {
     const { H } = CASA, azar = semillaCasa(77), techo = H - 0.04;
     // por el suelo, sin tapar la entrada, el vano del tabique ni el banco
-    const libre = (x, z) => !(x > -2.1 && x < -0.6 && z > 0.9) && !(x > 0.1 && x < 1.1 && Math.abs(z) < 0.8) && !(x > 0.6 && x < 3.1 && z > 0.05 && z < 2.0) && Math.abs(x - 0.6) > 0.3;
+    const libre = (x, z) => !(x > -2.1 && x < -0.6 && z > 0.9) && !(x > 0.1 && x < 1.1 && Math.abs(z) < 0.8) && !(x > 0.6 && x < 3.1 && z > 0.05 && z < 2.0) && Math.abs(x - 0.6) > 0.3 && Math.hypot(x + 2.75, z - 1.75) > 0.45;   // (y el rincón del gato)
     const dentro = () => { for (;;) { const x = (azar() - 0.5) * 6.0, z = (azar() - 0.5) * 4.0; if (libre(x, z)) return [x, z]; } };
     for (let i = 0; i < CASA_ESCOMBROS[fase]; i++) {
       const [x, z] = dentro(), tipo = i % 3;
@@ -605,4 +605,120 @@ AFRAME.registerComponent('leonor', {
     partida.verCasa();
   },
   remove() { if (this.quitar) { this.quitar(); partida.charlaAbierta = false; } this.quitar = null; this.sigueme = this.espera = null; }
+});
+
+// El gato de tu casa, tu mascota: siempre está en la casa, desde la abandonada, sentado en el rincón del hogar. Mueve
+// la cola por el suelo, parpadea y, si te acercas, vuelve la cabeza hacia ti. Al apuntarle y apretar el gatillo, lo
+// acaricias: cierra los ojos y ronronea. Hecho con piezas de THREE (luego, con Blender: herramientas/modelar-gato.py).
+// Mira hacia +z local; origen en el suelo, entre las patas.
+const GATO_MIRA = 4;   // a cuántos metros de ti vuelve la cabeza
+const GATO_RONRONEO_S = 2.5;
+let sonidoGato = null;
+// El ronroneo, hecho con el navegador (como el lobo, js/enemigos.js): ruido grave que late unas 25 veces por segundo
+function ronroneoDeGato() {
+  try {
+    sonidoGato = sonidoGato || new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = sonidoGato, t0 = ctx.currentTime + 0.02, dura = GATO_RONRONEO_S;
+    ctx.resume();
+    const ruido = ctx.createBuffer(1, Math.round(ctx.sampleRate * dura), ctx.sampleRate), d = ruido.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const fuente = ctx.createBufferSource(), filtro = ctx.createBiquadFilter(), g = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+    fuente.buffer = ruido;
+    filtro.type = 'lowpass'; filtro.frequency.value = 260; filtro.Q.value = 2;
+    // el latido: la ganancia sube y baja con el oscilador (de 0 a 0,5)
+    lfo.frequency.value = 25; lg.gain.value = 0.25; lfo.connect(lg); lg.connect(g.gain);
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0, t0); env.gain.linearRampToValueAtTime(0.9, t0 + 0.3); env.gain.setValueAtTime(0.9, t0 + dura - 0.5); env.gain.linearRampToValueAtTime(0, t0 + dura);
+    g.gain.value = 0.25;
+    fuente.connect(filtro); filtro.connect(g); g.connect(env); env.connect(ctx.destination);
+    fuente.start(t0); fuente.stop(t0 + dura); lfo.start(t0); lfo.stop(t0 + dura);
+  } catch (e) {}   // sin sonido, sigue igual
+}
+
+AFRAME.registerComponent('gato', {
+  init() {
+    this.materiales = [];
+    const mat = color => { const m = new THREE.MeshStandardMaterial({ color, roughness: 0.95 }); this.materiales.push(m); return m; };
+    const pelo = mat('#5a4e42'), claro = mat('#8a7a64'), ojo = new THREE.MeshStandardMaterial({ color: '#8a8a2a', emissive: '#2a2a08', roughness: 0.4 });
+    this.materiales.push(ojo);
+    const pieza = (padre, geo, m, x, y, z, sx = 1, sy = 1, sz = 1) => { const p = new THREE.Mesh(geo, m); p.position.set(x, y, z); p.scale.set(sx, sy, sz); padre.add(p); return p; };
+    const g = new THREE.Group();
+    // las ancas, el pecho (algo echado hacia atrás), las patas de delante y sus manos
+    pieza(g, new THREE.SphereGeometry(0.09, 12, 8), pelo, 0, 0.08, -0.04, 1, 0.85, 1.2);
+    pieza(g, new THREE.SphereGeometry(0.07, 12, 8), pelo, 0, 0.16, 0.03, 0.9, 1.5, 0.9).rotation.x = -0.25;
+    pieza(g, new THREE.SphereGeometry(0.04, 10, 6), claro, 0, 0.17, 0.08, 1, 1.4, 0.6);   // la pechera, más clara
+    for (const x of [-0.03, 0.03]) {
+      pieza(g, new THREE.CylinderGeometry(0.016, 0.018, 0.14, 8), pelo, x, 0.07, 0.08);
+      pieza(g, new THREE.SphereGeometry(0.02, 8, 6), claro, x, 0.012, 0.095, 1, 0.6, 1.3);
+    }
+    // la cabeza, en su pivote (el cuello): hocico claro, nariz, orejas y ojos (que parpadean: se aplastan)
+    const cabeza = this.cabeza = new THREE.Group();
+    cabeza.position.set(0, 0.27, 0.05);
+    g.add(cabeza);
+    pieza(cabeza, new THREE.SphereGeometry(0.055, 14, 10), pelo, 0, 0, 0, 1.05, 0.92, 0.95);
+    pieza(cabeza, new THREE.SphereGeometry(0.026, 10, 6), claro, 0, -0.018, 0.044, 1.2, 0.8, 0.9);
+    pieza(cabeza, new THREE.SphereGeometry(0.008, 6, 4), mat('#4a2a26'), 0, -0.008, 0.066);
+    for (const s of [-1, 1]) {
+      const oreja = pieza(cabeza, new THREE.ConeGeometry(0.022, 0.05, 4), pelo, s * 0.032, 0.05, -0.005);
+      oreja.rotation.z = -s * 0.3;
+    }
+    this.ojos = [-1, 1].map(s => pieza(cabeza, new THREE.SphereGeometry(0.009, 8, 6), ojo, s * 0.021, 0.008, 0.047));
+    // la cola, tumbada en el suelo hacia atrás: seis trozos, cada uno colgado del anterior, que se mecen de lado
+    this.cola = [];
+    let padre = g, z = -0.13;
+    for (let i = 0; i < 6; i++) {
+      const junta = new THREE.Group();
+      junta.position.set(0, i ? 0 : 0.02, i ? -0.04 : z);
+      padre.add(junta);
+      pieza(junta, new THREE.CylinderGeometry(0.013 - i * 0.001, 0.014 - i * 0.001, 0.045, 6), pelo, 0, 0, -0.02).rotation.x = Math.PI / 2;
+      this.cola.push(junta);
+      padre = junta;
+    }
+    this.el.setObject3D('mesh', g);
+    // para apuntarle: una caja que lo abarca
+    cajaDeRayo(this.el, 0, 0.17, 0, 0.3, 0.36, 0.45, () => this.acariciar());
+    this.el.querySelector('.clicable').addEventListener('mouseenter', () => partida.avisar('Aprieta el gatillo para acariciar al gato.'));
+    this.ojo = new THREE.Vector3();
+    this.giro = 0;              // hacia dónde mira la cabeza (radianes, en su eje y)
+    this.parpadeo = 3;          // segundos hasta el próximo parpadeo
+    this.ronronea = 0;          // segundos de ronroneo que quedan (con los ojos cerrados)
+  },
+  acariciar() {
+    if (this.ronronea > 0) return;
+    this.ronronea = GATO_RONRONEO_S;
+    ronroneoDeGato();
+    partida.aprender('En tu casa vive un gato: es tu mascota.');
+    partida.avisar('Acaricias al gato: cierra los ojos y ronronea.');
+  },
+  tick(t, dt) {
+    const s = Math.min(dt, 100) / 1000;
+    // la cola, de lado a lado, más deprisa la punta
+    this.cola.forEach((j, i) => { j.rotation.y = Math.sin(t / 700 + i * 0.6) * (0.15 + i * 0.04); });
+    // la cabeza: hacia ti si estás cerca (sin pasar de 60°), si no, al frente
+    const c = this.el.sceneEl.camera;
+    let quiere = 0, inclina = 0;
+    if (c) {
+      c.getWorldPosition(this.ojo);
+      this.el.object3D.worldToLocal(this.ojo);
+      const lejos = Math.hypot(this.ojo.x, this.ojo.z);
+      if (lejos < GATO_MIRA) {
+        quiere = Math.max(-1, Math.min(1, Math.atan2(this.ojo.x, this.ojo.z)));
+        inclina = -Math.max(-0.5, Math.min(0.2, Math.atan2(this.ojo.y - 0.27, lejos)));
+      }
+    }
+    this.giro += (quiere - this.giro) * Math.min(1, s * 3);
+    this.cabeza.rotation.y = this.giro;
+    this.cabeza.rotation.x += (inclina - this.cabeza.rotation.x) * Math.min(1, s * 3);
+    // los ojos: cerrados mientras ronronea; si no, un parpadeo cada pocos segundos
+    this.parpadeo -= s;
+    if (this.ronronea > 0) this.ronronea -= s;
+    const cerrados = this.ronronea > 0 || this.parpadeo < 0;
+    if (this.parpadeo < -0.15) this.parpadeo = 2 + Math.random() * 4;
+    for (const o of this.ojos) o.scale.y = cerrados ? 0.15 : 1;
+  },
+  remove() {
+    this.el.getObject3D('mesh').traverse(o => { if (o.isMesh) o.geometry.dispose(); });
+    for (const m of this.materiales) m.dispose();
+    this.el.removeObject3D('mesh');
+  }
 });
