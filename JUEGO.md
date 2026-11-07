@@ -104,7 +104,7 @@ El camarero tiene una boda y quiere dar un banquete con pescado. Hay que ir al l
 - Valores de la comida: crudo 1 punto, asado 3.
 - Número de cartas que se llevan a una misión, y otros personajes (erudito, diplomático, ladrón).
 - **Encuentros con enemigos:** al cambiar de zona puede aparecer un enemigo que solo quita puntos; se evita con puntos de lucha o un objeto de lucha.
-- **Un gato en la casa abandonada (pedido por el usuario, sin programar):** en la casa que reparas vive un gato que será tu mascota. Falta decidir cómo se gana (al terminar una obra, dándole de comer…) y qué hace.
+- **Un gato en la casa abandonada (pedido por el usuario, sin programar):** en la casa que reparas vive un gato que será tu mascota. Decidido: está siempre en la casa (no te acompaña por el mundo). Falta decidir desde cuándo está (desde la casa abandonada o al repararla) y qué hace.
 
 ## Ideas de la conversación
 
