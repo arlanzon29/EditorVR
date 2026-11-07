@@ -85,6 +85,7 @@ function hacerOficio({ que, tipo, como, precio, texto, id }) {
   preguntarGasto({ que, precio, alResponder: si => {
     if (!si || !partida.puedeOficio(tipo, precio) || partida.agotado(id)) return;
     partida.farmear(id, tipo);
+    partida.marcarSitio(id);
     partida.conseguir(tipo, como, precio, texto);
   } });
 }
