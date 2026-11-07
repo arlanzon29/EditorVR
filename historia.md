@@ -44,6 +44,10 @@ Los episodios 5 a 8 son **propuesta** (decidido: el faro, que después hay algo 
 
 - **1. La boda:** el primer episodio, hecho (el tutorial).
 - **2. Quedarte:** la boda hace que te quedes; necesitas una casa.
+  - **Decidido (2.º episodio):** te quedas porque **te lo piden los novios**. La casa es una **ruina del poblado que reparas**
+    tú, con materiales de los oficios (madera, piedra...). Durante el episodio **sigues durmiendo en la posada**: construir la
+    casa es el episodio, y la casa como base (cama, estante) llega al acabar. La idea principal: **localizar todos los
+    puntos de «farmeo» de materiales**. El resto del desarrollo se va definiendo sobre la marcha.
 - **3. El niño:** la pareja tiene un hijo pequeño, unido a ti, al que le gusta venir a cazar contigo. El chico te ayuda a
   encontrar lo escondido: donde hay un cofre, una estrella…
 - **4. El faro:** rescatar a alguien en el acantilado del faro; te reconoce y muere al momento. El niño ya es adolescente, lo
