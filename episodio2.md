@@ -115,6 +115,24 @@ Propuesta (a ajustar):
   de acción), pero esto es un enemigo fijo en un sitio, no un encuentro al azar en el cambio de zona.
 - Otras salidas, por si se quieren más adelante: echarle comida (carne) en vez de gastar puntos.
 
+## La casa (Decidido y Propuesta)
+
+**Decidido:**
+- La casa es **una del poblado, frente a la posada** (al otro lado de la plaza).
+- **Tiene que poder abrirse la puerta y entrar** (ahora las casas son cajas cerradas).
+- El interior tiene un **salón comedor** y **una habitación**.
+
+**Propuesta (a ajustar):**
+- **La casa:** la de `172 0 -146` (6 × 5 m, puerta a la calle, `rotation 0`), la más cercana a la puerta de la posada (x ≈ 162,5).
+  Alternativa algo más grande: la de `150 0 -146` (7 × 5 m), algo más al oeste.
+- **Interior:** sala nueva `salas/casa.html`, añadida a las del poblado en `MUNDO` (como la posada y la taberna). Se hornea sola,
+  sin tocar el poblado. Como la casa mide 6 × 5, el comedor ocupa la parte de la puerta y la habitación, la del fondo, separadas
+  por un tabique con su vano. Es pequeña: una casa humilde. Puerta que se abre, ventanas, techo de vigas.
+- **Exterior y obra:** la caja ya horneada se queda como está. La puerta que se abre va **justo delante** de la pintada, separada
+  1 o 2 cm. Lo que cambia con la obra (techo roto, tablones, madera nueva) va como piezas aparte, en `NO_FUNDIR`: no hace falta
+  hornear el poblado.
+- **Entrar:** zona andable propia (`zonasPermitidas`) unida por la puerta; mientras sea una ruina, la puerta está cerrada.
+
 ## Después (por definir)
 
 - La ruina: cuál es y cómo se ve (ver el poblado).
