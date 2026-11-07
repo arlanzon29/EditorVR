@@ -81,6 +81,23 @@ hay que encontrarlos **todos**: el diario dice cuántos faltan, no dónde.
 Por decidir: cuánto cuesta cada punto de farmeo en puntos de acción, dónde está exactamente cada uno (escondido), dónde se entrega
 la carga en la casa en ruinas, y cómo se hace la reparación por fases.
 
+## La cueva y los enemigos: el lobo (Decidido)
+
+- **La cueva no está disponible en el episodio 1.** Se **activa aquí**, en el episodio 2 (ya está cerrada al empezar: no está en
+  `ZONAS_ABIERTAS`). Es donde está la **cantera** de piedra.
+- Aquí empieza un tema nuevo: **los enemigos**.
+- **Hay un lobo dentro de la cueva.** Enfrentarlo **sólo consume más puntos** (no hay pelea de acción):
+  - Con puntos suficientes, **matas al lobo** y puedes entrar. **Ya no vuelve a aparecer en la misión.**
+  - Sin puntos suficientes, **vuelves a la posada** y **el lobo sigue** ahí para otro intento.
+
+Propuesta (a ajustar):
+- Cuánto cuesta: sobre el precio de entrar (la cueva cuesta 2), un recargo por el lobo (por ejemplo 2 más: 4 en total). Se avisa
+  antes de entrar, con la pregunta de gasto que ya usan los oficios.
+- Estado en la partida: «lobo de la cueva muerto», como las estrellas cogidas.
+- Es el primer enemigo y sirve de modelo para los siguientes. Encaja con los encuentros de [JUEGO.md](JUEGO.md) (se resuelven sin pelea
+  de acción), pero esto es un enemigo fijo en un sitio, no un encuentro al azar en el cambio de zona.
+- Otras salidas, por si se quieren más adelante: echarle comida (carne) en vez de gastar puntos.
+
 ## Después (por definir)
 
 - La ruina: cuál es y cómo se ve (ver el poblado).
