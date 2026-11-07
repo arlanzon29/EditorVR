@@ -631,9 +631,13 @@ AFRAME.registerComponent('mapa', {
   // la flecha en su sitio, según dónde estás y hacia dónde miras
   // El pergamino no mira la profundidad y se dibuja encima de todo: mientras está abierto, el rayo de los mandos
   // se dibuja después de él, o no se vería al apuntarle. Igual con una página de cómic abierta (js/comic.js).
-  rayoEncima(encima) {
+  // y también el de cada mando que apunte a un letrero que se pinta encima de todo (las charlas, las preguntas, los
+  // botones de la taberna y de la boda: sin mirar la profundidad, depthTest a false), que si no lo tapaba
+  rayoEncima(todos) {
     for (const m of document.querySelectorAll('[laser-controls]')) {
-      const linea = m.getObject3D('line');
+      const linea = m.getObject3D('line'), r = m.components.raycaster;
+      const primero = r && r.intersectedEls[0], malla = primero && primero.getObject3D('mesh');
+      const encima = todos || !!(malla && malla.material && malla.material.depthTest === false);
       if (!linea || linea.renderOrder === (encima ? 999 : 0)) continue;
       linea.renderOrder = encima ? 999 : 0;
       linea.material.transparent = encima;
