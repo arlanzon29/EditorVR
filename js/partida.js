@@ -39,6 +39,7 @@ const SALTOS_DEPURACION = [
 ];
 const PISTA_MATERIALES = 'La madera se tala en el bosque y en la isla del lago, y la piedra se pica en la cueva y en la montaña. Cada sitio da una sola carga, y algunos están escondidos.';
 const ESTRELLAS_TOTAL = 5;   // las estrellas escondidas que trae la misión (js/estrellas.js)
+const PUNTOS_NOCHE = 5;   // sin misión, con menos puntos que estos es de noche en el poblado (decidido por el usuario)
 const PUNTOS_LIBRE = 30;   // los puntos de acción de cada día sin misión (decidido por el usuario)
 const PUNTOS_PESCAR = 3;   // lo que cuesta pescar con misión
 // y los demás oficios (pedidos por el usuario): cazar el ciervo, talar en el bosque y picar piedra en la cueva
@@ -285,9 +286,15 @@ const partida = {
   loboEnCueva() { const e = this.estado; return e.mision === 'casa' && !e.lobo; },
   // ¿Ya tienes casa? Desde la cena del episodio 2: se duerme allí, no en la posada
   tieneCasa() { return this.estado.hechas.includes('casa'); },
-  // ¿Es de noche en la zona? Solo el poblado, y desde que se pisa el lago (anochecer) hasta que se duerme (empezarDia).
-  // Para mirarlo sin jugar: en la consola, partida.estado.noche = true y volver a entrar al poblado.
-  deNoche(nombre = zonaCargada.nombre) { return nombre === 'poblado' && !!this.estado.noche; },
+  // ¿Es de noche en la zona? Solo el poblado: desde que anochece (estado.noche: en el episodio 1, al pisar el lago; en
+  // el 2, al acabar la casa) hasta que se duerme (empezarDia); y sin misión, cuando quedan menos de PUNTOS_NOCHE. Se
+  // mira al cargar la zona. Para mirarlo sin jugar: en la consola, partida.estado.noche = true y volver a entrar al poblado.
+  deNoche(nombre = zonaCargada.nombre) {
+    const e = this.estado;
+    return nombre === 'poblado' && (!!e.noche || (!!this.ranura && !this.misionActiva() && e.puntos < PUNTOS_NOCHE));
+  },
+  // Al pisar el lago: solo en el episodio 1 (la misión de la boda) se vuelve de noche
+  anochecerEnElLago() { if (this.estado.mision === 'boda') this.anochecer(); },
   anochecer() {
     if (!this.ranura || this.estado.noche) return;
     this.estado.noche = true;
