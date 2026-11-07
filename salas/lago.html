@@ -1,5 +1,5 @@
-<!-- Lago: otra zona (ver js/mundo.js), al norte del bosque. Una barca (ahora quitada, ver abajo) llevaba
-     del embarcadero de la orilla sur a la isla y a la orilla norte. Es mediodía. -->
+<!-- Lago: otra zona (ver js/mundo.js), al norte del bosque. Una barca lleva del embarcadero de la orilla sur a la
+     isla y a la orilla norte. Es mediodía. -->
 
 <a-entity terreno="x0: -170; x1: 180; z0: -480; z1: -150"></a-entity>
 <a-entity agua="ancho: 190; fondo: 180" position="5 -0.6 -300"></a-entity>
@@ -12,8 +12,8 @@
 <a-entity embarcadero="x0: 5; z0: -231; x1: 5; z1: -244"></a-entity>
 <a-entity embarcadero="x0: 26; z0: -300; x1: 14; z1: -300"></a-entity>
 <a-entity embarcadero="x0: 5; z0: -369; x1: 5; z1: -356"></a-entity>
-<!-- (sin barca por ahora: se vuelve a poner cuando toque en el juego)
-<a-entity barca="paradas: sur 7.4 -242.5 5 -242.5 z, isla 17 -297.6 17 -300 x, norte 7.4 -357.5 5 -357.5 z"></a-entity> -->
+<!-- la barca, otra vez (episodio 2): lleva a la isla, donde está una de las talas de la misión de la casa -->
+<a-entity barca="paradas: sur 7.4 -242.5 5 -242.5 z, isla 17 -297.6 17 -300 x, norte 7.4 -357.5 5 -357.5 z"></a-entity>
 
 <!-- zona de pesca: un banco de peces al alcance del embarcadero sur y de la orilla, y su cartel -->
 <a-entity peces="cuantos: 14; radio: 3.5" position="11 -0.6 -237"></a-entity>
@@ -26,6 +26,10 @@
 <a-box position="41.5 6.85 -301.5" width="0.8" height="0.7" depth="0.8" piedra-mundo="tono: #a39c8e"></a-box>
 <a-box position="44.5 6.85 -301.5" width="0.8" height="0.7" depth="0.8" piedra-mundo="tono: #a39c8e"></a-box>
 <a-entity macizo="ancho: 3.8; fondo: 3.8; alto: 6.5" position="43 0 -300"></a-entity>
+
+<!-- una tala en la isla, detrás de la torre (sitio de farmeo de la misión de la casa) -->
+<a-entity tala="id: isla" position="45 1.5 -308"></a-entity>
+<a-entity macizo="ancho: 2.2; fondo: 2.2; alto: 2.3" position="45.6 0 -307.9"></a-entity>
 
 <!-- piedras en las orillas -->
 <a-dodecahedron position="-10 0.5 -226" radius="0.9" color="#77756c" material="roughness: 1; flatShading: true" macizo="ancho: 1.44; fondo: 1.44; alto: 1.49"></a-dodecahedron>

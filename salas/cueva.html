@@ -9,6 +9,9 @@
 <a-entity portal="texto: Salir al bosque; zona: bosque; x: 13.6; z: -150; giro: 90" position="1006.2 1.5 -100" rotation="0 90 0"></a-entity>
 <a-entity light="type: point; intensity: 1.2; distance: 9; color: #c7d8ea" position="1009 2.1 -100"></a-entity>
 
+<!-- el lobo, muerto, a la entrada del túnel: solo cuando ya lo has matado (episodio 2, js/enemigos.js) -->
+<a-entity lobo position="1013.5 0 -101.6" rotation="0 -30 0"></a-entity>
+
 <!-- antorchas por el túnel -->
 <a-entity light="type: point; intensity: 1.6; distance: 8; color: #ffb060" position="1030 2.3 -91"></a-entity>
 <a-entity light="type: point; intensity: 1.6; distance: 8; color: #ffb060" position="1050 2.3 -105"></a-entity>
@@ -24,7 +27,7 @@
 <a-entity light="type: point; intensity: 2; distance: 18; color: #ffb060" position="1085 6 -92"></a-entity>
 
 <!-- la cantera, junto a la pared del norte de la sala, mirando al lago: se pica piedra (js/oficios.js) -->
-<a-entity cantera position="1079 0 -84" rotation="0 132 0"></a-entity>
+<a-entity cantera="id: cueva" position="1079 0 -84" rotation="0 132 0"></a-entity>
 <a-entity light="type: point; intensity: 2.2; distance: 10; color: #ffb060" position="1081.5 2.6 -86.5"></a-entity>
 
 <!-- rocas -->

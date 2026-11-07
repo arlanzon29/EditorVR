@@ -147,8 +147,11 @@ AFRAME.registerComponent('zonas', {
       this.ir(nombre, destino);
       return true;
     };
-    if (!partida.ranura || nombre === zonaCargada.nombre || partida.estado.puntos < precio || !partida.abierta(nombre)) return ir();
-    this.pregunta = preguntarGasto({ que: viaje ? 'viaje' : 'andar', de: this.actual, a: nombre, precio, alResponder: si => {
+    // con el lobo en la cueva se pregunta aunque no lleguen los puntos: si se entra, se huye (partida.huirDelLobo)
+    const lobo = nombre === 'cueva' && partida.loboEnCueva();
+    if (!partida.ranura || nombre === zonaCargada.nombre || (partida.estado.puntos < precio && !lobo) || !partida.abierta(nombre)) return ir();
+    const enemigo = lobo ? { ...ENEMIGOS.lobo, extra: PUNTOS_LOBO } : null;
+    this.pregunta = preguntarGasto({ que: viaje ? 'viaje' : 'andar', de: this.actual, a: nombre, precio, enemigo, alResponder: si => {
       this.pregunta = null;
       // si no, un momento sin volver a preguntar, aunque se siga empujando hacia el paso
       if (si) ir(); else this.noHasta = performance.now() + NO_PREGUNTAR_MS;

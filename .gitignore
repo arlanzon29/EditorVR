@@ -17,3 +17,4 @@ servidor/*.pem
 
 # Copias de seguridad de Blender
 modelos/*.blend1
+__pycache__/

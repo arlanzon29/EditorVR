@@ -42,6 +42,8 @@ Decidido por el usuario: la partida y cada día empiezan en la posada. El viaje 
 
 Decidido por el usuario: sin misión (modo libre) se tienen 30 puntos de acción al día, y todo cuesta lo mismo que con misión.
 
+Decidido por el usuario (episodio 2): en la misión de la casa cada sitio de farmeo da una sola carga, y hay tres de madera (dos en el bosque y uno en la isla) y tres de piedra (la cueva y dos en la montaña), algo escondidos; la casa pide tres obras de una carga de madera y otra de piedra, de una en una. La cueva y la montaña se abren con esa misión.
+
 Decidido por el usuario: oficios que dan cartas, una de cada tipo: pescar (3 puntos, pescado), cazar el ciervo del bosque (3, carne), talar en el bosque (5, madera) y picar piedra en la cueva (5, pieza). El tendero del mercado del poblado compra cada carta por 5 monedas. La partida 1 del menú es de depuración, con el mapa entero; las demás, con niebla.
 
 Decidido por el usuario: una misión cumplida se puede repetir hablando con quien la dio, y solo se paga la primera vez.
@@ -192,6 +194,8 @@ Bajar a las mazmorras con una llave que está en el puerto. Con precios inventad
 ### Encuentros con enemigos
 
 Lo pidió el usuario. Las reglas de detalle son propuesta:
+
+- **Hecho (episodio 2):** el primer enemigo es fijo, no al azar: el lobo de la cueva. Decidido por el usuario: solo consume puntos (2 más al entrar), el cartel de la pregunta enseña su nivel en cabezas de lobo (1, 2 o 3, y los puntos de cada enemigo los decide él caso a caso), muerto no vuelve en la misión y, sin puntos, vuelves a la posada perdiendo lo que llevas y el lobo sigue. Detalle en [episodio2.md](episodio2.md).
 
 - Solo con misión activa, porque sin ella los puntos no cuentan.
 - Decidido por el usuario: puede haber un encuentro en **cualquier cambio de zona**.

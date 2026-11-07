@@ -76,10 +76,26 @@ function modelosDeCartas() {
   return { carne, madera, piedra };
 }
 
-// Un oficio que se hace apuntando a algo y apretando el gatillo: pregunta y, si se dice que sí, da la carta
-function hacerOficio({ que, tipo, como, precio, texto }) {
-  if (!partida.ranura || preguntaAbierta || !partida.puedeOficio(tipo, precio)) return;
-  preguntarGasto({ que, precio, alResponder: si => { if (si && partida.puedeOficio(tipo, precio)) partida.conseguir(tipo, como, precio, texto); } });
+// Un oficio que se hace apuntando a algo y apretando el gatillo: pregunta y, si se dice que sí, da la carta.
+// "id": el sitio de farmeo, que en la misión de la casa da una sola carga (partida.agotado)
+function hacerOficio({ que, tipo, como, precio, texto, id }) {
+  if (!partida.ranura || preguntaAbierta) return;
+  if (partida.agotado(id)) { partida.avisar(que === 'tala' ? 'Aquí ya no queda madera buena: busca otro sitio.' : 'Esta veta está agotada: busca otro sitio.'); return; }
+  if (!partida.puedeOficio(tipo, precio)) return;
+  preguntarGasto({ que, precio, alResponder: si => {
+    if (!si || !partida.puedeOficio(tipo, precio) || partida.agotado(id)) return;
+    partida.farmear(id, tipo);
+    partida.conseguir(tipo, como, precio, texto);
+  } });
+}
+
+// La carga de un sitio de farmeo (troncos, vetas) se ve mientras le quede: en la misión de la casa, una vez farmeado,
+// se queda sin ella
+function cargaDeFarmeo(comp, piezas) {
+  const poner = () => { const agotado = partida.agotado(comp.data.id); for (const p of piezas) p.visible = !agotado; };
+  poner();
+  comp.alCambiar = poner;
+  document.addEventListener('partida-cambia', poner);
 }
 
 // Piezas sueltas de THREE para los decorados de los oficios: cajas y cilindros, con su material
@@ -92,6 +108,7 @@ function piezaOficio(padre, geometria, color, x, y, z, rx = 0, ry = 0, rz = 0) {
 
 // Tala: un tocón con el hacha clavada y una pila de troncos. Origen: en el suelo, en el tocón.
 AFRAME.registerComponent('tala', {
+  schema: { id: { default: '' } },   // el sitio de farmeo (partida.farmear); sin id, se tala siempre
   init() {
     const g = new THREE.Group(), cil = (r, h) => new THREE.CylinderGeometry(r, r, h, 12);
     piezaOficio(g, cil(0.42, 0.5), '#5e4630', 0, 0.25, 0);
@@ -100,16 +117,18 @@ AFRAME.registerComponent('tala', {
     piezaOficio(g, new THREE.BoxGeometry(0.05, 0.8, 0.05), '#6e5236', 0.12, 0.82, 0, 0, 0, -0.5);
     piezaOficio(g, new THREE.BoxGeometry(0.2, 0.14, 0.03), '#4a4640', -0.06, 0.5, 0, 0, 0, -0.5);
     // los troncos, tumbados a lo largo de z, uno encima de los otros dos
-    for (const [x, y] of [[1.0, 0.18], [1.38, 0.18], [1.19, 0.5]]) piezaOficio(g, cil(0.18, 1.8), '#6e4a2c', x, y, 0.2, Math.PI / 2);
+    const troncos = [[1.0, 0.18], [1.38, 0.18], [1.19, 0.5]].map(([x, y]) => piezaOficio(g, cil(0.18, 1.8), '#6e4a2c', x, y, 0.2, Math.PI / 2));
     this.el.setObject3D('mesh', g);
-    cajaDeRayo(this.el, 0.6, 0.6, 0.1, 2.2, 1.2, 2, () => hacerOficio({ que: 'tala', tipo: 'madera', como: 'troncos', precio: PUNTOS_TALAR, texto: 'Talas un árbol y te llevas una carga de madera.' }));
+    cargaDeFarmeo(this, troncos);
+    cajaDeRayo(this.el, 0.6, 0.6, 0.1, 2.2, 1.2, 2, () => hacerOficio({ que: 'tala', tipo: 'madera', como: 'troncos', precio: PUNTOS_TALAR, id: this.data.id, texto: 'Talas un árbol y te llevas una carga de madera.' }));
     this.el.querySelector('.clicable').addEventListener('mouseenter', () => partida.avisar('Aprieta el gatillo para talar.'));
   },
-  remove() { this.el.getObject3D('mesh').traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); this.el.removeObject3D('mesh'); }
+  remove() { document.removeEventListener('partida-cambia', this.alCambiar); this.el.getObject3D('mesh').traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); this.el.removeObject3D('mesh'); }
 });
 
 // Cantera: una pared de roca con vetas, piedras sueltas y un pico apoyado. Mira hacia +z local; origen en el suelo.
 AFRAME.registerComponent('cantera', {
+  schema: { id: { default: '' } },   // como en la tala
   init() {
     const g = new THREE.Group();
     const roca = new THREE.MeshStandardMaterial({ color: '#7c776c', roughness: 1, flatShading: true });
@@ -117,16 +136,18 @@ AFRAME.registerComponent('cantera', {
       const m = new THREE.Mesh(new THREE.DodecahedronGeometry(r), roca); m.position.set(x, y, z); m.scale.set(1, 1, 0.6); g.add(m);
     }
     // vetas claras donde se pica, y piedras sueltas por el suelo
-    for (const [x, y] of [[-0.3, 1.1], [0.35, 0.8], [0.1, 1.5]]) piezaOficio(g, new THREE.BoxGeometry(0.5, 0.08, 0.05), '#b9b2a2', x, y, 0.42, 0, 0, 0.3);
-    for (const [x, z, r] of [[-0.6, 0.6, 0.15], [0.4, 0.75, 0.12], [0.9, 0.5, 0.18]]) piezaOficio(g, new THREE.DodecahedronGeometry(r), '#8a857a', x, r * 0.6, z);
+    const carga = [];
+    for (const [x, y] of [[-0.3, 1.1], [0.35, 0.8], [0.1, 1.5]]) carga.push(piezaOficio(g, new THREE.BoxGeometry(0.5, 0.08, 0.05), '#b9b2a2', x, y, 0.42, 0, 0, 0.3));
+    for (const [x, z, r] of [[-0.6, 0.6, 0.15], [0.4, 0.75, 0.12], [0.9, 0.5, 0.18]]) carga.push(piezaOficio(g, new THREE.DodecahedronGeometry(r), '#8a857a', x, r * 0.6, z));
     // el pico, apoyado en la roca: mango y cabeza de hierro
     piezaOficio(g, new THREE.BoxGeometry(0.05, 0.9, 0.05), '#6e5236', -1.0, 0.45, 0.55, 0.25, 0, 0.2);
     piezaOficio(g, new THREE.BoxGeometry(0.5, 0.06, 0.06), '#4a4640', -1.1, 0.88, 0.45, 0.25, 0, 0.2);
     this.el.setObject3D('mesh', g);
-    cajaDeRayo(this.el, 0, 1, 0.3, 3, 2, 1, () => hacerOficio({ que: 'picar', tipo: 'piedra', como: 'sillar', precio: PUNTOS_PICAR, texto: 'Picas la roca y sacas una buena pieza de piedra.' }));
+    cargaDeFarmeo(this, carga);
+    cajaDeRayo(this.el, 0, 1, 0.3, 3, 2, 1, () => hacerOficio({ que: 'picar', tipo: 'piedra', como: 'sillar', precio: PUNTOS_PICAR, id: this.data.id, texto: 'Picas la roca y sacas una buena pieza de piedra.' }));
     this.el.querySelector('.clicable').addEventListener('mouseenter', () => partida.avisar('Aprieta el gatillo para picar piedra.'));
   },
-  remove() { this.el.getObject3D('mesh').traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); this.el.removeObject3D('mesh'); }
+  remove() { document.removeEventListener('partida-cambia', this.alCambiar); this.el.getObject3D('mesh').traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); this.el.removeObject3D('mesh'); }
 });
 
 // Mercader: el tendero (persona-animada, modelos/tendero.glb), quieto detrás de su puesto; al hablarle te tiende la
@@ -137,22 +158,24 @@ AFRAME.registerComponent('mercader', {
     cajaDeRayo(this.el, 0, 0.95, 0, 0.9, 1.9, 0.9, () => { if (this.quitar) this.cerrar(); else this.hablar(); });
   },
   hablar() {
-    const cartas = partida.cartasQueLlevas();
+    // (en la misión de la casa, la madera y la piedra son para la obra: no se venden)
+    const cartas = partida.cartasQueLlevas().filter(([tipo]) => !partida.cargaDeLaCasa(tipo));
+    const paraLaCasa = partida.cartasQueLlevas().length > cartas.length ? ' La madera y la piedra que llevas, guárdalas para tu casa.' : '';
     if (this.el.components.criado) this.el.components.criado.charlando = true;
     partida.charlaAbierta = true;   // (el tutorial espera: partida.comprobarPaso)
     const persona = this.el.components['persona-animada'];
     if (persona) persona.poner('ofrecer', true);
     const charla = cartas.length ? {
-      texto: `Compro lo que traigas: pescado, carne, madera y piedra, a ${PRECIO_CARTA} monedas de plata cada carta.`,
+      texto: `Compro lo que traigas: pescado, carne, madera y piedra, a ${PRECIO_CARTA} monedas de plata cada carta.${paraLaCasa}`,
       opciones: [...cartas.map(([tipo]) => ({ texto: `Vender ${CARTAS[tipo].una}`, hacer: () => partida.vender(tipo) })), { texto: 'Nada más' }],
     } : {
-      texto: `¿No traes nada? Te compro pescado, carne, madera y piedra, a ${PRECIO_CARTA} monedas cada carta.`,
+      texto: `¿No traes nada? Te compro pescado, carne, madera y piedra, a ${PRECIO_CARTA} monedas cada carta.${paraLaCasa}`,
       opciones: [{ texto: 'Volveré' }],
     };
     this.quitar = tablaDeOpciones(this.el.sceneEl, sitioDeLectura(this.el.sceneEl), charla, op => {
       this.cerrar();
       // después de vender, sigue la charla con lo que quede
-      if (op.hacer) { op.hacer(); if (partida.cartasQueLlevas().length) this.hablar(); }
+      if (op.hacer) { op.hacer(); if (partida.cartasQueLlevas().some(([tipo]) => !partida.cargaDeLaCasa(tipo))) this.hablar(); }
     });
   },
   cerrar() {

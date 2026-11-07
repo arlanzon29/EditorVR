@@ -11,7 +11,32 @@ const ENTRADAS_ZONA = [['bosque', 'cueva'], ['castillo', 'mazmorras']];
 const ZONAS_ABIERTAS = ['poblado', 'bosque', 'lago'];
 const MISIONES = {
   boda: { titulo: 'El pescado de la boda', presupuesto: 9, pago: 5 },   // (el pago es provisional)
+  casa: { titulo: 'Tu casa en el poblado', presupuesto: 20 },        // episodio 2 (episodio2.md); el presupuesto es provisional
 };
+// Episodio 2: con la misión de la casa se abren la cueva y la montaña (antes, cerradas)
+const ZONAS_CASA = ['cueva', 'montana'];
+// El lobo de la cueva (episodio2.md): una cabeza de lobo, y entrar cuesta estos puntos más. Muerto, no vuelve en la misión.
+const PUNTOS_LOBO = 2;
+// La partida de depuración salta a cualquier momento de las misiones, con los botones de la hoja de la misión
+// (js/mapa.js): cada salto rehace el estado desde cero (conserva las zonas visitadas) y te lleva a su sitio (en el
+// poblado: x, z, giro; sin sitio, a tu habitación de la posada).
+const T_INICIO = { puerta: true, posadero: true }, T_BODA = { ...T_INICIO, alliEstare: true }, T_BRINDIS = { ...T_BODA, brindis: true };
+const despuesDeLaBoda = e => { e.tutorial = { ...T_BRINDIS }; e.hechas = ['boda']; e.bodaDia = e.dia - 2; e.bodaVista = e.dia - 1; e.monedas = MISIONES.boda.pago; };
+const enLaCasa = (obra, cartas) => e => { despuesDeLaBoda(e); e.mision = 'casa'; e.casaDia = e.dia; e.obra = obra; if (cartas) e.cartas = { madera: 'troncos', piedra: 'sillar' }; };
+const SALTOS_DEPURACION = [
+  { nombre: 'Episodio 1: el principio', poner: () => {} },
+  { nombre: 'Episodio 1: encargo aceptado', sitio: [162.5, -101, Math.PI], poner: e => { e.tutorial = { ...T_INICIO }; e.mision = 'boda'; e.estrellas = []; } },
+  { nombre: 'Episodio 1: con el pescado', sitio: [162.5, -101, Math.PI], poner: e => { e.tutorial = { ...T_INICIO }; e.mision = 'boda'; e.estrellas = []; e.pescado = 'crudo'; e.pescadoHoy = true; } },
+  { nombre: 'Episodio 1: el día de la boda', sitio: [161, -132.5, 0], poner: e => { e.tutorial = { ...T_BODA }; e.hechas = ['boda']; e.bodaDia = e.dia - 1; e.monedas = MISIONES.boda.pago; } },
+  { nombre: 'Episodio 2: Leonor en la posada', sitio: [181.3, -98.6, 0.6], poner: despuesDeLaBoda },
+  { nombre: 'Episodio 2: la casa en ruinas', sitio: [149, -139, 0], poner: enLaCasa(0, false) },
+  { nombre: 'Episodio 2: con madera y piedra', sitio: [149, -139, 0], poner: enLaCasa(0, true) },
+  { nombre: 'Episodio 2: obra 1 hecha', sitio: [149, -139, 0], poner: enLaCasa(1, true) },
+  { nombre: 'Episodio 2: obra 2 hecha', sitio: [149, -139, 0], poner: enLaCasa(2, true) },
+  { nombre: 'Episodio 2: la cena', sitio: [148.6, -140.5, 0], poner: enLaCasa(3, false) },
+  { nombre: 'Episodio 2: cumplido', sitio: [149, -139, 0], poner: e => { enLaCasa(3, false)(e); e.mision = null; e.hechas.push('casa'); e.cenaVista = e.dia; } },
+];
+const PISTA_MATERIALES = 'La madera se tala en el bosque y en la isla del lago, y la piedra se pica en la cueva y en la montaña. Cada sitio da una sola carga, y algunos están escondidos.';
 const ESTRELLAS_TOTAL = 5;   // las estrellas escondidas que trae la misión (js/estrellas.js)
 const PUNTOS_LIBRE = 30;   // los puntos de acción de cada día sin misión (decidido por el usuario)
 const PUNTOS_PESCAR = 3;   // lo que cuesta pescar con misión
@@ -39,7 +64,7 @@ const partida = {
   estado: null,   // sin partida abierta (en el menú), uno vacío que no se guarda
   ranura: null,   // el número de la partida abierta
   charlaAbierta: false,   // hablando con el tabernero: el tutorial espera a que acabe (comprobarPaso)
-  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, estrellas: null, noche: false, visitadas: [], sitio: null, fecha: null }; },
+  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, estrellas: null, obra: 0, farmeados: [], cargas: {}, lobo: false, casaDia: null, cenaVista: null, depura: 0, noche: false, visitadas: [], sitio: null, fecha: null }; },
   cargar() {
     this.estado = this.nuevo();
     this.traerPartidaVieja();
@@ -131,8 +156,8 @@ const partida = {
   // Lo marca el rombo de lo que diga "quien" (marca-paso), el aro del mapa en "zona", el aviso y el diario.
   pasoTutorial() {
     const e = this.estado, t = e.tutorial;
-    // lo último: sentado a la mesa de la boda, brindar (hasta entonces no se levanta uno; js/boda.js)
-    if (e.bodaVista !== null) return enLaMesa && !t.brindis ? { id: 'brindar', texto: textoBrindar() } : null;
+    // lo último: sentado a la mesa de la boda, brindar (hasta entonces no se levanta uno; js/boda.js). Luego, el episodio 2
+    if (e.bodaVista !== null) return enLaMesa && !t.brindis && e.dia === e.bodaVista ? { id: 'brindar', texto: textoBrindar() } : this.pasoCasa();
     if (!t.puerta) return { id: 'puerta', quien: 'puerta', texto: 'Apunta a la puerta con el mando derecho y aprieta el gatillo para abrirla.' };
     if (!t.posadero) return { id: 'posadero', quien: 'posadero', texto: 'Anda con el joystick izquierdo. Baja por la escalera del pasillo y habla con el posadero: apúntale y aprieta el gatillo.' };
     if (e.hechas.includes('boda')) {
@@ -167,11 +192,81 @@ const partida = {
     else if (this.ultimoPaso) this.avisar(`Se acabó el tutorial. Ya sabes moverte por estas tierras.${enLaMesa ? ' Puedes levantarte cuando quieras.' : ''}`, true);
     this.ultimoPaso = id;
   },
+  // --- Episodio 2, la casa (episodio2.md): al día siguiente de la boda, Leonor te pide que te quedes y repares la casa
+  // abandonada de enfrente de la posada (js/casa.js), con tres cargas de madera y tres de piedra; al terminarla, la cena.
+  pasoCasa() {
+    const e = this.estado;
+    if (e.hechas.includes('casa')) return null;
+    if (e.mision !== 'casa') {
+      if (e.dia === e.bodaVista) return { id: 'descansar', quien: 'cama', zona: 'poblado', texto: `Se acabó el tutorial.${enLaMesa ? ' Puedes levantarte cuando quieras.' : ''} Ha sido un gran día: vuelve a tu habitación de la posada y duerme. Mañana sigues tu camino.` };
+      return { id: 'leonor', quien: 'leonor', zona: 'poblado', texto: 'Hoy te marchas del poblado. Baja a la entrada de la posada: Leonor, la novia, te espera junto a la puerta.' };
+    }
+    // (sentado ya a la mesa, sin el rombo: quedaría delante de los ojos)
+    if (e.obra >= CASA_OBRAS) return { id: 'cena', quien: enLaMesa ? '' : 'cena', zona: 'poblado', texto: 'Tu casa está terminada. Leonor y Garcés te esperan para cenar en tu salón: apunta a la mesa y aprieta el gatillo para sentarte.' };
+    const madera = this.llevaCarta('madera'), piedra = this.llevaCarta('piedra');
+    if (madera && piedra) return { id: `reparar-${e.obra}`, quien: 'obra', zona: 'poblado', texto: 'Llevas madera y piedra. Ve a tu casa, frente a la posada al otro lado de la plaza, apunta al banco de obra y aprieta el gatillo.' };
+    const falta = !madera && !piedra ? 'una carga de madera y otra de piedra' : !madera ? 'una carga de madera' : 'una carga de piedra';
+    return { id: `buscar-${e.obra}-${madera}-${piedra}`, texto: `Para la obra ${e.obra + 1} de ${CASA_OBRAS} te falta ${falta}. ${PISTA_MATERIALES}` };
+  },
+  aceptarCasa() {
+    const e = this.estado;
+    e.mision = 'casa';
+    e.casaDia = e.dia;
+    e.farmeados = []; e.cargas = {};
+    this.prepararDia();
+    this.aprender('Leonor te ha pedido que te quedes en el poblado y repares la casa abandonada de enfrente de la posada.');
+    this.guardar();
+    this.avisar(`Misión: ${MISIONES.casa.titulo}. Tienes ${MISIONES.casa.presupuesto} puntos al día. Se abren la cueva y la montaña.`);
+  },
+  // La cena en tu casa terminada (js/casa.js): fin del episodio
+  cenarCasa() {
+    const e = this.estado;
+    if (e.hechas.includes('casa')) return;
+    e.hechas.push('casa');
+    e.mision = null;
+    e.cenaVista = e.dia;
+    e.puntos = PUNTOS_LIBRE;
+    this.aprender('Leonor espera un hijo. Tienes casa en el poblado, y un sitio entre los suyos.');
+    this.guardar();
+    this.avisar(`Misión cumplida: ${MISIONES.casa.titulo}. Tienes casa, y un sitio en el poblado.`);
+  },
+  // Lo que dice Leonor en la entrada de la posada, paso a paso (la conversación de episodio2.md)
+  charlaLeonor(paso) {
+    const e = this.estado;
+    if (e.mision === 'casa') return {
+      texto: 'Gracias. Sabía que te quedarías. La casa está frente a la posada, al otro lado de la plaza.',
+      opciones: [{ texto: 'Hasta luego' }],
+    };
+    return [
+      { texto: 'Me han dicho que te marchas.', opciones: [{ texto: 'Mi camino sigue. Siempre ha sido así.', sigue: 1 }] },
+      { texto: 'Anoche brindamos por ti. Garcés no ha dejado de hablar de la boda. ¿Y te vas sin una palabra?', opciones: [{ texto: 'No soy hombre de quedarme.', sigue: 2 }] },
+      { texto: 'Hay una casa frente a la posada, al otro lado de la plaza, vacía desde hace años: las paredes en pie y el techo caído. Nadie la quiere, y a ti te vendría bien un sitio. Repárala, y si luego quieres irte, nadie te lo impedirá.', opciones: [{ texto: '(Callas, y lo piensas)', sigue: 3 }] },
+      { texto: 'Solo te pido eso. Madera para el techo y piedra para los muros: tres cargas de cada. El pueblo te ayudará con lo que sepa.', opciones: [{ texto: 'Está bien. Veré esa casa.', hacer: () => this.aceptarCasa(), sigue: 4 }] },
+      { texto: 'Gracias. Sabía que te quedarías.', opciones: [{ texto: 'Hasta luego' }] },
+    ][paso];
+  },
+  // Depuración: ir al salto "i" de SALTOS_DEPURACION (y el que se está viendo, en estado.depura)
+  saltar(i) {
+    if (!this.depuracion() || cambiandoDeZona || enLaMesa || enBarco) return;
+    i = (i + SALTOS_DEPURACION.length) % SALTOS_DEPURACION.length;
+    const salto = SALTOS_DEPURACION[i], e = Object.assign(this.nuevo(), { visitadas: this.estado.visitadas, dia: 5, depura: i });
+    salto.poner(e);
+    this.estado = e;
+    this.prepararDia();
+    this.ultimoPaso = undefined;
+    this.guardar();
+    this.avisar(`Depuración: ${salto.nombre}.`);
+    const [x, z, giro] = salto.sitio || [], destino = salto.sitio ? { x, z, giro } : { x: INICIO_DIA.x, y: INICIO_DIA.y, z: INICIO_DIA.z, giro: INICIO_DIA.giro };
+    document.querySelector('a-scene').components.zonas.ir('poblado', destino);
+  },
   marcarTutorial(que) { if (!this.estado.tutorial[que]) { this.estado.tutorial[que] = true; this.guardar(); } },
   avisar(texto, tutorial = false) { if (this.ranura) document.dispatchEvent(new CustomEvent('partida-aviso', { detail: { texto, tutorial } })); },
   aprender(texto) { if (!this.estado.aprendido.includes(texto)) this.estado.aprendido.push(texto); },
   misionActiva() { return MISIONES[this.estado.mision] || null; },
-  precio(nombre) { return PRECIOS_ZONA[nombre] ?? 0; },
+  // (con el lobo en la cueva, entrar cuesta PUNTOS_LOBO más)
+  precio(nombre) { return (PRECIOS_ZONA[nombre] ?? 0) + (nombre === 'cueva' && this.loboEnCueva() ? PUNTOS_LOBO : 0); },
+  // El lobo de la cueva: solo con la misión de la casa (sin misión, los puntos no cuentan) y hasta que lo matas
+  loboEnCueva() { const e = this.estado; return e.mision === 'casa' && !e.lobo; },
   // ¿Es de noche en la zona? Solo el poblado, y desde que se pisa el lago (anochecer) hasta que se duerme (empezarDia).
   // Para mirarlo sin jugar: en la consola, partida.estado.noche = true y volver a entrar al poblado.
   deNoche(nombre = zonaCargada.nombre) { return nombre === 'poblado' && !!this.estado.noche; },
@@ -183,7 +278,8 @@ const partida = {
   // Al principio solo se puede ir al poblado, el bosque y el lago (ZONAS_ABIERTAS); la de depuración las tiene todas.
   // Las partidas de antes conservan las zonas que ya habían visitado.
   abierta(nombre) {
-    return nombre === zonaCargada.nombre || this.depuracion() || ZONAS_ABIERTAS.includes(nombre) || this.estado.visitadas.includes(nombre);
+    const e = this.estado, casa = e.mision === 'casa' || e.hechas.includes('casa');
+    return nombre === zonaCargada.nombre || this.depuracion() || ZONAS_ABIERTAS.includes(nombre) || e.visitadas.includes(nombre) || (casa && ZONAS_CASA.includes(nombre));
   },
   puedeEntrar(nombre) { return nombre === zonaCargada.nombre || (this.abierta(nombre) && this.estado.puntos >= this.precio(nombre)); },
 
@@ -207,6 +303,16 @@ const partida = {
     if (nombre === zonaCargada.nombre || !precio) return true;
     const titulo = MUNDO[nombre].titulo;
     if (!this.abierta(nombre)) { this.avisar(`${titulo} está cerrado por ahora.`); return false; }
+    // con el lobo dentro: con puntos lo matas y entras; sin ellos, te hace huir a la posada y pierdes lo que llevas
+    if (nombre === 'cueva' && this.loboEnCueva()) {
+      if (e.puntos < precio) { this.huirDelLobo(); return false; }
+      e.puntos -= precio;
+      e.lobo = true;
+      this.guardar();
+      aullidoDeLobo(true);
+      this.avisar(`Un lobo te sale al paso en la boca de la cueva. Luchas y lo matas: ${precio} puntos. Te ${e.puntos === 1 ? 'queda 1' : `quedan ${e.puntos}`}.`);
+      return true;
+    }
     if (e.puntos >= precio) {
       e.puntos -= precio;
       this.guardar();
@@ -216,6 +322,15 @@ const partida = {
     if (e.puntos === 0) this.terminarDia('Sin puntos: se acaba el día.');
     else this.avisar(`${titulo} cuesta ${precio} puntos y te ${e.puntos === 1 ? 'queda 1' : `quedan ${e.puntos}`}.`);
     return false;
+  },
+  // Sin puntos para el lobo: vuelves a la posada, pierdes lo que llevas (cartas, pescado y los puntos del día) y el lobo
+  // sigue ahí. La madera y la piedra que pierdes vuelven a su sitio de farmeo, para no quedarte sin cargas para la casa.
+  huirDelLobo() {
+    const e = this.estado;
+    for (const tipo of Object.keys(e.cartas)) this.devolverCarga(tipo);
+    e.cartas = {}; e.pescado = null;
+    aullidoDeLobo(false);
+    this.terminarDia('El lobo de la cueva te ataca y no tienes fuerzas: huyes a la posada y pierdes lo que llevabas.');
   },
   // Otro día, otro intento: presupuesto entero, se puede volver a pescar y lo pescado se ha estropeado.
   // Lo aprendido y las monedas se quedan.
@@ -307,6 +422,22 @@ const partida = {
     this.guardar();
     this.avisar(`${texto} Te ${e.puntos === 1 ? 'queda 1 punto' : `quedan ${e.puntos} puntos`}. El mercader del poblado te la compra.`);
   },
+  // --- Los sitios de farmeo de la misión de la casa (js/oficios.js): cada uno da una sola carga en la misión ---
+  agotado(id) { const e = this.estado; return !!id && e.mision === 'casa' && e.farmeados.includes(id); },
+  farmear(id, tipo) {
+    const e = this.estado;
+    if (!id || e.mision !== 'casa' || e.farmeados.includes(id)) return;
+    e.farmeados.push(id);
+    e.cargas[tipo] = id;
+  },
+  // la madera y la piedra, en la misión de la casa, son para la obra
+  cargaDeLaCasa(tipo) { return this.estado.mision === 'casa' && (tipo === 'madera' || tipo === 'piedra'); },
+  // si se pierde una carga de la misión (el lobo), su sitio vuelve a dar
+  devolverCarga(tipo) {
+    const e = this.estado, id = e.cargas[tipo];
+    if (id) e.farmeados = e.farmeados.filter(f => f !== id);
+    delete e.cargas[tipo];
+  },
   vender(tipo) {
     const e = this.estado;
     if (!this.llevaCarta(tipo)) return;
@@ -360,6 +491,7 @@ const partida = {
   // Para la hoja de la misión del pergamino (js/mapa.js): título, cómo va, los pasos (texto y si está hecho) y lo siguiente.
   // Lo siguiente es lo que pide el tutorial, si lo hay; si no, el primer paso sin hacer.
   resumenMision() {
+    if (this.enEpisodio2()) return this.resumenCasa();
     const e = this.estado, m = this.misionActiva(), paso = this.pasoTutorial(), cumplida = e.hechas.includes('boda');
     if (!m && !cumplida) return {
       titulo: 'Sin misión', estado: `Día ${e.dia}. Te ${e.puntos === 1 ? 'queda 1 punto' : `quedan ${e.puntos} puntos`} de los ${PUNTOS_LIBRE} del día.`, pasos: [],
@@ -382,6 +514,23 @@ const partida = {
         : falta ? 'Encargo entregado: te pagó en monedas de plata.' : 'Misión cumplida.',
       pasos,
       siguiente: paso ? paso.texto : falta ? falta.falta : 'Nada por ahora. Si quieres, el tabernero te pide otro pescado.',
+    };
+  },
+  enEpisodio2() { const e = this.estado; return e.mision === 'casa' || e.hechas.includes('casa') || (e.bodaVista !== null && e.dia > e.bodaVista); },
+  resumenCasa() {
+    const e = this.estado, paso = this.pasoTutorial(), aceptada = e.mision === 'casa' || e.hechas.includes('casa'), cenada = e.hechas.includes('casa');
+    const madera = this.llevaCarta('madera') ? ' (llevas una)' : '', piedra = this.llevaCarta('piedra') ? ' (llevas una)' : '';
+    const pasos = [
+      { texto: 'Hablar con Leonor en la entrada de la posada.', hecho: aceptada },
+      ...[1, 2, 3].map(n => ({ texto: `Obra ${n}: una carga de madera y otra de piedra en el banco de obra.`, hecho: e.obra >= n })),
+      { texto: 'Cenar con Leonor y Garcés en tu casa.', hecho: cenada },
+    ];
+    return {
+      titulo: MISIONES.casa.titulo,
+      estado: cenada ? 'Misión cumplida.' : !aceptada ? `Día ${e.dia}. Hoy te marchas del poblado.`
+        : `Día ${e.dia}. Te ${e.puntos === 1 ? 'queda 1 punto' : `quedan ${e.puntos} puntos`}. Puestas en la obra: madera ${e.obra} de ${CASA_OBRAS}${madera}, piedra ${e.obra} de ${CASA_OBRAS}${piedra}.`,
+      pasos,
+      siguiente: paso ? paso.texto : 'Nada por ahora: la casa es tuya.',
     };
   },
   // Qué dice el camarero ahora: su frase y las respuestas (texto y qué hacen; sin "hacer", se acaba la charla)
