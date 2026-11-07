@@ -49,6 +49,10 @@ const PUNTOS_COMIDA = { crudo: 1, asado: 3, cruda: 1, asada: 3 };
 // Cada día empieza en tu habitación de la posada, arriba, mirando a la puerta: al fondo, entre la cama y el
 // taburete, para ver la puerta entera
 const INICIO_DIA = { zona: 'poblado', x: 174.05, y: 3.2, z: -103, giro: Math.PI };
+// después de la cena del episodio 2 duermes en tu casa (js/casa.js): te despiertas junto a tu cama, mirando al vano
+const INICIO_DIA_CASA = { zona: 'poblado', x: 151.8, y: 0, z: -146.3, giro: Math.PI / 2 };
+// dónde se empieza el día: en tu habitación de la posada o, con la casa terminada y la cena hecha, en tu casa
+function inicioDelDia() { return partida.estado && partida.tieneCasa() ? INICIO_DIA_CASA : INICIO_DIA; }
 const CLAVE_PARTIDA = 'editorvr-partida';   // (más el número de la partida)
 const CLAVE_RANURA = 'editorvr-ranura';     // en sessionStorage: la que se está jugando, para seguir en ella al recargar
 const RANURAS = 3;                          // las partidas que se pueden guardar
@@ -197,7 +201,8 @@ const partida = {
   // abandonada de enfrente de la posada (js/casa.js), con tres cargas de madera y tres de piedra; al terminarla, la cena.
   pasoCasa() {
     const e = this.estado;
-    if (e.hechas.includes('casa')) return null;
+    // la noche de la cena, a dormir en tu cama nueva (con el rombo); después, nada más
+    if (e.hechas.includes('casa')) return e.cenaVista === e.dia ? { id: 'dormir-casa', quien: 'cama-casa', zona: 'poblado', texto: 'Ya tienes casa. Ve a la habitación, apunta a tu cama y aprieta el gatillo para dormir.' } : null;
     if (e.mision !== 'casa') {
       if (e.dia === e.bodaVista) return { id: 'descansar', quien: 'cama', zona: 'poblado', texto: `Se acabó el tutorial.${enLaMesa ? ' Puedes levantarte cuando quieras.' : ''} Ha sido un gran día: vuelve a tu habitación de la posada y duerme. Mañana sigues tu camino.` };
       return { id: 'leonor', quien: 'leonor', zona: 'poblado', texto: 'Hoy te marchas del poblado. Baja a la entrada de la posada: Leonor, la novia, te espera junto a la puerta.' };
@@ -277,6 +282,8 @@ const partida = {
   precio(nombre) { return (PRECIOS_ZONA[nombre] ?? 0) + (nombre === 'cueva' && this.loboEnCueva() ? PUNTOS_LOBO : 0); },
   // El lobo de la cueva: solo con la misión de la casa (sin misión, los puntos no cuentan) y hasta que lo matas
   loboEnCueva() { const e = this.estado; return e.mision === 'casa' && !e.lobo; },
+  // ¿Ya tienes casa? Desde la cena del episodio 2: se duerme allí, no en la posada
+  tieneCasa() { return this.estado.hechas.includes('casa'); },
   // ¿Es de noche en la zona? Solo el poblado, y desde que se pisa el lago (anochecer) hasta que se duerme (empezarDia).
   // Para mirarlo sin jugar: en la consola, partida.estado.noche = true y volver a entrar al poblado.
   deNoche(nombre = zonaCargada.nombre) { return nombre === 'poblado' && !!this.estado.noche; },
@@ -372,7 +379,7 @@ const partida = {
     const m = this.misionActiva();
     const boda = this.bodaHoy() ? ' Hoy es la boda, en la plaza.' : '';
     this.avisar(`${motivo ? motivo + ' ' : ''}Día ${this.estado.dia}. Tienes ${this.estado.puntos} puntos.${boda}`);
-    const { zona, x, y, z, giro } = INICIO_DIA;
+    const { zona, x, y, z, giro } = inicioDelDia();
     document.querySelector('a-scene').components.zonas.ir(zona, { x, y, z, giro });
   },
 

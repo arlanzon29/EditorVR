@@ -94,11 +94,13 @@ function cajaDeRayo(el, x, y, z, w, h, d, alApretar) {
 }
 
 // ¿Se ha alejado quien mira de este sitio?
-const seHaAlejado = (el, ojo) => {
+function seHaAlejado(el, ojo) {
   el.sceneEl.camera.getWorldPosition(ojo);
-  const o = el.object3D.position;
+  // (en el mundo: dentro de otra entidad, como la cama de tu casa en casa-obra, su posición es la de dentro)
+  const o = el.object3D.getWorldPosition(seHaAlejado.p);
   return Math.hypot(ojo.x - o.x, ojo.z - o.z) > TABLA_SE_CIERRA;
-};
+}
+seHaAlejado.p = new THREE.Vector3();
 
 // Cofre: la bisagra va a lo largo de la espalda (-z local), y la tapa se levanta por delante (+z local), que
 // es por donde se abre. Origen: en el suelo, en el centro.
@@ -215,16 +217,27 @@ AFRAME.registerComponent('postigos', {
 });
 
 // La cama de tu habitación: al apuntarle y apretar el gatillo, se puede dormir hasta el día siguiente
+// casa: la de tu casa (js/casa.js), que vale desde la cena; la de la posada deja de ser tuya entonces
 AFRAME.registerComponent('cama-dormir', {
+  schema: { casa: { default: false } },
   init() {
     this.quitar = null; this.ojo = new THREE.Vector3();
     cajaDeRayo(this.el, 0, 0.35, 0, 1.05, 0.7, 2.05, () => {
       if (this.quitar) return this.cerrar();
-      const charla = { texto: '¿Dormir hasta mañana?', opciones: [{ texto: 'Dormir', hacer: () => partida.terminarDia('Buenos días.') }, { texto: 'Todavía no' }] };
+      const tuya = this.data.casa === partida.tieneCasa();
+      const charla = tuya ? { texto: '¿Dormir hasta mañana?', opciones: [{ texto: 'Dormir', hacer: () => partida.terminarDia('Buenos días.') }, { texto: 'Todavía no' }] }
+        : this.data.casa ? { texto: 'Tu cama, recién hecha. Primero, la cena con Leonor y Garcés.', opciones: [{ texto: 'Cerrar' }] }
+        : { texto: 'Esta ya no es tu cama: ahora duermes en tu casa, al otro lado de la plaza.', opciones: [{ texto: 'Cerrar' }] };
       this.quitar = tablaDeOpciones(this.el.sceneEl, sitioDeLectura(this.el.sceneEl), charla, op => {
         this.cerrar();
         if (op.hacer) op.hacer();
       });
+    });
+    // al apuntarla, qué se puede hacer con ella
+    this.el.querySelector('.clicable').addEventListener('mouseenter', () => {
+      if (this.quitar) return;
+      const tuya = this.data.casa === partida.tieneCasa();
+      partida.avisar(tuya ? 'Aprieta el gatillo para dormir hasta mañana.' : this.data.casa ? 'Tu cama. Primero, la cena.' : 'Esta ya no es tu cama.');
     });
   },
   cerrar() { if (this.quitar) this.quitar(); this.quitar = null; },

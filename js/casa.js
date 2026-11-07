@@ -25,16 +25,42 @@ const CASA_RESULTADOS = [
   'Colocas los muebles y enciendes el fuego. Tu casa está terminada. Cae la noche: Leonor y Garcés vienen a cenar.',
 ];
 
-// La cena del final (episodio2.md): sentado en tu salón, con Leonor y Garcés de pie al otro lado de la mesa. Las frases
-// van saliendo solas, como en la boda (js/boda.js); en la tercera, la noticia.
+// La cena del final (episodio2.md), de noche: sentado en tu salón, con Leonor y Garcés sentados al otro lado de la mesa.
+// La charla va en una página de cómic (js/comic.js), como la de Leonor en la posada; en la tercera respuesta, la noticia.
 const CENA_SILLA = { x: -1.3, z: -0.25 };   // en coordenadas de la casa: en el banco, de cara a la mesa (y al fondo)
-const CENA_FRASE_MS = 7000, CENA_NOTICIA = 2;
-const FRASES_CENA = [
-  'Garcés alza la jarra: «Por la casa nueva, y por quien la ha levantado con sus manos».',
-  'Leonor sonríe: «Te dije que te quedarías. Y nosotros tenemos algo que contarte».',
-  'Leonor le coge la mano a Garcés: «Estoy esperando un niño». Garcés: «Queremos que lo veas crecer».',
-  'Por primera vez en mucho tiempo, sientes que tienes un sitio. Es un momento de felicidad.',
-];
+// Las tomas, en el mundo: la casa está en 150, -146; tú, en 148,7, -146,25; Garcés y Leonor, sentados en el banco del
+// fondo, en 148,35 y 149,05, -147,95, con la cabeza a 1,2 m; la chimenea, al oeste, en 147,1.
+const CENA_GARCES = [148.35, 1.22, -147.95], CENA_LEONOR = [149.05, 1.24, -147.95];
+const COMIC_CENA = {
+  titulo: 'Episodio 2 · Una casa',
+  tomas: {
+    general: { desde: [149.75, 1.75, -144.9], mira: [148.7, 0.95, -147.6], fov: 62, cabeza: CENA_GARCES },
+    garces: { desde: [148.05, 1.3, -146.8], mira: [148.35, 1.15, -147.95], fov: 40, cabeza: CENA_GARCES },
+    leonor: { desde: [149.4, 1.3, -146.8], mira: [149.05, 1.15, -147.95], fov: 40, cabeza: CENA_LEONOR },
+    losDos: { desde: [148.7, 1.32, -146.35], mira: [148.7, 1.1, -147.95], fov: 50, cabeza: CENA_LEONOR },
+    fuego: { desde: [149.2, 1.35, -145.4], mira: [147.2, 0.7, -146], fov: 55 },
+  },
+  paginas: [
+    [
+      { x: 0, y: 0, w: 0.6, h: 0.5, toma: 'garces', desde: 0, cartela: 'Esa noche, en tu casa nueva.', globos: [{ quien: 'ella', texto: 'Por la casa nueva, y por quien la ha levantado con sus manos.' }] },
+      { x: 0.6, y: 0, w: 0.4, h: 0.5, toma: 'fuego', desde: 1, globos: [{ quien: 'tu', texto: '¡Por la casa!' }] },
+      { x: 0, y: 0.5, w: 1, h: 0.5, toma: 'leonor', desde: 1, globos: [{ quien: 'ella', texto: 'Te dije que te quedarías. Y nosotros tenemos algo que contarte.' }] },
+    ],
+    [
+      { x: 0, y: 0, w: 0.45, h: 1, toma: 'losDos', desde: 2, globos: [{ quien: 'tu', texto: '¿Qué tenéis que contarme?' }, { quien: 'ella', texto: 'Estoy esperando un niño.' }] },
+      { x: 0.45, y: 0, w: 0.55, h: 0.5, toma: 'garces', desde: 3, globos: [{ quien: 'tu', texto: '¡Un niño! Enhorabuena.' }, { quien: 'ella', texto: 'Queremos que lo veas crecer.' }] },
+      { x: 0.45, y: 0.5, w: 0.55, h: 0.5, toma: 'general', desde: 4, cartela: 'Por primera vez en mucho tiempo, sientes que tienes un sitio.', globos: [{ quien: 'tu', texto: 'Aquí estaré.' }] },
+    ],
+  ],
+  // (los "hacer", con la cena abierta: los pone casa-obra, que tiene a Garcés)
+  pasos: [
+    { respuesta: '¡Por la casa!', brindis: true },
+    { respuesta: '¿Qué tenéis que contarme?' },
+    { respuesta: '¡Un niño! Enhorabuena.', brindis: true, grito: true },
+    { respuesta: 'Aquí estaré.' },
+    { respuesta: 'Levantarte' },
+  ],
+};
 
 const matCasa = {};
 const colorCasa = c => matCasa[c] || (matCasa[c] = new THREE.MeshStandardMaterial({ color: c, roughness: 1, flatShading: true }));
@@ -69,7 +95,7 @@ AFRAME.registerComponent('casa-fuera', {
   remove() { this.el.removeObject3D('mesh'); }
 });
 
-// Los muebles de la casa terminada, fijos: la chimenea, la alfombra, la mesa con sus bancos y lo que hay encima, y en la
+// Los muebles de la casa terminada, fijos: la chimenea (de Blender), la alfombra, la mesa con sus bancos y lo que hay encima, y en la
 // habitación la cama, el arcón y el estante (herramientas/modelar-muebles.py, modelos/mueble-*.glb). No está en
 // NO_FUNDIR: se funden y se hornean, con la casa terminada en su propia versión (archivoHorneado, js/rendimiento.js). Si
 // la obra se acaba con la sala ya cargada, salen sin hornear (.sin-hornear) hasta volver a cargarla.
@@ -87,15 +113,9 @@ AFRAME.registerComponent('casa-muebles', {
     document.addEventListener('partida-cambia', this.poner);
   },
   montar() {
-    const g = new THREE.Group(), piedra = '#5a5248';
+    const g = new THREE.Group();
     const caja = (w, h, d, x, y, z, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), colorCasa(color)); m.position.set(x, y, z); g.add(m); };
     const cilindro = (r, h, x, y, z, color, seg) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), colorCasa(color)); m.position.set(x, y, z); g.add(m); };
-    // la chimenea en la pared del oeste (el fuego, en casa-obra)
-    for (const z of [-0.85, 0.85]) caja(0.6, 1.6, 0.5, -2.9, 0.8, z, piedra);
-    caja(0.7, 0.35, 2.2, -2.85, 1.775, 0, piedra);
-    caja(0.55, 0.85, 1.9, -2.92, 2.4, 0, '#4e473f');
-    caja(0.08, 1.6, 1.2, -3.15, 0.8, 0, '#1e1813');
-    caja(1.0, 0.06, 2.2, -2.7, 0.03, 0, '#5e574d');
     // la alfombra y, en la mesa, platos, jarra y una vela
     const { x: MX, z: MZ } = CASA_MESA;
     caja(2.4, 0.02, 2.0, MX, 0.035, MZ + 0.1, '#6e2f2a');
@@ -104,12 +124,15 @@ AFRAME.registerComponent('casa-muebles', {
     cilindro(0.025, 0.14, MX - 0.2, 0.85, MZ, '#d8cdb4', 8);
     this.el.setObject3D('mesh', g);
     // los muebles de Blender
-    const mueble = (nombre, x, y, z) => {
+    const mueble = (nombre, x, y, z, giro = 0) => {
       const e = document.createElement('a-entity');
       e.setAttribute('gltf-model', `url(modelos/mueble-${nombre}.glb)`);
       e.setAttribute('position', `${x} ${y} ${z}`);
+      e.setAttribute('rotation', `0 ${giro} 0`);
       this.el.appendChild(e);
     };
+    // la chimenea, contra la pared del oeste (a 1 cm), mirando al salón; el fuego, en casa-obra
+    mueble('chimenea', -3.19, 0, 0, 90);
     mueble('mesa', MX, 0, MZ);
     mueble('banco', MX, 0, MZ - 0.75);
     mueble('banco', MX, 0, MZ + 0.75);
@@ -299,6 +322,8 @@ AFRAME.registerComponent('casa-obra', {
     this.entidad({ hoguera: 'intensidad: 1.2' }, -2.85, 0.06, 0);
     this.entidad({ 'lampara-rueda': 'radio: 0.45; velas: 6; techo: 0.8' }, CASA_MESA.x, 2.0, CASA_MESA.z);
     this.entidad({ antorcha: 'intensidad: 1' }, -0.4, 1.9, 2.2, 180);
+    // tu cama: desde la cena, se duerme aquí (cama-dormir, js/posada.js)
+    this.entidad({ 'cama-dormir': 'casa: true', 'marca-paso': 'quien: cama-casa; y: 1.2' }, 2.675, 0, -1.15);
     // lo que no se atraviesa: la chimenea, la mesa con sus bancos, la cama y el arcón
     this.macizo(-3.2, -2.35, -1.2, 1.2, 3);
     this.macizo(CASA_MESA.x - 0.85, CASA_MESA.x + 0.85, -2.25, CASA_MESA.z + 0.92, 0.9);
@@ -334,62 +359,21 @@ AFRAME.registerComponent('casa-obra', {
   sentarse() {
     enLaMesa = true;
     this.llevarCabeza(CENA_SILLA.x, CENA_SILLA.z, 0, true);
-    this.cena = { frase: 0, ms: 0, acabada: false, tex: [] };
-    this.garces.components['persona-animada']?.poner('brindis-sentado', true);
-    this.ponerFrase();
+    // la charla, en cómic; al brindar, Garcés alza la jarra (y en la noticia, el grito de la boda)
+    const brindar = paso => () => {
+      if (paso.grito) gritoDeBrindis();
+      this.garces.components['persona-animada']?.poner('brindis-sentado', true);
+    };
+    const guion = { ...COMIC_CENA, pasos: COMIC_CENA.pasos.map(p => p.brindis ? { ...p, hacer: brindar(p) } : p) };
+    partida.charlaAbierta = true;
+    this.cena = abrirComic(this.el.sceneEl, guion, () => this.levantarse());
   },
   levantarse() {
-    this.quitarFrase();
-    this.cena = null;
+    if (this.cena) { this.cena(); this.cena = null; }
+    partida.charlaAbierta = false;
     enLaMesa = false;   // (la altura la recupera andar-joystick)
     this.llevarCabeza(CENA_SILLA.x + 0.9, CENA_SILLA.z);
     partida.cenarCasa();
-  },
-  // La frase que toca, encima de la mesa, y al final el botón de levantarse
-  ponerFrase() {
-    this.quitarFrase();
-    const c = this.cena, tabla = this.tablaCena = document.createElement('a-entity');
-    tabla.classList.add('cartel');
-    tabla.object3D.position.set(this.O.x + CENA_SILLA.x, 0, this.O.z - 0.3);
-    const { malla, tex } = fraseEnTabla(FRASES_CENA[c.frase], 1.3);
-    malla.position.y = 1.62 + malla.geometry.parameters.height / 2;
-    c.tex = [tex];
-    tabla.setObject3D('mesh', malla);
-    if (c.acabada) {
-      const t = tablaDeTexto('Levantarte', 512, 96), boton = document.createElement('a-entity');
-      c.tex.push(t);
-      boton.classList.add('clicable', 'cartel');
-      boton.setAttribute('position', '0 1.46 0.01');
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.12), new THREE.MeshBasicMaterial({ map: t, depthTest: false, transparent: true, fog: false }));
-      m.renderOrder = 995;
-      boton.setObject3D('mesh', m);
-      boton.addEventListener('mouseenter', () => m.material.color.set('#ffcc33'));
-      boton.addEventListener('mouseleave', () => m.material.color.set('#ffffff'));
-      let ultimo = performance.now();
-      boton.addEventListener('mousedown', () => { if (performance.now() - ultimo > 500) this.levantarse(); ultimo = performance.now(); });
-      tabla.appendChild(boton);
-    }
-    this.el.sceneEl.appendChild(tabla);
-  },
-  quitarFrase() {
-    if (!this.tablaCena) return;
-    this.tablaCena.parentNode.removeChild(this.tablaCena);
-    this.tablaCena = null;
-    for (const t of this.cena?.tex || []) t.dispose();
-  },
-  pasarFrase(dt) {
-    const c = this.cena;
-    if (c.acabada) return;
-    c.ms += Math.min(dt, 100);
-    if (c.ms < CENA_FRASE_MS) return;
-    c.ms = 0; c.frase++;
-    if (c.frase === CENA_NOTICIA) {
-      gritoDeBrindis();
-      this.garces.components['persona-animada']?.poner('brindis-sentado', true);
-      partida.avisar('¡Un niño! Leonor y Garcés van a tener un hijo.');
-    }
-    if (c.frase === FRASES_CENA.length - 1) c.acabada = true;
-    this.ponerFrase();
   },
 
   // --- la obra: hablar con el banco, y reparar con una carga de madera y otra de piedra ---
@@ -470,12 +454,11 @@ AFRAME.registerComponent('casa-obra', {
   },
   tick(t, dt) {
     if (this.quitar && seHaAlejado(this.el, this.ojo)) this.cerrar();
-    if (this.cena && dt) this.pasarFrase(dt);
     if (this.fundido && dt) this.pasarFundido(Math.min(dt, 100));
   },
   remove() {
     if (this.quitar) { this.quitar(); partida.charlaAbierta = false; this.quitar = null; }
-    if (this.cena) { this.quitarFrase(); this.cena = null; enLaMesa = false; }
+    if (this.cena) { this.cena(); this.cena = null; enLaMesa = false; partida.charlaAbierta = false; }
     clearTimeout(this.anochece);
     this.acabarFundido();
     this.limpiar();

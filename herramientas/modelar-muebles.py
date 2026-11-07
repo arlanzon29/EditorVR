@@ -154,4 +154,30 @@ caja(p, M['cuero'], 0.3, 0, 0.46, 0.22, 0.16, 0.05)
 caja(p, M['verde'], 0.31, 0, 0.51, 0.2, 0.15, 0.04)
 caja(p, M['cuero'], 0.05, 0.02, 0.46, 0.05, 0.17, 0.24)
 exportar_mueble('estante', p)
+# --- la chimenea: contra la pared (su espalda en y = 0, el frente hacia -y), con dos machones de sillares, el dintel de
+# madera, la campana de piedra que sube estrechándose hasta el techo (2,79 m), el hogar de losas y dos morillos. El
+# fuego (hoguera, js/objetos.js) va aparte, delante del fondo de hollín.
+M = nuevo(); p = Pieza()
+P1 = material('Piedra', (0.1, 0.09, 0.08))   # oscura: con la luz fuerte, la clara salía blanca
+P2 = material('PiedraClara', (0.13, 0.12, 0.1))
+HOLLIN = material('Hollin', (0.02, 0.018, 0.016), 1.0)
+for k in range(6):                                                           # las losas del hogar, de dos tonos
+    caja(p, P1 if k % 2 else P2, -0.9 + k * 0.36, -0.5, 0, 0.35, 1.0, 0.06)
+for s in (-1, 1):                                                            # los machones, a hiladas de sillares
+    for k in range(5):
+        ancho = 0.5 if k % 2 == 0 else 0.46
+        caja(p, P2 if (k + (s > 0)) % 2 else P1, s * 0.85, -0.28, 0.06 + k * 0.29, ancho, 0.56 if k % 2 == 0 else 0.52, 0.28)
+caja(p, M['oscura'], 0, -0.35, 1.51, 2.3, 0.32, 0.22)                         # el dintel, una viga
+caja(p, P1, 0, -0.3, 1.73, 2.3, 0.62, 0.08)                                  # la repisa de piedra
+aros = []                                                                    # la campana, que se estrecha hasta el techo
+for z, an, fo in ((1.81, 2.1, 0.56), (2.3, 1.5, 0.48), (2.79, 1.0, 0.42)):
+    aros.append([(-an / 2, -fo, z), (an / 2, -fo, z), (an / 2, 0, z), (-an / 2, 0, z)])
+p.aros(aros, P2, tapas=(False, False))
+caja(p, HOLLIN, 0, -0.03, 0.06, 1.24, 0.04, 1.45)                             # el fondo y los lados de dentro, de hollín
+for s in (-1, 1):
+    caja(p, HOLLIN, s * 0.6, -0.28, 0.06, 0.02, 0.5, 1.45)
+for s in (-1, 1):                                                            # los morillos de hierro
+    caja(p, M['hierro'], s * 0.3, -0.5, 0.06, 0.04, 0.5, 0.04)
+    caja(p, M['hierro'], s * 0.3, -0.73, 0.06, 0.05, 0.05, 0.28)
+exportar_mueble('chimenea', p)
 print('Muebles terminados')
