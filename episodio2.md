@@ -19,8 +19,7 @@ Zona: poblado (la posada). Sigue a [la boda](historia.md) del tutorial. Reglas d
 - Allí se encuentra con **la novia, ahora la mujer** (la de la boda).
 - Ella **se ha enterado de que se va a marchar**, lo **convence de quedarse** y le propone **reparar una casa abandonada**.
 - Los novios piden que te quedes (ya decidido en [historia.md](historia.md)).
-- **No te puedes marchar.** Tienes que quedarte y continuar la historia: es tu destino. El juego no deja salir del poblado
-  hasta acabar el episodio; la conversación con ella es lo que lo justifica.
+- **No te puedes marchar.** Tienes que quedarte y continuar la historia: es tu destino. Lo logra la conversación con ella, sin cambiar la escena.
 
 **Propuesta (para ajustar):**
 - Al despertar, el objetivo del juego no marca ninguna misión: el jugador cree que el camino sigue, y el cartel de objetivo
@@ -44,9 +43,10 @@ Hall de la posada, de mañana. Llevas la bolsa al hombro. Leonor está junto a l
   te vendría bien un sitio. Repárala, y si luego quieres irte, no te lo impedirá nadie.
 - **Tú:** (duda) ...
 - **Leonor:** Sólo te pido eso. Madera para el techo, piedra para los muros. El pueblo te ayudará con lo que sepa.
-- *(El camino se cierra: al intentar salir, algo te frena: la nieve, un carro averiado en la puerta... Es el destino.)*
-- **Tú:** Está bien. Veré esa casa.
+- **Tú:** (tras un silencio) Está bien. Veré esa casa.
 - **Leonor:** Gracias. Sabía que te quedarías.
+
+**Decidido:** la convence **la conversación**, sin nieve ni nada que cierre el camino (cambiaría la escena y habría que hornear todo).
 
 Al final, el objetivo cambia a «Reparar la casa» y empieza la misión.
 
