@@ -89,6 +89,8 @@ Sin decidir: si se puede abandonar una misión (ahora no se puede).
 
 - Comer lo que se pesca o se caza da puntos, y cocinarlo en una hoguera da más todavía.
 - Con misión se puede pescar y cazar **una vez al día**. Sin misión se puede pescar todo lo que se quiera.
+- **Asar (decidido por el usuario):** el pescado y la carne se ponen en un espeto junto al fuego; en 10 segundos están hechos y hay que cogerlos a tiempo: si te pasas, se queman y se pierden. Un círculo enseña el avance.
+- **Cenar (decidido por el usuario):** lo asado se puede comer en una mesa, y eso es cenar. Si te acuestas sin cenar, al día siguiente empiezas con 5 puntos menos (no en el episodio 1). Da más inmersión.
 
 ## Primera misión (tutorial): el pescado de la boda
 

@@ -325,6 +325,8 @@ AFRAME.registerComponent('casa-obra', {
     this.entidad({ hoguera: 'intensidad: 1.2' }, -2.85, 0.06, 0);
     this.entidad({ 'lampara-rueda': 'radio: 0.45; velas: 6; techo: 0.8' }, CASA_MESA.x, 2.0, CASA_MESA.z);
     this.entidad({ antorcha: 'intensidad: 1' }, -0.4, 1.9, 2.2, 180);
+    // después de la cena del final, en la mesa del salón se cena lo asado (mesa-cena, js/posada.js)
+    if (partida.tieneCasa()) this.entidad({ 'mesa-cena': 'ancho: 1.6; fondo: 0.9' }, CASA_MESA.x, 0.78, CASA_MESA.z);
     // tu cama: desde la cena, se duerme aquí (cama-dormir, js/posada.js)
     this.entidad({ 'cama-dormir': 'casa: true', 'marca-paso': 'quien: cama-casa; y: 1.2' }, 2.675, 0, -1.15);
     // lo que no se atraviesa: la chimenea, la mesa con sus bancos, la cama y el arcón

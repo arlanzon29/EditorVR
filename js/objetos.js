@@ -419,6 +419,14 @@ AFRAME.registerComponent('pasillos-arriba', {
 
 // Hoguera de la chimenea: tres leños y varias llamas (conos que brillan) que tiemblan, cada una a
 // su ritmo, con una luz anaranjada que sube y baja con ellas. La base está en y = 0.
+// Asar en la hoguera: con pescado o carne crudos, el gatillo los pone cada uno en su espeto, clavado junto al fuego
+// de tu lado (el segundo, un poco más allá). Un círculo encima de cada uno dice cómo va: dorado mientras se asa; a los
+// ESPETO_HECHO_S, verde, y se coge con el gatillo; si te pasas, se va llenando de rojo y se oscurece, y a los
+// ESPETO_QUEMA_S se quema y se pierde. Mientras, no está en el inventario (partida.estado.alFuego); si te vas de la
+// zona, lo recuperas como esté (partida.devolverDelFuego).
+const ESPETO_HECHO_S = 10, ESPETO_QUEMA_S = 15;
+const ESPETO_CRUDO = new THREE.Color('#ffffff'), ESPETO_ASADO = new THREE.Color('#a8703a'), ESPETO_QUEMADO = new THREE.Color('#1e1410');
+const ESPETO_NOMBRE = { pescado: 'el pescado', carne: 'la carne' };
 AFRAME.registerComponent('hoguera', {
   schema: { intensidad: { default: 1.2 } },
   init() {
@@ -455,14 +463,114 @@ AFRAME.registerComponent('hoguera', {
     rayo.setAttribute('material', 'visible: false');
     this.el.appendChild(rayo);
     let ultimo = 0;
-    rayo.addEventListener('mouseenter', () => { if (partida.estado.pescado === 'crudo') partida.avisar('Aprieta el gatillo para asar el pescado.'); });
+    this.espetos = [];   // { tipo, grupo, pieza (lo que se tiñe), circulo, arco, quema, asado, pintado, quemado, avisado }
+    rayo.addEventListener('mouseenter', () => {
+      const e = partida.estado, listo = this.espetos.find(x => !x.quemado && x.asado >= ESPETO_HECHO_S);
+      if (listo) partida.avisar(`Aprieta el gatillo para coger ${ESPETO_NOMBRE[listo.tipo]} antes de que se queme.`);
+      else if (e.pescado === 'crudo' || e.cartas.carne === 'cruda') partida.avisar('Aprieta el gatillo para asar lo que llevas crudo.');
+      else if (this.espetos.length) partida.avisar('Se está asando: cuando el círculo se ponga verde, cógelo.');
+    });
     rayo.addEventListener('mousedown', () => {
       if (performance.now() - ultimo < 500) return;
       ultimo = performance.now();
-      partida.asar();
+      // primero, coger lo que esté hecho; si no, poner al fuego lo crudo que llevas
+      const listo = this.espetos.find(x => !x.quemado && x.asado >= ESPETO_HECHO_S);
+      if (listo) return this.cogerEspeto(listo);
+      const e = partida.estado, crudos = [e.pescado === 'crudo' && 'pescado', e.cartas.carne === 'cruda' && 'carne'].filter(Boolean);
+      for (const tipo of crudos) if (partida.ponerAlFuego(tipo)) this.ponerEspeto(tipo);
+      if (!crudos.length) partida.avisar(this.espetos.length ? 'Todavía no está hecho: espera a que el círculo se ponga verde.' : e.pescado || e.cartas.carne ? 'Ya está asado.' : 'No llevas nada que asar.');
     });
   },
-  tick(t) {
+  // El espeto: un palo clavado a 45 cm del fuego, del lado de quien mira (el segundo, girado 50°), inclinado hacia las
+  // llamas, con el pescado ensartado cabeza arriba o la pierna de carne; y el círculo del avance encima, de cara a ti.
+  ponerEspeto(tipo) {
+    const ojo = new THREE.Vector3();
+    this.el.sceneEl.camera.getWorldPosition(ojo);
+    this.el.object3D.worldToLocal(ojo);
+    const a = Math.atan2(ojo.x, ojo.z) + (this.espetos.some(x => x.lado === 0) ? 0.9 : 0), lado = this.espetos.some(x => x.lado === 0) ? 1 : 0;
+    const grupo = new THREE.Group();
+    grupo.position.set(Math.sin(a) * 0.45, 0, Math.cos(a) * 0.45);
+    grupo.rotation.y = a;
+    const palo = new THREE.Group();
+    palo.rotation.x = -0.5;   // la punta, hacia el fuego
+    grupo.add(palo);
+    const vara = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.013, 0.9, 6), new THREE.MeshStandardMaterial({ color: '#5a4630', roughness: 1 }));
+    vara.position.y = 0.45;
+    palo.add(vara);
+    let pieza;
+    if (tipo === 'pescado') {
+      pieza = new THREE.Mesh(formaDePez(), new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+      pieza.rotation.x = -Math.PI / 2; pieza.scale.setScalar(0.4);
+      palo.add(pieza);
+    } else {
+      // la pierna de las cartas (js/oficios.js), ensartada a lo largo del palo; se tiñe la carne
+      const carne = modelosDeCartas().carne;
+      carne.rotation.z = Math.PI / 2; carne.scale.setScalar(0.22);
+      carne.traverse(m => { if (m.isMesh) { m.renderOrder = 0; m.material.transparent = false; } });
+      palo.add(carne);
+      pieza = carne.userData.carne;
+      pieza.userData.base = new THREE.Color('#9a4a3a');
+      carne.position.y = 0.78;
+    }
+    if (tipo === 'pescado') pieza.position.y = 0.78;   // (por encima de las llamas)
+    // el círculo: el aro de fondo y el arco, que se rehace al avanzar
+    const circulo = new THREE.Group();
+    circulo.position.set(grupo.position.x * 0.8, 1.2, grupo.position.z * 0.8);
+    circulo.add(new THREE.Mesh(new THREE.RingGeometry(0.06, 0.09, 32), new THREE.MeshBasicMaterial({ color: '#1c140c', transparent: true, opacity: 0.55, fog: false })));
+    const arco = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color: '#d9a020', fog: false, side: THREE.DoubleSide }));
+    arco.position.z = 0.002;
+    const quema = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color: '#a01f16', fog: false, side: THREE.DoubleSide }));
+    quema.position.z = 0.004;
+    circulo.add(arco, quema);
+    this.el.getObject3D('mesh').add(grupo, circulo);
+    this.espetos.push({ tipo, lado, grupo, pieza, circulo, arco, quema, asado: 0, pintado: -1, quemado: false, avisado: false });
+  },
+  // el arco de "parte" (de 0 a 1), desde arriba y en el sentido de las agujas del reloj
+  arcoDe(malla, parte) {
+    malla.geometry.dispose();
+    malla.geometry = parte > 0 ? new THREE.RingGeometry(0.06, 0.09, 32, 1, Math.PI / 2 - parte * Math.PI * 2, parte * Math.PI * 2) : new THREE.BufferGeometry();
+  },
+  pasarEspeto(x, s) {
+    x.asado += s;
+    const t = x.asado, base = x.pieza.userData.base;
+    // el color: de crudo a asado mientras se hace; de asado a negro si te pasas (la carne, desde su rojo)
+    const color = x.pieza.material.color;
+    if (t < ESPETO_HECHO_S) color.copy(base || ESPETO_CRUDO).lerp(ESPETO_ASADO, t / ESPETO_HECHO_S);
+    else color.copy(ESPETO_ASADO).lerp(ESPETO_QUEMADO, Math.min(1, (t - ESPETO_HECHO_S) / (ESPETO_QUEMA_S - ESPETO_HECHO_S)));
+    // el círculo (rehecho cada 1 %): dorado que se llena; hecho, verde, con el rojo de quemarse por encima
+    const paso = Math.floor(Math.min(t, ESPETO_QUEMA_S) / ESPETO_QUEMA_S * 100);
+    if (paso !== x.pintado) {
+      x.pintado = paso;
+      const hecho = t >= ESPETO_HECHO_S;
+      x.arco.material.color.set(hecho ? '#6a9a3a' : '#d9a020');
+      this.arcoDe(x.arco, hecho ? 1 : t / ESPETO_HECHO_S);
+      this.arcoDe(x.quema, hecho ? (t - ESPETO_HECHO_S) / (ESPETO_QUEMA_S - ESPETO_HECHO_S) : 0);
+      if (hecho && !x.avisado) { x.avisado = true; partida.avisar(`¡${ESPETO_NOMBRE[x.tipo][0].toUpperCase()}${ESPETO_NOMBRE[x.tipo].slice(1)} está hech${x.tipo === 'carne' ? 'a' : 'o'}! Cógel${x.tipo === 'carne' ? 'a' : 'o'} con el gatillo antes de que se queme.`); }
+    }
+    const c = this.el.sceneEl.camera;
+    if (c) { const ojo = new THREE.Vector3(); c.getWorldPosition(ojo); x.circulo.lookAt(ojo); }
+    if (t >= ESPETO_QUEMA_S && !x.quemado) {
+      x.quemado = true;
+      partida.sacarDelFuego(x.tipo, false);
+      setTimeout(() => this.quitarEspeto(x), 1200);   // (que se vea negro un momento)
+    }
+  },
+  cogerEspeto(x) {
+    if (x.quemado || x.asado < ESPETO_HECHO_S) return;
+    partida.sacarDelFuego(x.tipo, true);
+    this.quitarEspeto(x);
+  },
+  quitarEspeto(x) {
+    const i = this.espetos.indexOf(x);
+    if (i < 0) return;
+    this.espetos.splice(i, 1);
+    for (const o of [x.grupo, x.circulo]) {
+      o.parent && o.parent.remove(o);
+      o.traverse(m => { if (m.isMesh) { m.geometry.dispose(); m.material.dispose(); } });
+    }
+  },
+  tick(t, dt) {
+    for (const x of [...this.espetos]) if (!x.quemado) this.pasarEspeto(x, Math.min(dt || 0, 100) / 1000);
     const s = t / 1000;
     for (const { m, fase } of this.llamas) {
       const v = 0.6 * Math.sin(s * 8.1 + fase) + 0.4 * Math.sin(s * 14.3 + fase * 2.3);
@@ -471,7 +579,11 @@ AFRAME.registerComponent('hoguera', {
     const luz = this.luz.getObject3D('light');
     if (luz) luz.intensity = this.data.intensidad * (1 + 0.2 * Math.sin(s * 9.7) + 0.1 * Math.sin(s * 23.1));
   },
-  remove() { this.el.removeObject3D('mesh'); }
+  remove() {
+    // si te vas con algo al fuego, te lo llevas como esté
+    for (const x of [...this.espetos]) { if (!x.quemado) partida.devolverDelFuego(x.tipo, x.asado >= ESPETO_HECHO_S); this.quitarEspeto(x); }
+    this.el.removeObject3D('mesh');
+  }
 });
 
 // Lámpara de rueda de hierro colgada del techo: aro con cuatro radios, velas encendidas sobre el

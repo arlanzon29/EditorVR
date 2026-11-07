@@ -347,3 +347,66 @@ AFRAME.registerComponent('copa', {
     this.material.dispose();
   }
 });
+
+// Mesa para cenar: con pescado o carne asados, el gatillo sobre la mesa te los sirve en un plato y te los comes; cuenta
+// como la cena del día (partida.comer con enLaMesa: si te acuestas sin cenar, al día siguiente tienes menos puntos,
+// PUNTOS_SIN_CENA). Lo crudo no se cena: primero, a la hoguera. Origen: en el centro del tablero, a su altura; "ancho" a
+// lo largo de x y "fondo" de z, en coordenadas de la entidad. El plato se ve un rato (MESA_PLATO_MS) y se retira.
+const MESA_PLATO_MS = 5000;
+AFRAME.registerComponent('mesa-cena', {
+  schema: { ancho: { default: 1.6 }, fondo: { default: 0.8 } },
+  init() {
+    const { ancho, fondo } = this.data;
+    this.ojo = new THREE.Vector3();
+    cajaDeRayo(this.el, 0, 0.1, 0, ancho, 0.2, fondo, () => this.cenar());
+    this.el.querySelector('.clicable').addEventListener('mouseenter', () => {
+      const que = this.queCenar();
+      if (que) partida.avisar('Aprieta el gatillo para cenar aquí.');
+      else if (partida.estado.pescado === 'crudo' || partida.estado.cartas.carne === 'cruda') partida.avisar('Crudo no se cena: ásalo antes en una hoguera.');
+    });
+  },
+  // lo que se puede cenar: lo asado, el pescado antes
+  queCenar() {
+    const e = partida.estado;
+    if (!partida.ranura) return null;
+    if (e.pescado === 'asado') return 'pescado';
+    if (e.cartas.carne === 'asada') return 'carne';
+    return null;
+  },
+  cenar() {
+    const que = this.queCenar();
+    if (!que) { partida.avisar('No llevas nada asado que cenar.'); return; }
+    this.servir(que);
+    partida.comer(que, true);
+  },
+  // el plato, en el borde de la mesa que tienes más cerca, con el pescado (el de los bancos, tostado) o la carne
+  servir(que) {
+    this.retirar();
+    const c = this.el.sceneEl.camera;
+    if (c) { c.getWorldPosition(this.ojo); this.el.object3D.worldToLocal(this.ojo); } else this.ojo.set(0, 0, 1);
+    const { ancho, fondo } = this.data, plato = this.plato = new THREE.Group();
+    plato.position.set(Math.max(-ancho / 2 + 0.2, Math.min(ancho / 2 - 0.2, this.ojo.x)), 0.005, Math.sign(this.ojo.z || 1) * (fondo / 2 - 0.18));
+    const barro = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.025, 20), new THREE.MeshStandardMaterial({ color: '#7a5a3c', roughness: 0.9 }));
+    barro.position.y = 0.0125;
+    plato.add(barro);
+    if (que === 'pescado') {
+      const pez = new THREE.Mesh(formaDePez(), new THREE.MeshBasicMaterial({ vertexColors: true, color: '#a8703a', side: THREE.DoubleSide }));
+      pez.position.y = 0.06; pez.rotation.z = Math.PI / 2; pez.rotation.y = Math.PI / 2; pez.scale.setScalar(0.32);
+      plato.add(pez);
+    } else {
+      const carne = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), new THREE.MeshStandardMaterial({ color: '#6a3a1c', roughness: 0.9 }));
+      carne.position.y = 0.06; carne.scale.set(1.3, 0.7, 0.9);
+      plato.add(carne);
+    }
+    this.el.object3D.add(plato);
+    this.quitarPlato = setTimeout(() => this.retirar(), MESA_PLATO_MS);
+  },
+  retirar() {
+    clearTimeout(this.quitarPlato);
+    if (!this.plato) return;
+    this.el.object3D.remove(this.plato);
+    this.plato.traverse(m => { if (m.isMesh) { m.geometry.dispose(); m.material.dispose(); } });
+    this.plato = null;
+  },
+  remove() { this.retirar(); }
+});
