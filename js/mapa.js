@@ -42,6 +42,11 @@ const CAMINOS_MAPA = [
   [[285, -349], [282, -300], [272, -260], [270, -232]],
   [[3, -58], [-40, -95], [-80, -120], [-125, -125], [-150, -160], [-180, -200], [-180, -230], [-180, -290], [-180, -315]],
 ];
+// Los letreros que se pintan encima de todo (charlas, preguntas, botones, el cómic: depthTest a false): cada uno se
+// apunta aquí al crearlo (letrero) y sale solo al quitarlo de la escena. Mientras haya alguno, el rayo de los mandos va
+// por encima y un punto rojo marca dónde los toca, como en el pergamino (punterosLetreros).
+const LETREROS = new Set();
+function letrero(malla) { LETREROS.add(malla); return malla; }
 const B_MANTENIDO_MS = 600;   // botón B: pulsado, las cartas; mantenido, la pantalla del PC (js/conexion.js)
 const HOJA_MAPA = 0, HOJA_MISION = 1, HOJA_DIARIO = 2, HOJA_INVENTARIO = 3, HOJA_AYUDA = 4;
 AFRAME.registerComponent('mapa', {
@@ -631,13 +636,10 @@ AFRAME.registerComponent('mapa', {
   // la flecha en su sitio, según dónde estás y hacia dónde miras
   // El pergamino no mira la profundidad y se dibuja encima de todo: mientras está abierto, el rayo de los mandos
   // se dibuja después de él, o no se vería al apuntarle. Igual con una página de cómic abierta (js/comic.js).
-  // y también el de cada mando que apunte a un letrero que se pinta encima de todo (las charlas, las preguntas, los
-  // botones de la taberna y de la boda: sin mirar la profundidad, depthTest a false), que si no lo tapaba
-  rayoEncima(todos) {
+  // Y con un letrero abierto (LETREROS: charlas, preguntas, botones), que tampoco miran la profundidad.
+  rayoEncima(encima) {
     for (const m of document.querySelectorAll('[laser-controls]')) {
-      const linea = m.getObject3D('line'), r = m.components.raycaster;
-      const primero = r && r.intersectedEls[0], malla = primero && primero.getObject3D('mesh');
-      const encima = todos || !!(malla && malla.material && malla.material.depthTest === false);
+      const linea = m.getObject3D('line');
       if (!linea || linea.renderOrder === (encima ? 999 : 0)) continue;
       linea.renderOrder = encima ? 999 : 0;
       linea.material.transparent = encima;
@@ -645,8 +647,48 @@ AFRAME.registerComponent('mapa', {
       linea.material.needsUpdate = true;
     }
   },
+  // ¿Hay algún letrero abierto? (de paso, se olvidan los que ya no están en la escena)
+  hayLetreros() {
+    const escena = this.el.object3D;
+    for (const m of LETREROS) {
+      let o = m, visible = true;
+      while (o.parent) { visible = visible && o.visible; o = o.parent; }
+      if (o !== escena) LETREROS.delete(m);
+      else if (visible && m.visible) return true;
+    }
+    return false;
+  },
+  // El punto rojo de cada mando sobre el letrero que tiene delante (en VR; en el ordenador no hay rayo de mando)
+  punterosLetreros(hay) {
+    this.punteros = this.punteros || new Map();
+    for (const m of document.querySelectorAll('[laser-controls]')) {
+      let punto = this.punteros.get(m);
+      if (!punto) {
+        punto = new THREE.Mesh(new THREE.CircleGeometry(0.006, 14), new THREE.MeshBasicMaterial({ color: '#c8201a', fog: false, depthTest: false, transparent: true }));
+        punto.renderOrder = 999;
+        this.el.object3D.add(punto);
+        this.punteros.set(m, punto);
+      }
+      const rc = m.components.raycaster;
+      let golpe = null;
+      if (hay && rc && rc.data.enabled && this.el.is('vr-mode')) {
+        this.rayo.ray.copy(rc.raycaster.ray);
+        this.rayo.far = rc.data.far;
+        const mallas = [...LETREROS].filter(l => { for (let o = l; o; o = o.parent) if (!o.visible) return false; return true; });
+        golpe = this.rayo.intersectObjects(mallas, false)[0];
+      }
+      punto.visible = !!golpe;
+      if (golpe) {
+        // pegado a la cara del letrero, 2 mm por delante
+        golpe.object.getWorldQuaternion(punto.quaternion);
+        punto.position.copy(golpe.point).add(new THREE.Vector3(0, 0, 0.002).applyQuaternion(punto.quaternion));
+      }
+    }
+  },
   tick() {
-    this.rayoEncima(this.panel.visible || !!comicAbierto);
+    const letreros = this.hayLetreros();
+    this.rayoEncima(this.panel.visible || !!comicAbierto || letreros);
+    this.punterosLetreros(letreros && !this.panel.visible);
     const aqui = zonaCargada.nombre;
     if (partida.ranura && !cambiandoDeZona && this.el.components.zonas.actual === aqui && !this.visitadas.has(aqui)) {
       this.visitadas.add(aqui);
