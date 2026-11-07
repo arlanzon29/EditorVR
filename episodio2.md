@@ -45,6 +45,7 @@ Hall de la posada, de mañana. Llevas la bolsa al hombro. Leonor está junto a l
 - **Leonor:** Sólo te pido eso. Madera para el techo, piedra para los muros. El pueblo te ayudará con lo que sepa.
 - **Tú:** (tras un silencio) Está bien. Veré esa casa.
 - **Leonor:** Gracias. Sabía que te quedarías.
+- **Leonor:** Sígueme, te la enseño. *(Y te lleva andando hasta la casa.)*
 
 **Decidido:** la convence **la conversación**, sin nieve ni nada que cierre el camino (cambiaría la escena y habría que hornear todo).
 
@@ -132,6 +133,14 @@ Propuesta (a ajustar):
   1 o 2 cm. Lo que cambia con la obra (techo roto, tablones, madera nueva) va como piezas aparte, en `NO_FUNDIR`: no hace falta
   hornear el poblado.
 - **Entrar:** zona andable propia (`zonasPermitidas`) unida por la puerta; mientras sea una ruina, la puerta está cerrada.
+
+**Decidido (noviembre de 2026): por fuera, horneada.** La casa estaba sin hornear y se notaba. Por fuera está **entera y
+siempre igual** (muros y tejado), en todos los episodios, y se hornea con su sombra en la plaza. **Toda la obra es de dentro**
+(escombros, techo y vigas de dentro, muebles): desde la plaza ya no se ve la ruina.
+
+**Decidido también:** se entra desde la primera fase, a ver la ruina. Lo fijo de dentro (muros, suelo, techo, tabique) se
+hornea con la sala; lo de cada fase (escombros, viga caída, huecos, muebles) va aparte, sin hornear (`NO_FUNDIR`). Si se nota
+mucho, más adelante se puede hornear una versión por fase. El banco de obra pasa a la habitación.
 
 ## Después (por definir)
 

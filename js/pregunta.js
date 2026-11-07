@@ -27,15 +27,16 @@ const PREGUNTA_OFICIOS = {
 };
 
 // "que": 'andar', 'viaje' o un oficio (PREGUNTA_OFICIOS); "de" y "a", las zonas (al andar y al viajar); "precio", los puntos.
-// "alResponder" recibe true si se dice que sí.
-function preguntarGasto({ que, de, a, precio, enemigo, alResponder }) {
+// "alResponder" recibe true si se dice que sí. Con "dibujar" (g, W, H) y "textos" (los botones), otro cartel: con un
+// solo botón, es un aviso (el cuadro del lobo, js/enemigos.js), y alejarse también cuenta como pulsarlo.
+function preguntarGasto({ que, de, a, precio, enemigo, alResponder, dibujar, textos: otrosTextos }) {
   if (preguntaAbierta) preguntaAbierta.responder(false);
   const escena = document.querySelector('a-scene');
   const [W, H] = PREGUNTA_PX, lienzo = document.createElement('canvas');
   lienzo.width = W; lienzo.height = H;
   // con la foto del destino; si aún no ha llegado, se vuelve a pintar cuando llegue
-  const foto = PREGUNTA_OFICIOS[que] ? null : fotoZona(a);
-  const pintar = () => dibujarPregunta(lienzo.getContext('2d'), W, H, { que, de, a, precio, enemigo, foto: foto && foto.complete && foto.naturalWidth ? foto : null });
+  const foto = PREGUNTA_OFICIOS[que] || dibujar ? null : fotoZona(a);
+  const pintar = () => dibujar ? dibujar(lienzo.getContext('2d'), W, H) : dibujarPregunta(lienzo.getContext('2d'), W, H, { que, de, a, precio, enemigo, foto: foto && foto.complete && foto.naturalWidth ? foto : null });
   pintar();
   const tex = new THREE.CanvasTexture(lienzo);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -59,7 +60,7 @@ function preguntarGasto({ que, de, a, precio, enemigo, alResponder }) {
 
   // los botones, debajo: el "sí" a la izquierda
   const texturas = [tex], botones = [];
-  const oficio = PREGUNTA_OFICIOS[que], textos = oficio ? [oficio.si, 'No'] : que === 'viaje' ? ['Sí, viajar', 'No'] : ['Sí, pasar', 'No, quedarme'];
+  const oficio = PREGUNTA_OFICIOS[que], textos = otrosTextos || (oficio ? [oficio.si, 'No'] : que === 'viaje' ? ['Sí, viajar', 'No'] : ['Sí, pasar', 'No, quedarme']);
   let ultimo = performance.now();   // (el mismo gatillo que ha hecho la pregunta no la contesta)
   textos.forEach((texto, i) => {
     const t = tablaDeTexto(texto, 480, 110);
@@ -69,7 +70,7 @@ function preguntarGasto({ que, de, a, precio, enemigo, alResponder }) {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.115), new THREE.MeshBasicMaterial({ map: t, depthTest: false, transparent: true, fog: false }));
     m.renderOrder = 996;
     e.setObject3D('mesh', m);
-    const p = cartel.localToWorld(new THREE.Vector3(i ? 0.28 : -0.28, -alto / 2 - 0.1, 0.01));
+    const p = cartel.localToWorld(new THREE.Vector3(textos.length === 1 ? 0 : i ? 0.28 : -0.28, -alto / 2 - 0.1, 0.01));
     e.object3D.scale.setScalar(k);
     e.classList.add('pregunta');
     e.setAttribute('position', `${p.x} ${p.y} ${p.z}`);
@@ -79,7 +80,7 @@ function preguntarGasto({ que, de, a, precio, enemigo, alResponder }) {
     e.addEventListener('mousedown', () => {
       if (performance.now() - ultimo < 400) return;
       ultimo = performance.now();
-      pregunta.responder(i === 0);
+      pregunta.responder(i === 0);   // (con un solo botón, siempre sí)
     });
     escena.appendChild(e);
     botones.push(e);
@@ -103,7 +104,7 @@ function preguntarGasto({ que, de, a, precio, enemigo, alResponder }) {
       for (const e of botones) { const m = e.getObject3D('mesh'); m.geometry.dispose(); m.material.dispose(); e.parentNode.removeChild(e); }
       for (const t of texturas) t.dispose();
       partida.charlaAbierta = false;
-      alResponder(si);
+      alResponder(textos.length === 1 || si);
       setTimeout(() => partida.comprobarPaso());
     },
   };
@@ -113,7 +114,11 @@ function preguntarGasto({ que, de, a, precio, enemigo, alResponder }) {
 // El cartel: título, el dibujo a la izquierda y, a la derecha, lo que cuesta y lo que quedará
 // "enemigo" (ENEMIGOS, js/enemigos.js): el que hay dentro, con sus cabezas de lobo y lo que cuesta de más ("extra")
 function dibujarPregunta(g, W, H, { que, de, a, precio, enemigo, foto }) {
-  // marco de madera y pergamino, con manchas siempre iguales
+  fondoDePergamino(g, W, H);
+  dibujarLoDeLaPregunta(g, W, H, { que, de, a, precio, enemigo, foto });
+}
+// Marco de madera y pergamino, con manchas siempre iguales
+function fondoDePergamino(g, W, H) {
   g.fillStyle = '#2e2116'; g.fillRect(0, 0, W, H);
   g.fillStyle = '#d7c49a'; g.fillRect(16, 16, W - 32, H - 32);
   let s = 23;
@@ -124,25 +129,28 @@ function dibujarPregunta(g, W, H, { que, de, a, precio, enemigo, foto }) {
   }
   g.strokeStyle = '#4a4640'; g.lineWidth = 10; g.strokeRect(5, 5, W - 10, H - 10);
   g.strokeStyle = 'rgba(58, 38, 22, 0.7)'; g.lineWidth = 2; g.strokeRect(30, 30, W - 60, H - 60);
-
+}
+function dibujarLoDeLaPregunta(g, W, H, { que, de, a, precio, enemigo, foto }) {
   const destino = a && MUNDO[a] ? MUNDO[a].titulo : '';
   g.fillStyle = PREGUNTA_TINTA; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.font = '600 50px Georgia, serif';
   const oficio = PREGUNTA_OFICIOS[que];
   g.fillText(oficio ? oficio.titulo : que === 'viaje' ? `¿Viajar a ${destino}?` : `¿Pasar a ${destino}?`, W / 2, 78);
 
+  // con enemigo, solo se enseña lo que cuesta entrar: lo de combatirlo es un riesgo, no se dice cuánto
+  const entrada = enemigo ? precio - enemigo.extra : precio;
   // el dibujo, en la mitad izquierda
   g.strokeStyle = PREGUNTA_TINTA; g.fillStyle = PREGUNTA_TINTA; g.lineCap = 'round'; g.lineJoin = 'round';
   // (sin precio, sin misión: sin monedas)
   if (oficio) { oficio.dibujo(g); if (precio) monedasDePuntos(g, 470, 470, precio); }
-  else { dibujoCamino(g, de, a, que === 'viaje', foto); if (precio) monedasDePuntos(g, 680, 550, precio); }
+  else { dibujoCamino(g, de, a, que === 'viaje', foto); if (entrada) monedasDePuntos(g, 680, 550, entrada); }
 
   // lo que cuesta y lo que quedará
   const tienes = partida.estado.puntos, punto = n => `${n} ${n === 1 ? 'punto' : 'puntos'}`;
   const parrafos = enemigo ? [
-    `Dentro hay ${enemigo.nombre}: entrar cuesta ${punto(precio)}, ${punto(enemigo.extra)} más para matarlo.`,
-    tienes >= precio ? `Tienes ${punto(tienes)}; te ${tienes - precio === 1 ? 'quedará' : 'quedarán'} ${tienes - precio}.`
-      : `Tienes ${punto(tienes)} y no te llegan: si entras, huirás a la posada y perderás lo que llevas.`,
+    // (no dice cuál ni cuánto cuesta: la cabeza roja avisa de que puede haber un enemigo, y combatirlo gasta energía)
+    `Entrar cuesta ${punto(entrada)}. Tienes ${punto(tienes)}.`,
+    'Cuidado: puede haber un enemigo. Combatirlo gasta energía.',
   ] : !precio ? [
     oficio ? oficio.gana : que === 'viaje' ? `El mapa te lleva a ${destino}.` : `Vas a entrar en ${destino}.`,
     'Sin misión no cuesta nada: se pasea libre.',
@@ -153,7 +161,7 @@ function dibujarPregunta(g, W, H, { que, de, a, precio, enemigo, foto }) {
     `Tienes ${punto(tienes)}; te ${tienes - precio === 1 ? 'quedará' : 'quedarán'} ${tienes - precio}.`,
   ];
   // el nivel del enemigo: sus cabezas de lobo, encima de lo que cuesta
-  if (enemigo) for (let i = 0; i < enemigo.cabezas; i++) dibujoCabezaLobo(g, 620 + i * 70, 150, 26);
+  if (enemigo) for (let i = 0; i < enemigo.cabezas; i++) dibujoCabezaLobo(g, 620 + i * 70, 150, 26, '#8a2318');   // en rojo: hay enemigo
   g.textAlign = 'left'; g.font = '34px Georgia, serif';
   let y = enemigo ? 215 : 190;
   for (const p of parrafos) {

@@ -22,7 +22,7 @@ const PUNTOS_LOBO = 2;
 // poblado: x, z, giro; sin sitio, a tu habitación de la posada).
 const T_INICIO = { puerta: true, posadero: true }, T_BODA = { ...T_INICIO, alliEstare: true }, T_BRINDIS = { ...T_BODA, brindis: true };
 const despuesDeLaBoda = e => { e.tutorial = { ...T_BRINDIS }; e.hechas = ['boda']; e.bodaDia = e.dia - 2; e.bodaVista = e.dia - 1; e.monedas = MISIONES.boda.pago; };
-const enLaCasa = (obra, cartas) => e => { despuesDeLaBoda(e); e.mision = 'casa'; e.casaDia = e.dia; e.obra = obra; if (cartas) e.cartas = { madera: 'troncos', piedra: 'sillar' }; };
+const enLaCasa = (obra, cartas) => e => { despuesDeLaBoda(e); e.mision = 'casa'; e.casaDia = e.dia; e.casaVista = true; e.obra = obra; if (cartas) e.cartas = { madera: 'troncos', piedra: 'sillar' }; };
 const SALTOS_DEPURACION = [
   { nombre: 'Episodio 1: el principio', poner: () => {} },
   { nombre: 'Episodio 1: encargo aceptado', sitio: [162.5, -101, Math.PI], poner: e => { e.tutorial = { ...T_INICIO }; e.mision = 'boda'; e.estrellas = []; } },
@@ -64,7 +64,7 @@ const partida = {
   estado: null,   // sin partida abierta (en el menú), uno vacío que no se guarda
   ranura: null,   // el número de la partida abierta
   charlaAbierta: false,   // hablando con el tabernero: el tutorial espera a que acabe (comprobarPaso)
-  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, estrellas: null, obra: 0, farmeados: [], cargas: {}, lobo: false, casaDia: null, cenaVista: null, depura: 0, noche: false, visitadas: [], sitio: null, fecha: null }; },
+  nuevo() { return { dia: 1, mision: null, puntos: PUNTOS_LIBRE, puntosLibres: true, monedas: 0, pescado: null, pescadoHoy: false, cartas: {}, cofre: [], postigos: false, tutorial: {}, aprendido: [], hechas: [], bodaDia: null, bodaVista: null, estrellas: null, obra: 0, farmeados: [], cargas: {}, lobo: false, casaDia: null, casaVista: false, cenaVista: null, depura: 0, noche: false, visitadas: [], sitio: null, fecha: null }; },
   cargar() {
     this.estado = this.nuevo();
     this.traerPartidaVieja();
@@ -203,6 +203,8 @@ const partida = {
     }
     // (sentado ya a la mesa, sin el rombo: quedaría delante de los ojos)
     if (e.obra >= CASA_OBRAS) return { id: 'cena', quien: enLaMesa ? '' : 'cena', zona: 'poblado', texto: 'Tu casa está terminada. Leonor y Garcés te esperan para cenar en tu salón: apunta a la mesa y aprieta el gatillo para sentarte.' };
+    // el día que aceptas, Leonor te lleva a la casa (js/casa.js); los demás días ya no está
+    if (!e.casaVista && e.obra === 0 && e.casaDia === e.dia) return { id: 'seguir-leonor', quien: 'leonor', zona: 'poblado', texto: 'Sigue a Leonor: te lleva a la casa abandonada, al otro lado de la plaza.' };
     const madera = this.llevaCarta('madera'), piedra = this.llevaCarta('piedra');
     if (madera && piedra) return { id: `reparar-${e.obra}`, quien: 'obra', zona: 'poblado', texto: 'Llevas madera y piedra. Ve a tu casa, frente a la posada al otro lado de la plaza, apunta al banco de obra y aprieta el gatillo.' };
     const falta = !madera && !piedra ? 'una carga de madera y otra de piedra' : !madera ? 'una carga de madera' : 'una carga de piedra';
@@ -211,12 +213,18 @@ const partida = {
   aceptarCasa() {
     const e = this.estado;
     e.mision = 'casa';
-    e.casaDia = e.dia;
+    e.casaDia = e.dia; e.casaVista = false;   // (Leonor te lleva a la casa; js/casa.js)
     e.farmeados = []; e.cargas = {};
     this.prepararDia();
     this.aprender('Leonor te ha pedido que te quedes en el poblado y repares la casa abandonada de enfrente de la posada.');
     this.guardar();
     this.avisar(`Misión: ${MISIONES.casa.titulo}. Tienes ${MISIONES.casa.presupuesto} puntos al día. Se abren la cueva y la montaña.`);
+  },
+  // Leonor te ha llevado hasta la casa (js/casa.js)
+  verCasa() {
+    this.estado.casaVista = true;
+    this.guardar();
+    this.avisar('Leonor: «Aquí la tienes. Madera para el techo y piedra para los muros. Sé que podrás».');
   },
   // La cena en tu casa terminada (js/casa.js): fin del episodio
   cenarCasa() {
@@ -308,9 +316,7 @@ const partida = {
       if (e.puntos < precio) { this.huirDelLobo(); return false; }
       e.puntos -= precio;
       e.lobo = true;
-      this.guardar();
-      aullidoDeLobo(true);
-      this.avisar(`Un lobo te sale al paso en la boca de la cueva. Luchas y lo matas: ${precio} puntos. Te ${e.puntos === 1 ? 'queda 1' : `quedan ${e.puntos}`}.`);
+      this.guardar();   // (el sonido y lo que ha pasado, antes, en el encuentro: encuentroConLobo, js/enemigos.js)
       return true;
     }
     if (e.puntos >= precio) {
@@ -692,6 +698,8 @@ AFRAME.registerComponent('partida', {
     const camara = this.el.camera && this.el.camera.el.object3D;
     if (!camara) return;
     if (this.indicador.malla.parent !== camara) { camara.add(this.indicador.malla, this.aviso.malla); }
+    // con una página de cómic abierta (js/comic.js) el indicador no se ve: estorba a las viñetas
+    this.indicador.malla.visible = !!partida.ranura && !comicAbierto;
     // el indicador: abajo a la izquierda en VR, y arriba en el centro en el monitor
     if (this.el.is('vr-mode')) this.indicador.malla.position.set(-0.5, -0.42, -1.3);
     else this.indicador.malla.position.set(0, 1.3 * Math.tan(this.el.camera.fov * Math.PI / 360) - 0.1, -1.3);

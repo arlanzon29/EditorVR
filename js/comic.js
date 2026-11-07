@@ -25,7 +25,10 @@ function huecoDeVineta(v) {
 }
 
 // Fotografía la escena desde una toma y la pasa a cómic. Devuelve el lienzo y dónde cae la cabeza de quien habla.
-function tomaDeComic(escena, toma, w, h) {
+function tomaDeComic(escena, toma, ancho, alto) {
+  // En las gafas, la foto a la mitad: pasarla a cómic en la CPU del Quest con la resolución entera tarda tanto que la
+  // sesión se queda parada y la página no sale. (Se estira al dibujarla en la viñeta.)
+  const k = escena.is('vr-mode') ? 0.5 : 1, w = Math.round(ancho * k), h = Math.round(alto * k);
   const r = escena.renderer, cam = new THREE.PerspectiveCamera(toma.fov || 50, w / h, 0.05, 400);
   cam.position.set(...toma.desde); cam.lookAt(...toma.mira); cam.updateMatrixWorld(true);
   const rt = new THREE.WebGLRenderTarget(w, h, { samples: 4 });
@@ -35,22 +38,29 @@ function tomaDeComic(escena, toma, w, h) {
   const ocultos = [document.getElementById('rig').object3D, ...[...document.querySelectorAll('[marca-paso]')].map(e => e.components['marca-paso']?.marca)].filter(o => o && o.visible);
   for (const o of ocultos) o.visible = false;
   const xr = r.xr.enabled, antes = r.getRenderTarget();
-  r.xr.enabled = false;
-  r.setRenderTarget(rt);
-  r.render(escena.object3D, cam);
-  r.setRenderTarget(antes);
-  r.xr.enabled = xr;
-  for (const o of ocultos) o.visible = true;
   const px = new Uint8Array(w * h * 4);
-  r.readRenderTargetPixels(rt, 0, 0, w, h, px);
-  rt.dispose();
+  // (si algo falla, que la página salga igual, con la viñeta en negro, y que la escena siga como estaba)
+  try {
+    r.xr.enabled = false;
+    r.setRenderTarget(rt);
+    r.render(escena.object3D, cam);
+    r.setRenderTarget(antes);
+    r.readRenderTargetPixels(rt, 0, 0, w, h, px);
+  } catch (e) {
+    console.error('Cómic: no se pudo sacar la toma:', e);
+    r.setRenderTarget(antes);
+  } finally {
+    r.xr.enabled = xr;
+    for (const o of ocultos) o.visible = true;
+    rt.dispose();
+  }
   const lienzo = document.createElement('canvas');
   lienzo.width = w; lienzo.height = h;
   lienzo.getContext('2d').putImageData(pixelesDeComic(px, w, h), 0, 0);
   let cabeza = null;
   if (toma.cabeza) {
     const v = new THREE.Vector3(...toma.cabeza).project(cam);
-    if (v.z < 1 && Math.abs(v.x) < 1.2 && Math.abs(v.y) < 1.2) cabeza = [(v.x + 1) / 2 * w, (1 - v.y) / 2 * h];
+    if (v.z < 1 && Math.abs(v.x) < 1.2 && Math.abs(v.y) < 1.2) cabeza = [(v.x + 1) / 2 * ancho, (1 - v.y) / 2 * alto];
   }
   return { lienzo, cabeza };
 }
@@ -171,7 +181,9 @@ function abrirComic(escena, guion, alAcabar) {
   const g = lienzo.getContext('2d'), tex = new THREE.CanvasTexture(lienzo);
   tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
   const alto = COMIC_ANCHO * H / W, pagina = new THREE.Group();
-  const malla = new THREE.Mesh(new THREE.PlaneGeometry(COMIC_ANCHO, alto), new THREE.MeshBasicMaterial({ map: tex, depthTest: false, fog: false }));
+  const malla = new THREE.Mesh(new THREE.PlaneGeometry(COMIC_ANCHO, alto), new THREE.MeshBasicMaterial({ map: tex, depthTest: false, transparent: true, fog: false }));
+  // (en la pasada de lo transparente, como las tablas: si no, lo transparente que está más cerca que la página, como lo
+  // horneado de una pared al lado, se pintaba después encima y las viñetas parecían transparentes)
   malla.renderOrder = 994;
   malla.position.y = alto / 2 + 0.1;
   pagina.add(malla);
@@ -186,6 +198,11 @@ function abrirComic(escena, guion, alAcabar) {
   escena.object3D.add(pagina);
   pagina.updateMatrixWorld(true);
   if (vista) ratonLibre('pregunta', true);
+  // con la página abierta, el rayo de los mandos solo da en el botón de tu respuesta (.pregunta): si no, el gatillo
+  // daba también en quien habla, y eso cerraba la charla. (La mira del monitor ya lo hace con ratonLibre.)
+  const rayos = [...escena.querySelectorAll('[raycaster]')].filter(r => !r.hasAttribute('camera'));
+  const objetosAntes = rayos.map(r => r.getAttribute('raycaster').objects);
+  for (const r of rayos) r.setAttribute('raycaster', 'objects', '.pregunta');
 
   let paso = 0, boton = null, texBoton = null, ultimo = performance.now();
   const ponerBoton = () => {
@@ -219,6 +236,7 @@ function abrirComic(escena, guion, alAcabar) {
   ponerBoton();
   return () => {
     if (vista) ratonLibre('pregunta', false);
+    rayos.forEach((r, i) => r.setAttribute('raycaster', 'objects', objetosAntes[i]));
     comicAbierto = null;
     pagina.parent.remove(pagina);
     malla.geometry.dispose(); malla.material.dispose(); tex.dispose();

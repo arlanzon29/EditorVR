@@ -131,8 +131,8 @@ document.addEventListener('model-loaded', e => {
 });
 
 // Cajas del mundo de las que se quitan los triángulos de lo horneado, hasta que se hornee la sala otra vez sin ellos.
-// poblado: la casa de 150, -146 (7 × 5, con el vuelo del tejado), que ahora es salas/casa.html
-const HUECOS_HORNEADOS = { poblado: [{ x0: 146, x1: 154, z0: -148.9, z1: -143.1, y0: -3, y1: 5.2 }] };
+// (vacío: la casa de 150, -146 se quitó así del poblado hasta hornearlo otra vez sin ella, en noviembre de 2026)
+const HUECOS_HORNEADOS = {};
 function quitarDeLoHorneado(geo, cajas) {
   const P = geo.attributes.position, I = geo.index, n = I ? I.count : P.count, quedan = [];
   const dentro = i => cajas.some(c => P.getX(i) >= c.x0 && P.getX(i) <= c.x1 && P.getZ(i) >= c.z0 && P.getZ(i) <= c.z1 && P.getY(i) >= c.y0 && P.getY(i) <= c.y1);

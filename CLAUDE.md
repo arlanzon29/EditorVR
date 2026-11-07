@@ -32,7 +32,7 @@ cambiar la escena (`index.html`, `salas/`, `js/`, `modelos/`) no, la página se 
 
 - `https://localhost:8443/__posicion`: dónde está, en qué zona, a qué altura, hacia dónde mira
   y qué punto tiene delante. Usarlo para "pon X donde estoy" / "donde miro" / "esta pared".
-- `https://localhost:8443/__vista.jpg`: última foto de lo que ve (botón A o X del mando).
+- `https://localhost:8443/__vista.jpg`: última foto de lo que ve (gatillo lateral del mando derecho sin coger nada, o la tecla P).
   Descargarla con `curl -sk` al scratchpad y mirarla.
 - **Vista previa propia:** `http://localhost:8080/` en el navegador integrado (no acepta el
   certificado del 8443). Sale el menú: con `?partida=1` se entra directo a esa partida (y juega en ella, así que

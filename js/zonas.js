@@ -154,7 +154,11 @@ AFRAME.registerComponent('zonas', {
     this.pregunta = preguntarGasto({ que: viaje ? 'viaje' : 'andar', de: this.actual, a: nombre, precio, enemigo, alResponder: si => {
       this.pregunta = null;
       // si no, un momento sin volver a preguntar, aunque se siga empujando hacia el paso
-      if (si) ir(); else this.noHasta = performance.now() + NO_PREGUNTAR_MS;
+      if (!si) { this.noHasta = performance.now() + NO_PREGUNTAR_MS; return; }
+      if (!lobo) { ir(); return; }
+      // el lobo: un rato de espera en la boca de la cueva y, luego, lo que ha pasado; mientras, no se vuelve a preguntar
+      this.pregunta = true;
+      encuentroConLobo(precio, gana => { this.pregunta = null; if (gana) ir(); else partida.huirDelLobo(); });
     } });
     return true;
   },

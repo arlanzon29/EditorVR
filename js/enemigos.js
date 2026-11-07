@@ -112,3 +112,49 @@ AFRAME.registerComponent('lobo-ojos', {
     this.el.removeObject3D('mesh');
   }
 });
+
+// El encuentro con el lobo, al decir que sí a entrar en la cueva: primero la espera (un aviso, un rato de silencio, el
+// gruñido y el gañido o el aullido) y luego, en un cuadro con su cabeza, lo que ha pasado. "alSeguir(gana)" al pulsar
+// Seguir: si ganas, se entra (y se cobra: partida.entrar); si no, se huye (partida.huirDelLobo).
+const LOBO_SILENCIO_MS = 1800, LOBO_CUADRO_MS = 2000;   // del aviso al gruñido, y del gruñido al cuadro
+function encuentroConLobo(precio, alSeguir) {
+  const tienes = partida.estado.puntos, gana = tienes >= precio, quedan = tienes - precio;
+  partida.charlaAbierta = true;   // (el tutorial espera)
+  partida.avisar('Algo se mueve en la oscuridad de la cueva...');
+  setTimeout(() => aullidoDeLobo(gana), LOBO_SILENCIO_MS);
+  setTimeout(() => {
+    preguntarGasto({
+      textos: ['Seguir'],
+      dibujar: (g, W, H) => dibujarCuadroDelLobo(g, W, H, gana, precio, quedan),
+      alResponder: () => { partida.charlaAbierta = false; alSeguir(gana); },
+    });
+  }, LOBO_SILENCIO_MS + LOBO_CUADRO_MS);
+}
+
+function dibujarCuadroDelLobo(g, W, H, gana, precio, quedan) {
+  fondoDePergamino(g, W, H);
+  g.fillStyle = '#5a1810'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '600 56px Georgia, serif';
+  g.fillText('¡Un lobo!', W / 2, 82);
+  // la cabeza, grande y en rojo, a la izquierda; tachada si lo has matado
+  dibujoCabezaLobo(g, 270, 350, 165, '#8a2318');
+  if (gana) {
+    g.strokeStyle = '#2e2116'; g.lineWidth = 16; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(130, 190); g.lineTo(410, 510); g.stroke();
+  }
+  const punto = n => `${n} ${n === 1 ? 'punto' : 'puntos'}`;
+  const parrafos = gana ? [
+    'Sale de la oscuridad y se te echa encima.',
+    'Luchas con él y lo matas.',
+    `Has gastado ${punto(precio)} de energía; te ${quedan === 1 ? 'queda' : 'quedan'} ${quedan}.`,
+  ] : [
+    'Sale de la oscuridad y se te echa encima.',
+    'No te quedan fuerzas para hacerle frente: huyes a la posada y pierdes lo que llevabas.',
+  ];
+  g.fillStyle = '#3a2616'; g.textAlign = 'left'; g.font = '36px Georgia, serif';
+  let y = 200;
+  for (const p of parrafos) {
+    for (const l of partirTexto(g, p, 430)) { g.fillText(l, 520, y); y += 48; }
+    y += 22;
+  }
+}

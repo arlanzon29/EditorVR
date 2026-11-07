@@ -195,3 +195,66 @@ AFRAME.registerComponent('informe-posicion', {
   }
 });
 const r3 = v => ({ x: +v.x.toFixed(2), y: +v.y.toFixed(2), z: +v.z.toFixed(2) });
+
+// Foto para Claude: con el gatillo lateral del mando derecho (si no está cogiendo nada) o la tecla P, fotografía lo que ves y la manda al servidor
+// (POST /__vista.jpg; Claude la mira con GET). En VR la imagen de las gafas no se puede leer, así que se saca con
+// una cámara aparte puesta donde están tus ojos (como las viñetas del cómic, js/comic.js), sin los mandos ni lo que
+// va pegado a la vista.
+const FOTO_ANCHO = 1280, FOTO_ALTO = 960, FOTO_FOV = 75;
+AFRAME.registerComponent('foto-para-claude', {
+  init() {
+    // (el gatillo lateral también coge las cosas, js/conexion.js agarrable: si ha cogido algo, no hay foto)
+    this.sacar = () => setTimeout(() => {
+      const cogiendo = [...document.querySelectorAll('[agarrable]')].some(e => e.components.agarrable?.mano === this.mando);
+      if (!cogiendo) this.foto();
+    }, 30);
+    this.tecla = e => { if (e.code === 'KeyP' && !e.repeat) this.foto(); };
+    window.addEventListener('keydown', this.tecla);
+    const enganchar = () => {
+      if (!this.sacar) return;
+      this.mando = document.querySelector('[laser-controls="hand: right"]');
+      if (!this.mando) { this.espera = setTimeout(enganchar, 500); return; }
+      this.mando.addEventListener('gripdown', this.sacar);
+    };
+    enganchar();
+  },
+  foto() {
+    const escena = this.el, r = escena.renderer, w = FOTO_ANCHO, h = FOTO_ALTO;
+    const cam = new THREE.PerspectiveCamera(FOTO_FOV, w / h, 0.05, 2000);
+    escena.camera.updateMatrixWorld(true);
+    escena.camera.matrixWorld.decompose(cam.position, cam.quaternion, cam.scale);
+    cam.scale.set(1, 1, 1); cam.updateMatrixWorld(true);
+    const rt = new THREE.WebGLRenderTarget(w, h, { samples: 4 });
+    rt.texture.colorSpace = THREE.SRGBColorSpace;
+    const rig = document.getElementById('rig').object3D, seVeia = rig.visible;
+    const xr = r.xr.enabled, antes = r.getRenderTarget(), px = new Uint8Array(w * h * 4);
+    try {
+      rig.visible = false;
+      r.xr.enabled = false;
+      r.setRenderTarget(rt);
+      r.render(escena.object3D, cam);
+      r.setRenderTarget(antes);
+      r.readRenderTargetPixels(rt, 0, 0, w, h, px);
+    } catch (e) {
+      console.error('Foto: no se pudo sacar:', e);
+      r.setRenderTarget(antes);
+      return;
+    } finally {
+      r.xr.enabled = xr; rig.visible = seVeia; rt.dispose();
+    }
+    // (los píxeles llegan de abajo arriba)
+    const lienzo = document.createElement('canvas'); lienzo.width = w; lienzo.height = h;
+    const img = new ImageData(w, h);
+    for (let y = 0; y < h; y++) img.data.set(px.subarray((h - 1 - y) * w * 4, (h - y) * w * 4), y * w * 4);
+    lienzo.getContext('2d').putImageData(img, 0, 0);
+    lienzo.toBlob(b => fetch('/__vista.jpg', { method: 'POST', body: b })
+      .then(() => partida.avisar('Foto enviada a Claude.'))
+      .catch(() => partida.avisar('No se pudo enviar la foto.')), 'image/jpeg', 0.85);
+  },
+  remove() {
+    window.removeEventListener('keydown', this.tecla);
+    clearTimeout(this.espera);
+    if (this.mando) this.mando.removeEventListener('gripdown', this.sacar);
+    this.sacar = null;
+  }
+});

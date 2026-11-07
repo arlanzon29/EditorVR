@@ -1,35 +1,31 @@
-// Editor VR: tu casa del poblado (salas/casa.html), frente a la posada. Empieza en ruinas y se repara en tres obras, cada
-// una con una carga de madera y otra de piedra (las cartas de los oficios, js/oficios.js). Cuatro fases, guardadas en
-// partida.estado.obra: 0 ruina, 1 y 2 avances de la obra, 3 la casa terminada (con sus muebles y el fuego).
-//   0 y 1: la puerta está clavada y no se entra.   2: se entra, pero está vacía.   3: amueblada.
-// Lo que cambia con la obra (tejado, puerta, escombros, muebles) lo dibuja este componente, y va en NO_FUNDIR
-// (rendimiento.js): así reparar no obliga a hornear el poblado. Lo fijo (muros, suelo, techo y tabique) está en el HTML.
+// Editor VR: tu casa del poblado (salas/casa.html), frente a la posada. Por fuera está entera y siempre igual (muros,
+// tejado: casa-fuera, que se funde y se hornea con la sala), en todos los episodios. Por dentro empieza en ruinas y se
+// repara en tres obras, cada una con una carga de madera y otra de piedra (las cartas de los oficios, js/oficios.js).
+// Cuatro fases, guardadas en partida.estado.obra: 0 ruina (vigas caídas, agujeros, escombros y maleza), 1 el techo y las
+// paredes arreglados, 2 limpia pero vacía, 3 terminada (con sus muebles y el fuego). Se entra desde el principio.
+// Lo que cambia con la obra (escombros, vigas caídas, parches, muebles) lo dibuja casa-obra, y va en NO_FUNDIR
+// (rendimiento.js): así reparar no obliga a hornear. Lo fijo (muros, suelo, techo y tabique) está en el HTML.
 // Origen: el centro de la casa, en el suelo. Planta de 7 × 5 m, con la puerta en la cara +z, a x = -1,4. Sin girar.
 
 const CASA = { A: 7, F: 5, H: 2.8, V: 0.35, P: 1.9 };   // ancho, fondo, alto de los muros, vuelo del tejado y altura del tejado
 const CASA_OBRAS = 3;
-// El tejado, en seis tramos por lado, de delante (+z) a atrás. f falta, v paja vieja, n paja nueva
-const CASA_TEJADO = [
-  { o: [['v', 'f', 'f', 'f', 'v', 'f'], ['f', 'v', 'f', 'f', 'f', 'f']] },
-  { o: [['n', 'n', 'n', 'f', 'f', 'v'], ['n', 'n', 'n', 'v', 'f', 'f']] },
-  { o: [['n', 'n', 'n', 'n', 'n', 'n'], ['n', 'n', 'n', 'n', 'n', 'n']] },
-  { o: [['n', 'n', 'n', 'n', 'n', 'n'], ['n', 'n', 'n', 'n', 'n', 'n']] },
-];
-const CASA_ESCOMBROS = [14, 8, 3, 0], CASA_MALEZA = [18, 11, 4, 0];
+const CASA_ESCOMBROS = [16, 7, 2, 0], CASA_MALEZA = [10, 4, 0, 0];   // dentro
+const CASA_BANCO = { x: 1.9, z: 1.3 };
+const CASA_FUNDIDO_MS = 2500;   // al pasar de una obra a otra, lo de antes se desvanece mientras aparece lo nuevo   // el banco de obra, en la habitación (hasta la última obra)
 const CASA_TEXTOS = [
-  'La casa lleva años abandonada: el techo caído y la puerta clavada. Para empezar a repararla hace falta una carga de madera y otra de piedra.',
-  'Ya hay medio tejado. Para seguir con la obra hace falta otra carga de madera y otra de piedra.',
-  'Falta lo último: rematar el tejado y arreglar la puerta. Una carga de madera y otra de piedra.',
+  'La casa lleva años abandonada: por fuera aguanta, pero por dentro hay vigas caídas, agujeros y escombros. Para empezar a repararla hace falta una carga de madera y otra de piedra.',
+  'El techo y las paredes ya están arreglados. Para seguir hace falta otra carga de madera y otra de piedra.',
+  'Falta lo último: los muebles y el hogar. Una carga de madera y otra de piedra.',
 ];
 const CASA_RESULTADOS = [
-  'Levantas el armazón del tejado y tapas lo peor. La casa empieza a tener cara de casa.',
-  'Rematas el tejado y arreglas la puerta: ya se puede entrar. Falta darle vida.',
-  'Colocas los últimos muebles y enciendes el fuego. Tu casa está terminada.',
+  'Subes las vigas caídas y tapas los agujeros del techo y de las paredes. La casa empieza a tener cara de casa.',
+  'Sacas los escombros y barres. Ya está limpia, pero vacía. Falta darle vida.',
+  'Colocas los muebles y enciendes el fuego. Tu casa está terminada.',
 ];
 
 // La cena del final (episodio2.md): sentado en tu salón, con Leonor y Garcés de pie al otro lado de la mesa. Las frases
 // van saliendo solas, como en la boda (js/boda.js); en la tercera, la noticia.
-const CENA_SILLA = { x: -1.2, z: 1.6 };   // en coordenadas de la casa: el extremo de la mesa que da a la puerta
+const CENA_SILLA = { x: -1.2, z: 1.2 };   // en coordenadas de la casa: el extremo de la mesa que da a la puerta
 const CENA_FRASE_MS = 7000, CENA_NOTICIA = 2;
 const FRASES_CENA = [
   'Garcés alza la jarra: «Por la casa nueva, y por quien la ha levantado con sus manos».',
@@ -42,6 +38,35 @@ const matCasa = {};
 const colorCasa = c => matCasa[c] || (matCasa[c] = new THREE.MeshStandardMaterial({ color: c, roughness: 1, flatShading: true }));
 function semillaCasa(s) { return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
 
+// El tejado de la casa, entero y siempre igual: a dos aguas, con el caballete a lo largo de z, sus cabrios, y los
+// hastiales de delante y de atrás. Lo fijo de fuera que no cabe en el HTML; no está en NO_FUNDIR: se funde y se hornea.
+AFRAME.registerComponent('casa-fuera', {
+  init() {
+    const g = new THREE.Group(), caja = (w, h, d, x, y, z, color, rz = 0) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), colorCasa(color));
+      m.position.set(x, y, z); m.rotation.z = rz; g.add(m);
+    };
+    const { A, F, H, V, P } = CASA, pendiente = Math.atan2(P, A / 2 + V), L = Math.hypot(A / 2 + V, P), tramos = 6;
+    const fondo = F + 2 * V, seg = fondo / tramos, y0 = H + 0.05;
+    for (const s of [-1, 1]) {
+      // la paja, en seis tramos de tono algo distinto (de años de remiendos)
+      for (let k = 0; k < tramos; k++) caja(L, 0.14, seg * 0.98, s * (A / 2 + V) / 2, y0 + P / 2, F / 2 + V - seg * (k + 0.5), ['#7a6a3e', '#71623a', '#7f6e41'][(k + (s > 0 ? 1 : 0)) % 3], -s * pendiente);
+      for (let k = 0; k <= tramos; k++) caja(L, 0.1, 0.1, s * (A / 2 + V) / 2, y0 + P / 2 - 0.1, F / 2 + V - seg * k, '#3a2a1b', -s * pendiente);
+    }
+    caja(0.14, 0.14, fondo, 0, y0 + P - 0.04, 0, '#3a2a1b');
+    for (const z of [F / 2 - 0.15, -(F / 2 - 0.15)]) {
+      const forma = new THREE.Shape();
+      forma.moveTo(-A / 2, 0); forma.lineTo(A / 2, 0); forma.lineTo(A / 2, 0.17); forma.lineTo(0, P); forma.lineTo(-A / 2, 0.17);
+      const geo = new THREE.ExtrudeGeometry(forma, { depth: 0.3, bevelEnabled: false });
+      geo.translate(0, H, z - 0.15);
+      geo.computeVertexNormals();
+      g.add(new THREE.Mesh(geo, colorCasa('#a6937a')));
+    }
+    this.el.setObject3D('mesh', g);
+  },
+  remove() { this.el.removeObject3D('mesh'); }
+});
+
 AFRAME.registerComponent('casa-obra', {
   init() {
     this.g = new THREE.Group();
@@ -51,11 +76,8 @@ AFRAME.registerComponent('casa-obra', {
     this.quitar = null; this.ojo = new THREE.Vector3();
     const p = this.el.object3D.position;
     this.O = { x: p.x, z: p.z };
-    // el hueco de la puerta, cerrado hasta la segunda obra (como el de la puerta de tu habitación)
-    this.cierre = { x0: p.x - 2.15, x1: p.x - 0.65, z0: p.z + 2.0, z1: p.z + 2.7, y: 4, macizo: true };
-    SUPERFICIES.push(this.cierre);
-    // el banco de obra, a la derecha de la puerta: al apuntarlo y apretar el gatillo, se habla de la obra
-    cajaDeRayo(this.el, 1.9, 0.6, 3.3, 2.2, 1.2, 1.2, () => { if (this.quitar) this.cerrar(); else this.hablar(); });
+    // el banco de obra, en la habitación: al apuntarlo y apretar el gatillo, se habla de la obra
+    cajaDeRayo(this.el, CASA_BANCO.x, 0.6, CASA_BANCO.z, 2.2, 1.2, 1.2, () => { if (this.quitar) this.cerrar(); else this.hablar(); });
     this.el.querySelector('.clicable').addEventListener('mouseenter', () => partida.avisar(this.fase() < CASA_OBRAS ? 'Aprieta el gatillo para ver la obra.' : 'Tu casa está terminada.'));
     this.montar();
   },
@@ -96,110 +118,73 @@ AFRAME.registerComponent('casa-obra', {
   montar() {
     const fase = this.fase();
     this.limpiar();
-    this.cierre.y = fase >= 2 ? 0 : 4;
-    this.tejado(fase);
-    this.entorno(fase);
-    this.puerta(fase);
+    this.puerta();
+    this.ruina(fase);
     if (fase < 3) this.banco();
     if (fase === 2) this.vacia();
     if (fase === 3) this.amueblada();
     if (fase === 3 && partida.estado.mision === 'casa') this.prepararCena();
   },
 
-  // El tejado a dos aguas, con el caballete a lo largo de z, y los hastiales de delante y de atrás
-  tejado(fase) {
-    const { A, F, H, V, P } = CASA, pendiente = Math.atan2(P, A / 2 + V), L = Math.hypot(A / 2 + V, P), tramos = 6;
-    const fondo = F + 2 * V, seg = fondo / tramos, y0 = H + 0.05;
-    const paja = { v: '#5a4a2a', n: '#8d7a45' };
-    for (let lado = 0; lado < 2; lado++) {
-      const s = lado === 0 ? -1 : 1;
-      for (let k = 0; k < tramos; k++) {
-        const z = F / 2 + V - seg * (k + 0.5), estado = CASA_TEJADO[fase].o[lado][k];
-        const cx = s * (A / 2 + V) / 2, cy = y0 + P / 2;
-        if (estado === 'f') {
-          // una tabla tirada en el suelo, de cuando se cayó el tramo; sin cabrios en la mitad
-          if (fase === 0 && (k + lado) % 2 === 0) this.caja(L * 0.45, 0.08, seg * 0.8, s * (A / 2 + 0.9), 0.35, z, '#4a3a22', 0, 0.3, -s * 0.5);
-          continue;
-        }
-        this.caja(L, 0.14, seg * 0.98, cx, cy, z, paja[estado], 0, 0, -s * pendiente);
-      }
-      // los cabrios: uno en cada junta, y en la ruina faltan algunos
-      for (let k = 0; k <= tramos; k++) {
-        if (fase === 0 && (k + lado) % 3 === 1) continue;
-        this.caja(L, 0.1, 0.1, s * (A / 2 + V) / 2, y0 + P / 2 - 0.1, F / 2 + V - seg * k, '#3a2a1b', 0, 0, -s * pendiente);
-      }
-    }
-    // el caballete, entero salvo en la ruina
-    const largo = fase === 0 ? fondo * 0.55 : fondo;
-    this.caja(0.14, 0.14, largo, 0, y0 + P - 0.04, F / 2 + V - largo / 2, '#3a2a1b');
-    // los hastiales: madera hasta el tejado, con un hueco oscuro en la ruina
-    for (const z of [F / 2 - 0.15, -(F / 2 - 0.15)]) {
-      const forma = new THREE.Shape();
-      forma.moveTo(-A / 2, 0); forma.lineTo(A / 2, 0); forma.lineTo(A / 2, 0.17); forma.lineTo(0, P); forma.lineTo(-A / 2, 0.17);
-      const geo = new THREE.ExtrudeGeometry(forma, { depth: 0.3, bevelEnabled: false });
-      geo.translate(0, H, z - 0.15);
-      geo.computeVertexNormals();
-      const m = new THREE.Mesh(geo, colorCasa('#a6937a'));
-      this.g.add(m);
-      if (fase < 2) this.caja(1.2, 0.8, 0.04, z > 0 ? 0.6 : -0.9, H + 0.6, z + (z > 0 ? 0.17 : -0.17), '#1e1813');
-    }
-  },
-
-  // Escombros y maleza alrededor, que van desapareciendo, y los parches de los muros
-  entorno(fase) {
-    const { A, F } = CASA, azar = semillaCasa(77);
-    const libre = (x, z) => !(x > -2.6 && x < -0.2 && z > 2.4 && z < 4.2) && !(x > 0.6 && x < 3.4 && z > 2.6 && z < 4.2);
-    const cerca = () => {
-      for (;;) {
-        const lado = Math.floor(azar() * 4), d = 0.5 + azar() * 1.3, t = (azar() - 0.5) * 2;
-        const x = lado < 2 ? t * (A / 2 + 0.6) : (lado === 2 ? -1 : 1) * (A / 2 + d), z = lado < 2 ? (lado === 0 ? 1 : -1) * (F / 2 + d) : t * (F / 2 + 0.6);
-        if (libre(x, z)) return [x, z];
-      }
-    };
+  // Lo roto de dentro, que va desapareciendo: escombros y maleza por el suelo, una viga caída y tablas colgando del
+  // techo, y agujeros en las paredes (que en la primera obra se tapan con tablas nuevas)
+  ruina(fase) {
+    const { H } = CASA, azar = semillaCasa(77), techo = H - 0.04;
+    // por el suelo, sin tapar la entrada, el vano del tabique ni el banco
+    const libre = (x, z) => !(x > -2.3 && x < -0.5 && z > 0.9) && !(x > 0.1 && x < 1.1 && Math.abs(z) < 0.8) && !(x > 0.6 && x < 3.1 && z > 0.05 && z < 2.0) && Math.abs(x - 0.6) > 0.3;
+    const dentro = () => { for (;;) { const x = (azar() - 0.5) * 6.0, z = (azar() - 0.5) * 4.0; if (libre(x, z)) return [x, z]; } };
     for (let i = 0; i < CASA_ESCOMBROS[fase]; i++) {
-      const [x, z] = cerca(), tipo = i % 3;
-      if (tipo === 0) this.caja(0.9 + azar() * 0.8, 0.07, 0.16, x, 0.06, z, '#4a3a22', 0, azar() * 3, (azar() - 0.5) * 0.3);
-      else if (tipo === 1) this.caja(0.35, 0.22, 0.3, x, 0.11, z, '#8a857a', azar(), azar() * 3, azar());
-      else this.caja(0.8, 0.2, 0.6, x, 0.1, z, '#6b5a35', 0, azar() * 3, 0);
+      const [x, z] = dentro(), tipo = i % 3;
+      if (tipo === 0) this.caja(0.7 + azar() * 0.6, 0.06, 0.15, x, 0.06, z, '#4a3a22', 0, azar() * 3, (azar() - 0.5) * 0.2);
+      else if (tipo === 1) this.caja(0.3, 0.2, 0.26, x, 0.1, z, '#8a857a', azar() * 0.5, azar() * 3, azar() * 0.5);
+      else this.caja(0.7, 0.12, 0.5, x, 0.07, z, '#6b5a35', 0, azar() * 3, 0);   // paja caída del tejado viejo
     }
     for (let i = 0; i < CASA_MALEZA[fase]; i++) {
-      const [x, z] = cerca(), alto = 0.4 + azar() * 0.9;
-      this.caja(0.05, alto, 0.05, x, alto / 2, z, i % 2 ? '#4f6a34' : '#5c7a3b', (azar() - 0.5) * 0.4, 0, (azar() - 0.5) * 0.4);
+      const [x, z] = dentro(), alto = 0.25 + azar() * 0.5;
+      this.caja(0.04, alto, 0.04, x, alto / 2, z, i % 2 ? '#4f6a34' : '#5c7a3b', (azar() - 0.5) * 0.4, 0, (azar() - 0.5) * 0.4);
     }
-    // parches en la pared de delante: agujeros en la ruina, tablas nuevas después
     if (fase === 0) {
-      this.caja(0.7, 0.55, 0.04, 0.4, 1.2, F / 2 + 0.02, '#2a2018');
-      this.caja(0.5, 0.7, 0.04, -2.85, 1.3, F / 2 + 0.02, '#2a2018');
-      this.caja(0.04, 0.6, 0.8, A / 2 + 0.02, 1.4, 1.2, '#2a2018');
+      // la viga caída en el salón: un extremo en el suelo y el otro aún en la pared del oeste, y el hueco que dejó arriba
+      const a = [-3.05, 2.45], b = [-0.9, 0.12], largo = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      this.caja(largo, 0.2, 0.2, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, -0.7, '#4a3424', 0, 0, Math.atan2(b[1] - a[1], b[0] - a[0]));
+      this.caja(1.8, 0.03, 0.9, -2.1, techo, -0.7, '#1e1813');
+      // en la habitación, dos tablas del techo descolgadas
+      this.caja(1.3, 0.04, 0.24, 2.2, 2.25, -0.5, '#5a4a30', 0, 0.3, 0.55);
+      this.caja(1.1, 0.04, 0.24, 2.5, 2.35, -1.1, '#5a4a30', 0, -0.2, -0.45);
+      this.caja(1.0, 0.03, 0.7, 2.3, techo, -0.8, '#1e1813');
     } else if (fase === 1) {
-      this.caja(0.8, 0.6, 0.04, 0.4, 1.2, F / 2 + 0.02, '#a08a66');
-      this.caja(0.04, 0.6, 0.9, A / 2 + 0.02, 1.4, 1.2, '#a08a66');
+      // los huecos del techo, tapados con tablas nuevas
+      this.caja(1.8, 0.03, 0.9, -2.1, techo, -0.7, '#a08a66');
+      this.caja(1.0, 0.03, 0.7, 2.3, techo, -0.8, '#a08a66');
+    }
+    // las paredes por dentro (a 2 cm de su cara): agujeros oscuros en la ruina, tablas nuevas después de la primera obra
+    if (fase <= 1) {
+      const c = fase === 0 ? '#1e1813' : '#a08a66', zf = CASA.F / 2 - 0.15 - 0.02, xo = CASA.A / 2 - 0.15 - 0.02;
+      this.caja(0.5, 0.6, 0.02, -2.75, 1.3, zf, c);
+      this.caja(0.02, 0.55, 0.7, xo, 1.4, -1.0, c);
+      this.caja(0.02, 0.6, 0.6, -xo, 1.5, 1.5, c);
     }
   },
 
-  // Antes de la segunda obra la puerta está clavada con tablas; después, abierta hacia dentro
-  puerta(fase) {
+  // La puerta, siempre abierta hacia dentro: como la de la taberna, girada media vuelta, contra el lado de la bisagra
+  puerta() {
     const x = -1.4, zc = CASA.F / 2;
-    if (fase < 2) {
-      for (const [y, g] of [[0.45, 0.07], [1.05, -0.09], [1.65, 0.05]]) this.caja(1.7, 0.18, 0.06, x, y, zc + 0.07, '#5a4a30', 0, 0, g);
-      this.caja(0.16, 2.0, 0.06, x - 0.4, 1.0, zc + 0.13, '#4a3a22', 0, 0, 0.05);
-    } else {
-      // como la de la taberna, girada media vuelta: la hoja, abierta hacia dentro, contra el lado de la bisagra
-      this.entidad({ 'gltf-model': 'url(modelos/puerta-ancha.glb)' }, x + 0.78, 0.02, zc - 0.4, 80);
-      this.macizo(x + 0.82, x + 1.12, zc - 1.45, zc - 0.35, 2);
-    }
+    this.entidad({ 'gltf-model': 'url(modelos/puerta-ancha.glb)' }, x + 0.78, 0.02, zc - 0.4, 80);
+    this.macizo(x + 0.82, x + 1.12, zc - 1.45, zc - 0.35, 2);
   },
 
-  // El banco de obra, con sus herramientas y las cargas que quedan por poner
+  // El banco de obra, con sus herramientas y las cargas que quedan por poner, y el rombo del tutorial
   banco() {
-    const x = 1.9, z = 3.3;
+    const { x, z } = CASA_BANCO;
     for (const dx of [-0.8, 0.8]) for (const dz of [-0.25, 0.25]) this.caja(0.08, 0.8, 0.08, x + dx, 0.4, z + dz, '#3a281a', 0, 0, dx * 0.08);
     this.caja(2.0, 0.07, 0.8, x, 0.83, z, '#6e5236');
     this.caja(0.08, 0.06, 0.4, x + 0.3, 0.9, z, '#6e5236');   // el martillo
     this.caja(0.2, 0.08, 0.1, x + 0.3, 0.97, z + 0.15, '#4a4640');
     this.caja(0.7, 0.05, 0.12, x - 0.5, 0.89, z + 0.1, '#8a8478');   // la sierra
-    for (const [dx, dy] of [[-0.9, 0.18], [-0.9, 0.5], [-0.65, 0.18]]) this.cilindro(0.16, 1.1, x + dx, dy, z + 0.9, '#6e4a2c', Math.PI / 2);
-    this.caja(0.8, 0.4, 0.5, x + 1.1, 0.2, z + 0.7, '#8a857a');
+    for (const [dx, dy] of [[-0.6, 0.18], [-0.6, 0.5], [-0.3, 0.18]]) this.cilindro(0.16, 1.1, x + dx, dy, z - 0.85, '#6e4a2c', Math.PI / 2);
+    this.caja(0.6, 0.35, 0.45, x + 0.7, 0.175, z - 0.85, '#8a857a');
+    this.macizo(x - 1.05, x + 1.05, z - 1.15, z + 0.45, 1);
+    this.entidad({ 'marca-paso': 'quien: obra; y: 1.5' }, x, 0, z);
   },
 
   // Segunda fase: abierta, vacía y polvorienta
@@ -214,28 +199,28 @@ AFRAME.registerComponent('casa-obra', {
 
   // Tercera fase: el salón comedor (chimenea, mesa con bancos, alfombra, lámpara) y la habitación (cama, cofre, estante)
   amueblada() {
-    const { A, F } = CASA, piedra = '#b8ab96', madera = '#5e4630', oscuro = '#3a281a';
+    const piedra = '#7a7064', madera = '#5e4630', oscuro = '#3a281a';
     // chimenea en la pared del oeste, con su fuego
     for (const z of [-0.85, 0.85]) this.caja(0.6, 1.6, 0.5, -2.9, 0.8, z, piedra);
     this.caja(0.7, 0.35, 2.2, -2.85, 1.775, 0, piedra);
-    this.caja(0.55, 0.85, 1.9, -2.92, 2.4, 0, '#a39c8e');
+    this.caja(0.55, 0.85, 1.9, -2.92, 2.4, 0, '#6a6258');
     this.caja(0.08, 1.6, 1.2, -3.15, 0.8, 0, '#1e1813');
-    this.caja(1.0, 0.06, 2.2, -2.7, 0.03, 0, '#9a907f');
+    this.caja(1.0, 0.06, 2.2, -2.7, 0.03, 0, '#5e574d');
     this.entidad({ hoguera: 'intensidad: 1.2' }, -2.85, 0.06, 0);
     this.macizo(-3.2, -2.35, -1.2, 1.2, 3);
     // alfombra, mesa larga y dos bancos
-    this.caja(2.4, 0.02, 3.0, -1.2, 0.035, 0, '#6e2f2a');
-    this.caja(0.95, 0.07, 2.4, -1.2, 0.76, 0, madera);
-    for (const dz of [-1, 1]) for (const dx of [-0.35, 0.35]) this.caja(0.1, 0.74, 0.1, -1.2 + dx, 0.37, dz * 1.0, oscuro);
+    this.caja(2.2, 0.02, 2.4, -1.2, 0.035, 0, '#6e2f2a');
+    this.caja(0.95, 0.07, 1.6, -1.2, 0.76, 0, madera);
+    for (const dz of [-1, 1]) for (const dx of [-0.35, 0.35]) this.caja(0.1, 0.74, 0.1, -1.2 + dx, 0.37, dz * 0.65, oscuro);
     for (const dx of [-0.75, 0.75]) {
-      this.caja(0.3, 0.06, 2.2, -1.2 + dx, 0.45, 0, '#4a3424');
-      for (const dz of [-0.9, 0.9]) this.caja(0.08, 0.44, 0.08, -1.2 + dx, 0.22, dz, oscuro);
+      this.caja(0.3, 0.06, 1.4, -1.2 + dx, 0.45, 0, '#4a3424');
+      for (const dz of [-0.55, 0.55]) this.caja(0.08, 0.44, 0.08, -1.2 + dx, 0.22, dz, oscuro);
     }
-    this.macizo(-2.2, -0.2, -1.25, 1.25, 0.9);
+    this.macizo(-2.2, -0.2, -0.85, 0.85, 0.9);
     // en la mesa: platos, jarra y una vela
-    for (const [dx, dz] of [[-0.25, -0.6], [0.25, -0.6], [-0.25, 0.1], [0.25, 0.1], [-0.25, 0.8], [0.25, 0.8]]) this.cilindro(0.11, 0.015, -1.2 + dx, 0.8, dz, '#a89e8b', 0, 14);
-    this.cilindro(0.07, 0.2, -1.2, 0.9, 0.35, '#5c3a22', 0, 10);
-    this.cilindro(0.025, 0.14, -1.2, 0.84, -0.2, '#d8cdb4', 0, 8);
+    for (const [dx, dz] of [[-0.25, -0.45], [0.25, -0.45], [-0.25, 0.45], [0.25, 0.45]]) this.cilindro(0.11, 0.015, -1.2 + dx, 0.8, dz, '#a89e8b', 0, 14);
+    this.cilindro(0.07, 0.2, -1.2, 0.9, 0.1, '#5c3a22', 0, 10);
+    this.cilindro(0.025, 0.14, -1.2, 0.84, -0.15, '#d8cdb4', 0, 8);
     this.entidad({ 'lampara-rueda': 'radio: 0.45; velas: 6; techo: 0.8' }, -1.2, 2.0, 0);
     this.entidad({ antorcha: 'intensidad: 1' }, -0.4, 1.9, 2.2, 180);
     // la habitación: cama contra la pared del este, cofre a los pies, estante al fondo
@@ -250,18 +235,14 @@ AFRAME.registerComponent('casa-obra', {
     this.macizo(0.95, 1.85, -2.2, -1.7, 0.5);
     this.caja(1.2, 0.05, 0.25, 1.9, 1.3, -2.05, oscuro);
     for (const [dx, c] of [[-0.4, '#7a5a4a'], [-0.2, '#5a6a4a'], [0.1, '#6a5a3a']]) this.caja(0.14, 0.24, 0.18, 1.9 + dx, 1.45, -2.05, c);
-    // fuera: macetero bajo la ventana y una pila de leña
-    this.caja(1.1, 0.18, 0.25, 1.9, 1.2, F / 2 + 0.13, '#4a3424');
-    for (const dx of [-0.4, -0.15, 0.1, 0.35]) this.caja(0.12, 0.14, 0.12, 1.9 + dx, 1.35, F / 2 + 0.13, ['#a8473f', '#d8b04a', '#8d5aa8', '#d8cdb4'][Math.round((dx + 0.4) / 0.25) % 4]);
-    for (const [dz, dy] of [[-0.45, 0.16], [-0.1, 0.16], [0.25, 0.16], [-0.27, 0.46], [0.08, 0.46]]) this.cilindro(0.16, 1.1, A / 2 + 0.6, dy, dz - 0.5, '#6e4a2c', Math.PI / 2);
   },
 
   // --- la cena del final: Leonor y Garcés esperan junto a la mesa; al apuntarla y apretar el gatillo, te sientas ---
   prepararCena() {
-    this.garces = this.entidad({ 'persona-animada': 'modelo: novio; macizo: false' }, -1.55, 0, -1.75);
-    this.leonor = this.entidad({ 'persona-animada': 'modelo: novia; macizo: false' }, -0.85, 0, -1.75);
+    this.garces = this.entidad({ 'persona-animada': 'modelo: novio; macizo: false' }, -1.55, 0, -1.35);
+    this.leonor = this.entidad({ 'persona-animada': 'modelo: leonor; macizo: false' }, -0.85, 0, -1.35);
     this.entidad({ 'marca-paso': 'quien: cena; y: 1.3' }, CENA_SILLA.x, 0, CENA_SILLA.z - 0.4);
-    cajaDeRayo(this.el, -1.2, 0.8, 0, 1.0, 0.3, 2.4, () => { if (!enLaMesa && !cambiandoDeZona) this.sentarse(); });
+    cajaDeRayo(this.el, -1.2, 0.8, 0, 1.0, 0.3, 1.6, () => { if (!enLaMesa && !cambiandoDeZona) this.sentarse(); });
     const rayo = this.el.lastElementChild;
     this.extras.push(rayo);
     rayo.addEventListener('mouseenter', () => { if (!enLaMesa) partida.avisar('Aprieta el gatillo para sentarte a cenar.'); });
@@ -344,14 +325,15 @@ AFRAME.registerComponent('casa-obra', {
   hablar() {
     const fase = this.fase();
     if (fase >= CASA_OBRAS) { partida.avisar('Tu casa está terminada.'); return; }
-    const tiene = partida.llevaCarta('madera'), tienePiedra = partida.llevaCarta('piedra');
+    // (en la partida de depuración no hacen falta las cargas: para ver cómo avanza la casa)
+    const gratis = partida.depuracion(), tiene = gratis || partida.llevaCarta('madera'), tienePiedra = gratis || partida.llevaCarta('piedra');
     partida.charlaAbierta = true;
     const faltan = [!tiene && 'madera', !tienePiedra && 'piedra'].filter(Boolean);
     const charla = faltan.length ? {
       texto: `${CASA_TEXTOS[fase]} Te falta ${faltan.length === 2 ? 'una carga de madera y otra de piedra' : `una carga de ${faltan[0]}`}. Obra ${fase + 1} de ${CASA_OBRAS}.`,
       opciones: [{ texto: 'Volveré' }],
     } : {
-      texto: `${CASA_TEXTOS[fase]} Llevas las dos. Obra ${fase + 1} de ${CASA_OBRAS}.`,
+      texto: `${CASA_TEXTOS[fase]} ${gratis ? 'En la partida de depuración no hacen falta.' : 'Llevas las dos.'} Obra ${fase + 1} de ${CASA_OBRAS}.`,
       opciones: [{ texto: 'Reparar la casa', hacer: () => this.reparar() }, { texto: 'Ahora no' }],
     };
     this.quitar = tablaDeOpciones(this.el.sceneEl, sitioDeLectura(this.el.sceneEl), charla, op => {
@@ -361,13 +343,43 @@ AFRAME.registerComponent('casa-obra', {
   },
   reparar() {
     const e = partida.estado, fase = this.fase();
-    if (fase >= CASA_OBRAS || !partida.llevaCarta('madera') || !partida.llevaCarta('piedra')) return;
+    if (fase >= CASA_OBRAS || (!partida.depuracion() && (!partida.llevaCarta('madera') || !partida.llevaCarta('piedra')))) return;
     delete e.cartas.madera; delete e.cartas.piedra;
     e.cargas = {};   // (ya puestas en la obra: si luego te ataca el lobo, no vuelven a su sitio)
     e.obra = fase + 1;
     partida.guardar();
-    this.montar();
+    this.cambiarDeFase();
     partida.avisar(CASA_RESULTADOS[fase]);
+  },
+  // Rehace la casa con un fundido: las piezas de la fase de antes se apartan y se desvanecen mientras las nuevas
+  // aparecen, cada una con una copia transparente de su material (los de colorCasa son compartidos)
+  cambiarDeFase() {
+    this.acabarFundido();
+    const viejos = [...this.g.children];
+    for (const m of viejos) this.g.remove(m);
+    this.montar();
+    const nuevos = [...this.g.children], salen = new THREE.Group();
+    this.el.object3D.add(salen);
+    const transparente = (m, opacidad) => { const c = m.material.clone(); c.transparent = true; c.opacity = opacidad; return c; };
+    for (const m of viejos) { m.material = transparente(m, 1); salen.add(m); }
+    for (const m of nuevos) { m.userData.material = m.material; m.material = transparente(m, 0); }
+    this.fundido = { t: 0, viejos, nuevos, salen };
+  },
+  pasarFundido(dt) {
+    const f = this.fundido;
+    f.t += dt;
+    const k = Math.min(1, f.t / CASA_FUNDIDO_MS);
+    for (const m of f.viejos) m.material.opacity = 1 - k;
+    for (const m of f.nuevos) m.material.opacity = k;
+    if (k >= 1) this.acabarFundido();
+  },
+  acabarFundido() {
+    const f = this.fundido;
+    if (!f) return;
+    this.fundido = null;
+    for (const m of f.viejos) { m.geometry.dispose(); m.material.dispose(); }
+    f.salen.parent?.remove(f.salen);
+    for (const m of f.nuevos) { m.material.dispose(); m.material = m.userData.material; }
   },
   cerrar() {
     if (!this.quitar) return;
@@ -378,12 +390,13 @@ AFRAME.registerComponent('casa-obra', {
   tick(t, dt) {
     if (this.quitar && seHaAlejado(this.el, this.ojo)) this.cerrar();
     if (this.cena && dt) this.pasarFrase(dt);
+    if (this.fundido && dt) this.pasarFundido(Math.min(dt, 100));
   },
   remove() {
     if (this.quitar) { this.quitar(); partida.charlaAbierta = false; this.quitar = null; }
     if (this.cena) { this.quitarFrase(); this.cena = null; enLaMesa = false; }
+    this.acabarFundido();
     this.limpiar();
-    const i = SUPERFICIES.indexOf(this.cierre); if (i >= 0) SUPERFICIES.splice(i, 1);
     this.el.removeObject3D('mesh');
   }
 });
@@ -413,6 +426,7 @@ const COMIC_LEONOR = {
       { x: 0.34, y: 0.5, w: 0.66, h: 0.5, toma: 'sonrisa', desde: 3, globos: [
         { quien: 'ella', texto: 'Solo te pido eso: madera para el techo y piedra para los muros.' },
         { quien: 'tu', texto: 'Está bien. Veré esa casa.', desde: 4 },
+        { quien: 'ella', texto: 'Sígueme, te la enseño.', desde: 4 },
       ] },
     ],
   ],
@@ -421,28 +435,42 @@ const COMIC_LEONOR = {
     { respuesta: 'No soy hombre de quedarme.' },
     { respuesta: '(Callas, y lo piensas)' },
     { respuesta: 'Está bien. Veré esa casa.', hacer: () => partida.aceptarCasa() },
-    { respuesta: 'Cerrar' },
+    { respuesta: 'Seguirla' },   // (al cerrar, te lleva a la casa: no hace falta volver a hablarle)
   ],
 };
 
+// Al cerrar el cómic, ya aceptada la misión, Leonor te lleva a la casa: sale por la puerta de la posada, baja por el
+// borde de la plaza (por donde anda la moza, sin el pozo ni los puestos) y se para delante de la puerta de la casa.
+// Puntos x z; si te quedas atrás, te espera.
+const LEONOR_GUIA = [[178.1, -102.9], [178.1, -106], [171, -113], [171, -125], [156, -136.5], [150.9, -140.6]];
+const LEONOR_VELOCIDAD = 1.0, LEONOR_ESPERA = 5;   // m/s, y a cuántos metros de ti se para a esperarte
+const LEONOR_PASOS_POR_S = 2.2;
+
 // Leonor, la novia de la boda, en la entrada de la posada: el día siguiente a la boda te sale al paso y te convence
-// de quedarte, en una página de cómic (COMIC_LEONOR; ya convencido, con una tabla: partida.charlaLeonor). Ese día se
-// queda allí; los demás, no está.
+// de quedarte, en una página de cómic (COMIC_LEONOR; ya convencido, con una tabla: partida.charlaLeonor). Al cerrar
+// la página te lleva hasta la casa (LEONOR_GUIA) y se queda allí. Ese día está; los demás, no.
 AFRAME.registerComponent('leonor', {
   init() {
     this.quitar = null; this.ojo = new THREE.Vector3();
+    this.guia = -1; this.fase = 0;   // el punto de LEONOR_GUIA al que va (-1: quieta)
     const e = partida.estado;
     const hoy = !e.hechas.includes('casa') && e.bodaVista !== null && e.dia > e.bodaVista && (e.mision !== 'casa' || e.casaDia === e.dia);
     if (!hoy) return;
-    this.el.setAttribute('persona-animada', 'modelo: novia');
-    cajaDeRayo(this.el, 0, 0.95, 0, 0.9, 1.9, 0.9, () => { if (this.quitar) this.cerrar(); else this.hablar(0); });
-    this.el.querySelector('.clicable').addEventListener('mouseenter', () => { if (!this.quitar) partida.avisar('Aprieta el gatillo para hablar con Leonor.'); });
+    this.el.setAttribute('persona-animada', 'modelo: leonor');
+    cajaDeRayo(this.el, 0, 0.95, 0, 0.9, 1.9, 0.9, () => { if (this.quitar) this.cerrar(); else if (this.guia >= 0) partida.avisar('Sigue a Leonor: te lleva a la casa.'); else this.hablar(0); });
+    this.el.querySelector('.clicable').addEventListener('mouseenter', () => { if (!this.quitar && this.guia < 0) partida.avisar('Aprieta el gatillo para hablar con Leonor.'); });
+    this.sigueme = cartelDeTexto(this.el, 'Sígueme, te enseño la casa.', '0 2.05 0');
+    this.espera = cartelDeTexto(this.el, '¿Vienes? Es por aquí.', '0 2.05 0');
+    // (si se recarga a medio camino, vuelve a la posada y desde allí te lleva otra vez)
+    if (e.mision === 'casa' && !e.casaVista) this.guiar();
+    // y si ya te la ha enseñado, se queda en la casa, delante de la puerta
+    else if (e.mision === 'casa') { const [x, z] = LEONOR_GUIA[LEONOR_GUIA.length - 1]; this.el.object3D.position.set(x, 0, z); this.el.object3D.rotation.y = 0.6; }
   },
   hablar(paso) {
     partida.charlaAbierta = true;
     if (partida.estado.mision !== 'casa') {
       this.el.components['persona-animada']?.poner('reposo');
-      this.quitar = abrirComic(this.el.sceneEl, COMIC_LEONOR, () => this.cerrar());
+      this.quitar = abrirComic(this.el.sceneEl, COMIC_LEONOR, () => { this.cerrar(); if (partida.estado.mision === 'casa') this.guiar(); });
       return;
     }
     this.quitar = tablaDeOpciones(this.el.sceneEl, sitioDeLectura(this.el.sceneEl), partida.charlaLeonor(paso), op => {
@@ -456,6 +484,43 @@ AFRAME.registerComponent('leonor', {
     partida.charlaAbierta = false;
     setTimeout(() => partida.comprobarPaso());
   },
-  tick() { if (this.quitar && seHaAlejado(this.el, this.ojo)) this.cerrar(); },
-  remove() { if (this.quitar) { this.quitar(); partida.charlaAbierta = false; } this.quitar = null; }
+  guiar() {
+    this.guia = 0;
+    this.sigueme.object3D.visible = true;
+  },
+  tick(t, dt) {
+    if (this.quitar && seHaAlejado(this.el, this.ojo)) this.cerrar();
+    if (this.guia < 0 || !dt) return;
+    dt = Math.min(dt, 50);
+    const o = this.el.object3D, persona = this.el.components['persona-animada'];
+    this.el.sceneEl.camera.getWorldPosition(this.ojo);
+    const aMi = Math.hypot(this.ojo.x - o.position.x, this.ojo.z - o.position.z);
+    for (const c of [this.sigueme, this.espera]) if (c.object3D.visible) c.object3D.lookAt(this.ojo.x, c.object3D.getWorldPosition(new THREE.Vector3()).y, this.ojo.z);
+    const [x, z] = LEONOR_GUIA[this.guia], dx = x - o.position.x, dz = z - o.position.z, falta = Math.hypot(dx, dz);
+    // te espera si te quedas atrás (mirándote) o si estás justo delante
+    const espera = !!this.quitar || aMi > LEONOR_ESPERA || aMi < 0.8;   // (y mientras habla contigo, quieta)
+    this.espera.object3D.visible = aMi > LEONOR_ESPERA;
+    if (this.espera.object3D.visible) this.sigueme.object3D.visible = false;
+    const rumbo = espera ? Math.atan2(this.ojo.x - o.position.x, this.ojo.z - o.position.z) : Math.atan2(dx, dz);
+    const giro = Math.atan2(Math.sin(rumbo - o.rotation.y), Math.cos(rumbo - o.rotation.y));
+    o.rotation.y += giro * Math.min(1, dt / 250);
+    if (espera || Math.abs(giro) > 0.7) { if (persona) persona.poner(espera ? 'reposo' : 'andar'); o.position.y = 0; return; }
+    if (persona) persona.poner('andar');
+    const paso = LEONOR_VELOCIDAD * dt / 1000;
+    if (falta > paso) {
+      o.position.x += dx / falta * paso; o.position.z += dz / falta * paso;
+      this.fase += dt / 1000 * LEONOR_PASOS_POR_S * Math.PI;
+      o.position.y = 0.012 * Math.abs(Math.sin(this.fase));
+      return;
+    }
+    o.position.set(x, 0, z);
+    if (++this.guia < LEONOR_GUIA.length) return;
+    // ya en la casa: se vuelve hacia ti y te la enseña
+    this.guia = -1;
+    this.sigueme.object3D.visible = this.espera.object3D.visible = false;
+    if (persona) persona.poner('reposo');
+    o.rotation.y = Math.atan2(this.ojo.x - o.position.x, this.ojo.z - o.position.z);
+    partida.verCasa();
+  },
+  remove() { if (this.quitar) { this.quitar(); partida.charlaAbierta = false; } this.quitar = null; this.sigueme = this.espera = null; }
 });

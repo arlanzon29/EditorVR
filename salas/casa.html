@@ -1,7 +1,8 @@
 <!-- Tu casa: en el poblado, frente a la posada, al otro lado de la plaza (x = 146,5…153,5, z = -148,5…-143,5; 2,8 m
      de alto), con la puerta hacia la calle (+z). Dentro, el salón comedor (al oeste, con la puerta) y la habitación (al
-     este), separados por un tabique con su vano. Aquí solo lo fijo: muros, suelo, techo y tabique. La obra (tejado,
-     puerta, escombros, muebles) cambia con partida.estado.obra y la dibuja casa-obra (js/casa.js). -->
+     este), separados por un tabique con su vano. Aquí lo fijo: muros, suelo, techo y tabique, y el tejado (casa-fuera):
+     por fuera está entera y siempre igual, y se hornea. La obra es toda de dentro (escombros, vigas caídas, puerta,
+     muebles): cambia con partida.estado.obra y la dibuja casa-obra (js/casa.js). -->
 
 <!-- suelo de tablas y techo de madera con vigas -->
 <a-plane rotation="-90 0 0" position="150 0.02 -146" width="6.4" height="4.4" color="#ffffff" suelo-madera></a-plane>
@@ -63,5 +64,13 @@
 <a-entity macizo="ancho: 0.5; fondo: 1.6; alto: 4" position="150.6 0 -147.4"></a-entity>
 <a-entity macizo="ancho: 0.5; fondo: 1.6; alto: 4" position="150.6 0 -144.6"></a-entity>
 
-<!-- la obra: tejado, puerta, escombros, banco de obra y muebles, según la fase (js/casa.js) -->
+<!-- la claridad que entra por las rendijas, una en cada cuarto: sin ella, por dentro salía negra al hornear (los
+     postigos están cerrados y el fuego y la lámpara solo están con la casa terminada) -->
+<a-entity light="type: point; intensity: 1.1; distance: 6; color: #e6dcc6" position="148.4 2.2 -146"></a-entity>
+<a-entity light="type: point; intensity: 0.9; distance: 5; color: #e6dcc6" position="152.1 2.2 -146.4"></a-entity>
+
+<!-- el tejado, fijo (js/casa.js) -->
+<a-entity casa-fuera position="150 0 -146"></a-entity>
+
+<!-- la obra, por dentro: puerta, escombros, banco de obra y muebles, según la fase (js/casa.js) -->
 <a-entity casa-obra position="150 0 -146"></a-entity>

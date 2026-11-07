@@ -584,18 +584,20 @@ AFRAME.registerComponent('mapa', {
     if (mejor) { mejor.material.color.set('#ffcc33'); mejor.scale.setScalar(1.7); }
   },
   // la flecha en su sitio, según dónde estás y hacia dónde miras
-  // El pergamino no mira la profundidad y se dibuja encima de todo: mientras está abierto, el rayo del mando
-  // derecho se dibuja después de él, o no se vería al apuntarle
+  // El pergamino no mira la profundidad y se dibuja encima de todo: mientras está abierto, el rayo de los mandos
+  // se dibuja después de él, o no se vería al apuntarle. Igual con una página de cómic abierta (js/comic.js).
   rayoEncima(encima) {
-    const m = document.querySelector('[laser-controls="hand: right"]'), linea = m && m.getObject3D('line');
-    if (!linea || linea.renderOrder === (encima ? 999 : 0)) return;
-    linea.renderOrder = encima ? 999 : 0;
-    linea.material.transparent = encima;
-    linea.material.depthTest = !encima;
-    linea.material.needsUpdate = true;
+    for (const m of document.querySelectorAll('[laser-controls]')) {
+      const linea = m.getObject3D('line');
+      if (!linea || linea.renderOrder === (encima ? 999 : 0)) continue;
+      linea.renderOrder = encima ? 999 : 0;
+      linea.material.transparent = encima;
+      linea.material.depthTest = !encima;
+      linea.material.needsUpdate = true;
+    }
   },
   tick() {
-    this.rayoEncima(this.panel.visible);
+    this.rayoEncima(this.panel.visible || !!comicAbierto);
     const aqui = zonaCargada.nombre;
     if (partida.ranura && !cambiandoDeZona && this.el.components.zonas.actual === aqui && !this.visitadas.has(aqui)) {
       this.visitadas.add(aqui);
