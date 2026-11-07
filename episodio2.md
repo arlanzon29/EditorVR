@@ -32,6 +32,42 @@ Zona: poblado (la posada). Sigue a [la boda](historia.md) del tutorial. Reglas d
 - Al aceptar, ella te señala dónde está la casa (marca en el mapa y sobre el sitio) y qué hace falta: madera, piedra…
   Es la entrada al resto del episodio: localizar los puntos donde conseguir materiales.
 
+## La conversación (borrador, Propuesta)
+
+Hall de la posada, de mañana. Llevas la bolsa al hombro. Leonor está junto a la puerta, en el camino de salida.
+
+- **Leonor:** Me han dicho que te marchas.
+- **Tú:** Mi camino sigue. Siempre ha sido así.
+- **Leonor:** Anoche brindamos por ti. Garcés no ha dejado de hablar de la boda. ¿Y te vas sin una palabra?
+- **Tú:** No soy hombre de quedarme.
+- **Leonor:** Hay una casa al final del poblado, vacía desde hace años. Tiene las paredes en pie y el techo caído. Nadie la quiere, y a ti
+  te vendría bien un sitio. Repárala, y si luego quieres irte, no te lo impedirá nadie.
+- **Tú:** (duda) ...
+- **Leonor:** Sólo te pido eso. Madera para el techo, piedra para los muros. El pueblo te ayudará con lo que sepa.
+- *(El camino se cierra: al intentar salir, algo te frena: la nieve, un carro averiado en la puerta... Es el destino.)*
+- **Tú:** Está bien. Veré esa casa.
+- **Leonor:** Gracias. Sabía que te quedarías.
+
+Al final, el objetivo cambia a «Reparar la casa» y empieza la misión.
+
+## La misión: los puntos de farmeo (Decidido)
+
+La misión empieza al acabar la conversación. Hay que localizar los puntos donde se consigue cada material:
+
+| Material | Zona | Puntos |
+|---|---|---|
+| Madera | Bosque | 2 zonas de madera |
+| Madera | Isla (en el lago) | 1 zona de madera (hasta ahora sólo tenía árboles) |
+| Piedra | Mina (cueva) | 1 zona de piedra |
+| Piedra | Montaña | 2 zonas de piedra |
+
+- Total: **3 zonas de madera** y **3 de piedra** que farmear.
+- **El bote** tiene que estar ya en la zona del lago, para llegar a la isla.
+- **La montaña** se habilita (hasta ahora cerrada) en este episodio: es la zona que se abre.
+
+Por decidir: cuánta madera y piedra necesita la casa, qué da cada zona por vez, cuánto cuesta en puntos, y si el bosque, la isla,
+la mina y la montaña ya tienen las zonas dibujadas (comprobarlo en la escena).
+
 ## Después (por definir)
 
 - La ruina: cuál es y cómo se ve (ver el poblado).
