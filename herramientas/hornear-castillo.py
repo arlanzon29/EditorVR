@@ -16,6 +16,9 @@ SUFIJO = '-noche' if NOCHE else ''
 ENTRADA, SALIDA = args[0], args[1]
 MUESTRAS = int(args[2]) if len(args) > 2 else 256
 ZONA = os.path.splitext(os.path.basename(ENTRADA))[0]
+# HORNEAR_SOLO=poblado,casa (variable de entorno): hornea y exporta solo esas salas; las demás siguen en la escena para
+# dar sombra y rebotar la luz, pero no se calculan (para rehacer lo que ha cambiado sin esperar al resto)
+SOLO = [s for s in os.environ.get('HORNEAR_SOLO', '').split(',') if s]
 ESCALA_LUZ = 2   # como en js/rendimiento.js: la imagen guarda la luz dividida por esto
 VATIOS = 130     # por cada unidad de fuerza de las luces de la escena (ajustado a ojo, mirando el resultado)
 
@@ -244,6 +247,8 @@ escena.render.image_settings.file_format = 'JPEG'
 escena.render.image_settings.quality = 95
 
 for sala, s in salas.items():
+    if SOLO and sala not in SOLO:
+        continue
     bpy.ops.object.select_all(action='DESELECT')
     for o in s['piezas']:
         o.select_set(True)
@@ -275,6 +280,8 @@ if NOCHE:
 
 # para exportar: solo textura en el color base (el color de vértice va aparte)
 for sala, s in salas.items():
+    if SOLO and sala not in SOLO:
+        continue
     for o in s['piezas']:
         arbol = o.data.materials[0].node_tree
         pbr = next(n for n in arbol.nodes if n.type == 'BSDF_PRINCIPLED')

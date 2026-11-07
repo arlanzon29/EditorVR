@@ -414,6 +414,7 @@ Con **`?sinhornear`** en la dirección se empieza sin ella.
   3. `blender --background --python herramientas/hornear-castillo.py -- <carpeta>/<zona>.json <salida> 256`
      (unos minutos; 100 píxeles por metro, imágenes de hasta 4096) y copiar a `modelos/horneado/` los `.glb`, los `.jpg` y el `.blend`. Los vatios
      por unidad de luz, el sol y el cielo se ajustan en ese script.
+     Con `HORNEAR_SOLO=poblado,casa` delante solo se hornean (y exportan) esas salas; las demás siguen en la escena para dar sombra. Sin GPU (CUDA), Blender hornea con la CPU, mucho más despacio.
 - **Luz de noche** (poblado: `campo-poblado`, `poblado`, `posada`, `taberna`): mismos `.glb`, solo cambia la imagen, `<sala>-noche-luz.jpg`. Se hace igual (pasos 1 y 2, con `/poblado`) y el paso 3 con `--noche` al final, que pone luna fría y baja y cielo oscuro (`CIELOS.noche`, copiado en el script) y deja las luces puntuales con su calidez; no escribe `.glb`: `blender --background --python herramientas/hornear-castillo.py -- <carpeta>/poblado.json <salida> 256 --noche` (unos 5 minutos; deja también `poblado-noche.blend`). Si se cambia algo fijo del poblado, regenerar primero la de día y luego esta. Para usarlas, `hornearEstancia` (rendimiento.js) tiene que pedir `<sala>-noche-luz.jpg` en vez de `<sala>-luz.jpg`.
 - En las estancias con fuego (`SALAS_CON_FUEGO`) la luz horneada tiembla un 4 %, toda a la vez, para acompañar a las llamas.
 - Las puertas y los personajes no están en Blender: no dan sombra, y la luz pasa por las puertas como si
