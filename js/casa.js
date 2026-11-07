@@ -275,7 +275,8 @@ AFRAME.registerComponent('casa-obra', {
     // la misma hoja que la de tu habitación de la posada (modelos/puerta.glb, de 0,9 × 2,05), escalada igual que allí;
     // los huecos se hicieron a su medida (estirar la ancha deformaba la aldaba y la tapaba con las tablas)
     modelo.setAttribute('gltf-model', 'url(modelos/puerta.glb)');
-    modelo.setAttribute('scale', `${(ancho / 0.9).toFixed(3)} 1.024 1`);
+    // (de alto, hasta 2,08: con 1,024 llegaba a 2,12 y se metía en el dintel y en el tabique, y titilaba arriba)
+    modelo.setAttribute('scale', `${(ancho / 0.9).toFixed(3)} 1.005 1`);
     hoja.appendChild(modelo);
     const caja = document.createElement('a-box');
     caja.classList.add('clicable');
