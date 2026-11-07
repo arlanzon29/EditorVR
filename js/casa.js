@@ -22,7 +22,7 @@ const CASA_TEXTOS = [
 const CASA_RESULTADOS = [
   'Subes las vigas caídas y tapas los agujeros del techo y de las paredes. La casa empieza a tener cara de casa.',
   'Sacas los escombros y barres. Ya está limpia, pero vacía. Falta darle vida.',
-  'Colocas los muebles y enciendes el fuego. Tu casa está terminada.',
+  'Colocas los muebles y enciendes el fuego. Tu casa está terminada. Cae la noche: Leonor y Garcés vienen a cenar.',
 ];
 
 // La cena del final (episodio2.md): sentado en tu salón, con Leonor y Garcés de pie al otro lado de la mesa. Las frases
@@ -421,6 +421,16 @@ AFRAME.registerComponent('casa-obra', {
     partida.guardar();
     this.cambiarDeFase();
     partida.avisar(CASA_RESULTADOS[fase]);
+    // la casa terminada: la cena es de noche. Después del fundido anochece y se vuelve a cargar la zona (ya de noche,
+    // y con la casa terminada horneada, casa-terminada)
+    if (e.obra >= CASA_OBRAS && e.mision === 'casa') {
+      clearTimeout(this.anochece);
+      this.anochece = setTimeout(() => {
+        const zonas = this.el.sceneEl.components.zonas;
+        partida.anochecer();
+        if (zonas && zonas.actual && !cambiandoDeZona) zonas.ir(zonas.actual);
+      }, CASA_FUNDIDO_MS + 1500);
+    }
   },
   // Rehace la casa con un fundido: las piezas de la fase de antes se apartan y se desvanecen mientras las nuevas
   // aparecen, cada una con una copia transparente de su material (los de colorCasa son compartidos)
@@ -466,6 +476,7 @@ AFRAME.registerComponent('casa-obra', {
   remove() {
     if (this.quitar) { this.quitar(); partida.charlaAbierta = false; this.quitar = null; }
     if (this.cena) { this.quitarFrase(); this.cena = null; enLaMesa = false; }
+    clearTimeout(this.anochece);
     this.acabarFundido();
     this.limpiar();
     for (const p of this.puertasCasa || []) {

@@ -22,7 +22,8 @@ const PUNTOS_LOBO = 2;
 // poblado: x, z, giro; sin sitio, a tu habitación de la posada).
 const T_INICIO = { puerta: true, posadero: true }, T_BODA = { ...T_INICIO, alliEstare: true }, T_BRINDIS = { ...T_BODA, brindis: true };
 const despuesDeLaBoda = e => { e.tutorial = { ...T_BRINDIS }; e.hechas = ['boda']; e.bodaDia = e.dia - 2; e.bodaVista = e.dia - 1; e.monedas = MISIONES.boda.pago; };
-const enLaCasa = (obra, cartas) => e => { despuesDeLaBoda(e); e.mision = 'casa'; e.casaDia = e.dia; e.casaVista = true; e.obra = obra; if (cartas) e.cartas = { madera: 'troncos', piedra: 'sillar' }; };
+// (con la casa terminada es de noche: la cena, js/casa.js)
+const enLaCasa = (obra, cartas) => e => { despuesDeLaBoda(e); e.mision = 'casa'; e.casaDia = e.dia; e.casaVista = true; e.obra = obra; e.noche = obra >= CASA_OBRAS; if (cartas) e.cartas = { madera: 'troncos', piedra: 'sillar' }; };
 const SALTOS_DEPURACION = [
   { nombre: 'Episodio 1: el principio', poner: () => {} },
   { nombre: 'Episodio 1: encargo aceptado', sitio: [162.5, -101, Math.PI], poner: e => { e.tutorial = { ...T_INICIO }; e.mision = 'boda'; e.estrellas = []; } },
