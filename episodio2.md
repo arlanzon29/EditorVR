@@ -90,14 +90,15 @@ la carga en la casa en ruinas, y cómo se hace la reparación por fases.
   - Con puntos suficientes, **matas al lobo** y puedes entrar. **Ya no vuelve a aparecer en la misión.**
   - Sin puntos suficientes, **vuelves a la posada** y **el lobo sigue** ahí para otro intento.
 
-**Decidido:** el lobo cuesta **2 puntos más** que entrar (la cueva cuesta 2: 4 en total).
+**Decidido:** el lobo de la cueva es de **una cabeza** y cuesta **2 puntos más** que entrar (la cueva cuesta 2: 4 en total).
+Los puntos de cada encuentro **no siguen una escala fija** con las cabezas: el usuario decide en cada momento cuánto cuesta
+cada enemigo.
 
 **Decidido:** en el **cartel que sale al ir a la cueva** aparece un **símbolo de enemigo que indica el nivel**: una **cabeza de lobo, o dos, o tres**, según la
 dificultad.
 
 Propuesta (a ajustar):
-- Escala de nivel: 1 cabeza = 2 puntos más (el lobo de la cueva), 2 cabezas = 4 más, 3 cabezas = 6 más. Un enemigo más fuerte
-  cuesta más. El símbolo sale en ese cartel, junto al precio, antes de cruzar.
+- El símbolo sale en ese cartel, junto al precio, antes de cruzar.
 - Se avisa antes de entrar, con la pregunta de gasto que ya usan los oficios.
 - Estado en la partida: «lobo de la cueva muerto», como las estrellas cogidas.
 - Es el primer enemigo y sirve de modelo para los siguientes. Encaja con los encuentros de [JUEGO.md](JUEGO.md) (se resuelven sin pelea
