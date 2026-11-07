@@ -253,9 +253,13 @@ AFRAME.registerComponent('posadero', {
       if (this.quitar) return this.cerrar();
       this.el.components.criado.charlando = true;
       // con el encargo ya aceptado (o cumplido), ya no hace falta que lo repita
+      // y, si Leonor te ha convencido de quedarte (la misión de la casa), ya no te despide: te quedas en el poblado
       const e = partida.estado, conEncargo = e.mision || e.hechas.includes('boda');
+      const texto = partida.tieneCasa() ? 'Bienvenido, vecino. Ya tienes casa propia, pero aquí siempre tienes un sitio junto al fuego.'
+        : e.mision === 'casa' ? 'Así que te quedas en el poblado. Me alegro. Suerte con la casa de enfrente: lleva años abandonada.'
+        : 'Buen viaje. Y ten cuidado con los puntos del día.';
       const charla = conEncargo
-        ? { texto: 'Buen viaje. Y ten cuidado con los puntos del día.', opciones: [{ texto: 'Gracias' }] }
+        ? { texto, opciones: [{ texto: 'Gracias' }] }
         : { texto: 'La taberna está aquí al lado: saliendo por la puerta, a la izquierda. Allí el tabernero anda buscando quien le haga un encargo.', opciones: [{ texto: 'Gracias' }] };
       this.quitar = tablaDeOpciones(this.el.sceneEl, sitioDeLectura(this.el.sceneEl), charla, () => this.cerrar());
     });
