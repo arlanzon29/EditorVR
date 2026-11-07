@@ -352,16 +352,21 @@ AFRAME.registerComponent('copa', {
 // como la cena del día (partida.comer con enLaMesa: si te acuestas sin cenar, al día siguiente tienes menos puntos,
 // PUNTOS_SIN_CENA). Lo crudo no se cena: primero, a la hoguera. Origen: en el centro del tablero, a su altura; "ancho" a
 // lo largo de x y "fondo" de z, en coordenadas de la entidad. El plato se ve un rato (MESA_PLATO_MS) y se retira.
+// Con "silla" (x z, en coordenadas de la entidad: dónde van los ojos, mirando hacia -z), te sientas a cenar, como en la
+// cena de tu casa: el plato sale delante y te quedas sentado hasta apretar "Levantarte".
 const MESA_PLATO_MS = 5000;
 AFRAME.registerComponent('mesa-cena', {
-  schema: { ancho: { default: 1.6 }, fondo: { default: 0.8 } },
+  schema: { ancho: { default: 1.6 }, fondo: { default: 0.8 }, silla: { default: '' } },
   init() {
     const { ancho, fondo } = this.data;
     this.ojo = new THREE.Vector3();
+    const s = this.data.silla.trim().split(/\s+/).map(Number);
+    this.silla = s.length === 2 && s.every(Number.isFinite) ? { x: s[0], z: s[1] } : null;
     cajaDeRayo(this.el, 0, 0.1, 0, ancho, 0.2, fondo, () => this.cenar());
     this.el.querySelector('.clicable').addEventListener('mouseenter', () => {
       const que = this.queCenar();
-      if (que) partida.avisar('Aprieta el gatillo para cenar aquí.');
+      if (enLaMesa) return;
+      if (que) partida.avisar(this.silla ? 'Aprieta el gatillo para sentarte a cenar.' : 'Aprieta el gatillo para cenar aquí.');
       else if (partida.estado.pescado === 'crudo' || partida.estado.cartas.carne === 'cruda') partida.avisar('Crudo no se cena: ásalo antes en una hoguera.');
     });
   },
@@ -374,13 +379,47 @@ AFRAME.registerComponent('mesa-cena', {
     return null;
   },
   cenar() {
+    if (enLaMesa || cambiandoDeZona) return;
     const que = this.queCenar();
     if (!que) { partida.avisar('No llevas nada asado que cenar.'); return; }
+    if (this.silla) return this.sentarse(que);
     this.servir(que);
     partida.comer(que, true);
   },
+  // Lleva tus ojos al punto (x, z) de la entidad; "sentado", a la altura de sentado (ALTURA_SENTADO), y mirando a -z
+  llevarCabeza(x, z, sentado) {
+    const rig = document.getElementById('rig').object3D, cam = this.el.sceneEl.camera, d = new THREE.Vector3(), p = new THREE.Vector3();
+    const destino = this.el.object3D.localToWorld(new THREE.Vector3(x, 0, z));
+    if (sentado) {
+      const delante = this.el.object3D.localToWorld(new THREE.Vector3(x, 0, z - 1)).sub(destino);
+      cam.getWorldDirection(d);
+      rig.rotation.y += Math.atan2(-delante.x, -delante.z) - Math.atan2(-d.x, -d.z);
+      rig.updateMatrixWorld(true);
+    }
+    cam.getWorldPosition(p);
+    rig.position.x += destino.x - p.x;
+    rig.position.z += destino.z - p.z;
+    if (sentado) rig.position.y += ALTURA_SENTADO - p.y;
+  },
+  sentarse(que) {
+    enLaMesa = true;
+    this.llevarCabeza(this.silla.x, this.silla.z, true);
+    this.servir(que, true);
+    partida.comer(que, true);
+    partida.charlaAbierta = true;
+    this.quitar = tablaDeOpciones(this.el.sceneEl, sitioDeLectura(this.el.sceneEl), { texto: 'Cenas sentado a tu mesa, junto al fuego.', opciones: [{ texto: 'Levantarte' }] }, () => this.levantarse());
+  },
+  levantarse() {
+    if (this.quitar) { this.quitar(); this.quitar = null; }
+    partida.charlaAbierta = false;
+    if (!enLaMesa) return;
+    enLaMesa = false;   // (la altura la recupera andar-joystick)
+    this.llevarCabeza(this.silla.x + 0.9, this.silla.z);   // de pie, al lado del banco
+    this.retirar();
+  },
   // el plato, en el borde de la mesa que tienes más cerca, con el pescado (el de los bancos, tostado) o la carne
-  servir(que) {
+  // ("quieto": sentado, no se retira solo: al levantarte)
+  servir(que, quieto = false) {
     this.retirar();
     const c = this.el.sceneEl.camera;
     if (c) { c.getWorldPosition(this.ojo); this.el.object3D.worldToLocal(this.ojo); } else this.ojo.set(0, 0, 1);
@@ -390,7 +429,7 @@ AFRAME.registerComponent('mesa-cena', {
     barro.position.y = 0.0125;
     plato.add(barro);
     if (que === 'pescado') {
-      const pez = new THREE.Mesh(formaDePez(), new THREE.MeshBasicMaterial({ vertexColors: true, color: '#a8703a', side: THREE.DoubleSide }));
+      const pez = new THREE.Mesh(formaDePez(), new THREE.MeshBasicMaterial({ vertexColors: true, color: '#f0b878', side: THREE.DoubleSide }));   // (más claro que en el espeto: en el plato salía casi negro)
       pez.position.y = 0.06; pez.rotation.z = Math.PI / 2; pez.rotation.y = Math.PI / 2; pez.scale.setScalar(0.32);
       plato.add(pez);
     } else {
@@ -399,7 +438,7 @@ AFRAME.registerComponent('mesa-cena', {
       plato.add(carne);
     }
     this.el.object3D.add(plato);
-    this.quitarPlato = setTimeout(() => this.retirar(), MESA_PLATO_MS);
+    if (!quieto) this.quitarPlato = setTimeout(() => this.retirar(), MESA_PLATO_MS);
   },
   retirar() {
     clearTimeout(this.quitarPlato);
@@ -408,5 +447,5 @@ AFRAME.registerComponent('mesa-cena', {
     this.plato.traverse(m => { if (m.isMesh) { m.geometry.dispose(); m.material.dispose(); } });
     this.plato = null;
   },
-  remove() { this.retirar(); }
+  remove() { if (enLaMesa && this.quitar) { enLaMesa = false; partida.charlaAbierta = false; } if (this.quitar) this.quitar(); this.quitar = null; this.retirar(); }
 });
