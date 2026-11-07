@@ -33,7 +33,19 @@ const SITIOS_MAPA = [
   { id: 'cueva', icono: 'piedra', x: 5, z: -168 },
   { id: 'montana-norte', icono: 'piedra', x: -234, z: -30 },
   { id: 'montana-sur', icono: 'piedra', x: -270, z: -202 },
+  // los de caza: donde pastan los ciervos (sus rutas, en salas/bosque.html y montana.html); al cazar se marca el más
+  // cercano al ciervo (sitioDeCaza)
+  { id: 'caza-bosque', icono: 'carne', x: -45, z: -140 },
+  { id: 'caza-montana-este', icono: 'carne', x: -160, z: -100 },
+  { id: 'caza-montana-sur', icono: 'carne', x: -225, z: -155 },
+  { id: 'caza-montana-norte', icono: 'carne', x: -130, z: -45 },
 ];
+// El sitio de caza más cercano a (x, z)
+function sitioDeCaza(x, z) {
+  let mejor = null, d = Infinity;
+  for (const s of SITIOS_MAPA) if (s.icono === 'carne' && Math.hypot(s.x - x, s.z - z) < d) { d = Math.hypot(s.x - x, s.z - z); mejor = s.id; }
+  return mejor;
+}
 // los caminos, trazados a mano sobre los de cada zona
 const CAMINOS_MAPA = [
   [[6, -7], [8, -15], [4, -25], [6, -35], [6, -45], [3, -54], [6, -66], [9, -76], [6, -84], [12, -92], [8, -110], [11, -150], [6, -200], [6, -231]],
@@ -558,7 +570,8 @@ AFRAME.registerComponent('mapa', {
     this.pestanas(g, W, 0);
     this.hojas[HOJA_MAPA].needsUpdate = true;
   },
-  // Los sitios de oficio que ya has usado: una chapa de pergamino con su dibujo a tinta (un pez, dos troncos, un sillar)
+  // Los sitios de oficio que ya has usado: una chapa de pergamino con su dibujo a tinta (un pez, dos troncos, un sillar,
+  // una pierna de carne)
   iconosSitios(g, X, Y) {
     const usados = partida.estado ? partida.estado.usados : [];
     this.usadosPintados = usados.length;
@@ -580,6 +593,13 @@ AFRAME.registerComponent('mapa', {
           g.fillStyle = '#6e4a2c'; g.fillRect(x - 9, y + dy - 3.5, 15, 7); g.strokeRect(x - 9, y + dy - 3.5, 15, 7);
           g.fillStyle = '#c9a66b'; g.beginPath(); g.ellipse(x + 6, y + dy, 2.5, 3.5, 0, 0, Math.PI * 2); g.fill(); g.stroke();
         }
+      } else if (s.icono === 'carne') {
+        // una pierna: la carne y el hueso, con sus dos nudos
+        g.lineCap = 'round'; g.lineWidth = 6; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 7, y - 7); g.stroke();
+        g.strokeStyle = '#e8dcc4'; g.lineWidth = 3; g.stroke(); g.strokeStyle = TINTA; g.lineWidth = 2; g.lineCap = 'butt';
+        g.fillStyle = '#e8dcc4';
+        for (const [dx, dy] of [[6, -10], [10, -6]]) { g.beginPath(); g.arc(x + dx, y + dy, 3, 0, Math.PI * 2); g.fill(); g.stroke(); }
+        g.fillStyle = '#9a4a3a'; g.beginPath(); g.ellipse(x - 3, y + 3, 7.5, 5.5, -0.75, 0, Math.PI * 2); g.fill(); g.stroke();
       } else {
         // un sillar: la cara y la de arriba
         g.fillStyle = '#a8a196'; g.fillRect(x - 8, y - 2, 13, 9); g.strokeRect(x - 8, y - 2, 13, 9);
