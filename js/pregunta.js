@@ -42,7 +42,7 @@ function preguntarGasto({ que, de, a, precio, enemigo, alResponder, dibujar, tex
   tex.colorSpace = THREE.SRGBColorSpace;
   if (foto && !foto.complete) foto.addEventListener('load', () => { if (preguntaAbierta === pregunta) { pintar(); tex.needsUpdate = true; } }, { once: true });
   const alto = PREGUNTA_ANCHO * H / W;
-  const cartel = new THREE.Mesh(new THREE.PlaneGeometry(PREGUNTA_ANCHO, alto), new THREE.MeshBasicMaterial({ map: tex, depthTest: false, transparent: true, fog: false }));
+  const cartel = letrero(new THREE.Mesh(new THREE.PlaneGeometry(PREGUNTA_ANCHO, alto), new THREE.MeshBasicMaterial({ map: tex, depthTest: false, transparent: true, fog: false })));
   cartel.renderOrder = 995;
   // en el monitor, recta y a una escala con la que cabe con sus botones (alto del cartel y botones: 1,05)
   const vista = tablaEnMonitor(escena, PREGUNTA_ANCHO, 1.05), k = vista ? vista.k : 1;
@@ -67,7 +67,7 @@ function preguntarGasto({ que, de, a, precio, enemigo, alResponder, dibujar, tex
     texturas.push(t);
     const e = document.createElement('a-entity');
     e.classList.add('clicable', 'cartel');
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.115), new THREE.MeshBasicMaterial({ map: t, depthTest: false, transparent: true, fog: false }));
+    const m = letrero(new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.115), new THREE.MeshBasicMaterial({ map: t, depthTest: false, transparent: true, fog: false })));
     m.renderOrder = 996;
     e.setObject3D('mesh', m);
     const p = cartel.localToWorld(new THREE.Vector3(textos.length === 1 ? 0 : i ? 0.28 : -0.28, -alto / 2 - 0.1, 0.01));

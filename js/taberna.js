@@ -18,7 +18,7 @@ function fraseEnTabla(texto, a) {
   lineas.forEach((l, i) => g.fillText(l, W / 2, 22 + alto * (i + 0.5) + 2));
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const malla = new THREE.Mesh(new THREE.PlaneGeometry(a, a * H / W), new THREE.MeshBasicMaterial({ map: tex, depthTest: false, transparent: true, fog: false }));
+  const malla = letrero(new THREE.Mesh(new THREE.PlaneGeometry(a, a * H / W), new THREE.MeshBasicMaterial({ map: tex, depthTest: false, transparent: true, fog: false })));
   malla.renderOrder = 995;
   return { malla, tex };
 }
@@ -121,7 +121,7 @@ AFRAME.registerComponent('camarero', {
     const e = document.createElement('a-entity');
     e.classList.add('clicable', 'cartel');
     e.setAttribute('position', `0 ${y} 0.01`);
-    const malla = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.15), new THREE.MeshBasicMaterial({ map: tex, depthTest: false, transparent: true, fog: false }));
+    const malla = letrero(new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.15), new THREE.MeshBasicMaterial({ map: tex, depthTest: false, transparent: true, fog: false })));
     malla.renderOrder = 995;
     e.setObject3D('mesh', malla);
     e.addEventListener('mouseenter', () => malla.material.color.set('#ffcc33'));

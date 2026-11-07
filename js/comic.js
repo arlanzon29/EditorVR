@@ -183,7 +183,7 @@ function abrirComic(escena, guion, alAcabar) {
   const g = lienzo.getContext('2d'), tex = new THREE.CanvasTexture(lienzo);
   tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
   const alto = COMIC_ANCHO * H / W, pagina = new THREE.Group();
-  const malla = new THREE.Mesh(new THREE.PlaneGeometry(COMIC_ANCHO, alto), new THREE.MeshBasicMaterial({ map: tex, depthTest: false, transparent: true, fog: false }));
+  const malla = letrero(new THREE.Mesh(new THREE.PlaneGeometry(COMIC_ANCHO, alto), new THREE.MeshBasicMaterial({ map: tex, depthTest: false, transparent: true, fog: false })));
   // (en la pasada de lo transparente, como las tablas: si no, lo transparente que está más cerca que la página, como lo
   // horneado de una pared al lado, se pintaba después encima y las viñetas parecían transparentes)
   malla.renderOrder = 994;
@@ -214,7 +214,7 @@ function abrirComic(escena, guion, alAcabar) {
     texBoton = tablaDeTexto(p.respuesta, 512, 96);
     boton = document.createElement('a-entity');
     boton.classList.add('clicable', 'cartel', 'pregunta');
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.15), new THREE.MeshBasicMaterial({ map: texBoton, depthTest: false, transparent: true, fog: false }));
+    const m = letrero(new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.15), new THREE.MeshBasicMaterial({ map: texBoton, depthTest: false, transparent: true, fog: false })));
     m.renderOrder = 995;
     boton.setObject3D('mesh', m);
     const pos = pagina.localToWorld(new THREE.Vector3(0, 0, 0.01));

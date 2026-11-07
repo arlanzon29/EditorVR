@@ -50,7 +50,7 @@ function tablaDeOpciones(escena, sitio, charla, alElegir) {
     texturas.push(t);
     const e = document.createElement('a-entity');
     e.classList.add('clicable', 'cartel', 'pregunta');
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.15), new THREE.MeshBasicMaterial({ map: t, depthTest: false, transparent: true, fog: false }));
+    const m = letrero(new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.15), new THREE.MeshBasicMaterial({ map: t, depthTest: false, transparent: true, fog: false })));
     m.renderOrder = 995;
     e.setObject3D('mesh', m);
     const p = tabla.localToWorld(new THREE.Vector3(0, 0.44 - i * 0.18, 0.01));

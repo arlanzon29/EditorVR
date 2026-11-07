@@ -314,7 +314,7 @@ AFRAME.registerComponent('boda', {
     const boton = document.createElement('a-entity');
     boton.classList.add('clicable', 'cartel');
     boton.setAttribute('position', '0 1.56 0.01');
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.12), new THREE.MeshBasicMaterial({ map: texBoton, depthTest: false, transparent: true, fog: false }));
+    const m = letrero(new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.12), new THREE.MeshBasicMaterial({ map: texBoton, depthTest: false, transparent: true, fog: false })));
     m.renderOrder = 995;
     boton.setObject3D('mesh', m);
     boton.addEventListener('mouseenter', () => m.material.color.set('#ffcc33'));
