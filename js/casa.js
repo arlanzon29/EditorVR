@@ -388,8 +388,46 @@ AFRAME.registerComponent('casa-obra', {
   }
 });
 
+// La conversación de Leonor en página de cómic (js/comic.js): las tomas, en la entrada de la posada y, la de la casa,
+// desde la plaza; Leonor está en 178,9, -102,3 y su cabeza, a 1,6 m.
+const LEONOR_CABEZA = [178.9, 1.58, -102.3];
+const COMIC_LEONOR = {
+  titulo: 'Episodio 2 · Quedarte',
+  tomas: {
+    general: { desde: [181.4, 1.8, -97.4], mira: [178.9, 1.05, -102.3], fov: 58, cabeza: LEONOR_CABEZA },
+    puerta: { desde: [179.6, 1.62, -99.9], mira: [178.3, 1.35, -103.85], fov: 50, cabeza: LEONOR_CABEZA },
+    cara: { desde: [178.95, 1.6, -101.1], mira: [178.9, 1.5, -102.3], fov: 34, cabeza: LEONOR_CABEZA },
+    medio: { desde: [177.5, 1.45, -100.8], mira: [178.9, 1.3, -102.3], fov: 42, cabeza: LEONOR_CABEZA },
+    perfil: { desde: [180.7, 1.5, -101.5], mira: [178.6, 1.45, -102.9], fov: 46, cabeza: LEONOR_CABEZA },   // de perfil, con la puerta detrás
+    sonrisa: { desde: [179.3, 1.5, -101.2], mira: [178.9, 1.68, -102.3], fov: 36, cabeza: LEONOR_CABEZA },
+  },
+  paginas: [
+    [
+      { x: 0, y: 0, w: 1, h: 0.46, toma: 'general', desde: 0, cartela: 'La mañana después de la boda.', globos: [{ quien: 'ella', texto: 'Me han dicho que te marchas.' }] },
+      { x: 0, y: 0.46, w: 0.4, h: 0.54, toma: 'puerta', desde: 1, globos: [{ quien: 'tu', texto: 'Mi camino sigue. Siempre ha sido así.' }] },
+      { x: 0.4, y: 0.46, w: 0.6, h: 0.54, toma: 'cara', desde: 1, globos: [{ quien: 'ella', texto: 'Anoche brindamos por ti. ¿Y te vas sin una palabra?' }] },
+    ],
+    [
+      { x: 0, y: 0, w: 0.34, h: 1, toma: 'medio', desde: 2, globos: [{ quien: 'tu', texto: 'No soy hombre de quedarme.' }] },
+      { x: 0.34, y: 0, w: 0.66, h: 0.5, toma: 'perfil', desde: 2, globos: [{ quien: 'ella', texto: 'Frente a la posada hay una casa vacía desde hace años. Repárala, y si luego quieres irte, nadie te lo impedirá.' }] },
+      { x: 0.34, y: 0.5, w: 0.66, h: 0.5, toma: 'sonrisa', desde: 3, globos: [
+        { quien: 'ella', texto: 'Solo te pido eso: madera para el techo y piedra para los muros.' },
+        { quien: 'tu', texto: 'Está bien. Veré esa casa.', desde: 4 },
+      ] },
+    ],
+  ],
+  pasos: [
+    { respuesta: 'Mi camino sigue. Siempre ha sido así.' },
+    { respuesta: 'No soy hombre de quedarme.' },
+    { respuesta: '(Callas, y lo piensas)' },
+    { respuesta: 'Está bien. Veré esa casa.', hacer: () => partida.aceptarCasa() },
+    { respuesta: 'Cerrar' },
+  ],
+};
+
 // Leonor, la novia de la boda, en la entrada de la posada: el día siguiente a la boda te sale al paso y te convence
-// de quedarte (partida.charlaLeonor). Ese día se queda allí; los demás, no está.
+// de quedarte, en una página de cómic (COMIC_LEONOR; ya convencido, con una tabla: partida.charlaLeonor). Ese día se
+// queda allí; los demás, no está.
 AFRAME.registerComponent('leonor', {
   init() {
     this.quitar = null; this.ojo = new THREE.Vector3();
@@ -402,6 +440,11 @@ AFRAME.registerComponent('leonor', {
   },
   hablar(paso) {
     partida.charlaAbierta = true;
+    if (partida.estado.mision !== 'casa') {
+      this.el.components['persona-animada']?.poner('reposo');
+      this.quitar = abrirComic(this.el.sceneEl, COMIC_LEONOR, () => this.cerrar());
+      return;
+    }
     this.quitar = tablaDeOpciones(this.el.sceneEl, sitioDeLectura(this.el.sceneEl), partida.charlaLeonor(paso), op => {
       this.quitar(); this.quitar = null;
       if (op.hacer) op.hacer();
